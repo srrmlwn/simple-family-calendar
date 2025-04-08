@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* React Big Calendar custom styling */
+.rbc-calendar {
+  font-family: inherit;
+}
+
+.rbc-toolbar button {
+  @apply bg-white border border-gray-300 text-gray-700 font-normal rounded;
+}
+
+.rbc-toolbar button:hover,
+.rbc-toolbar button:focus {
+  @apply bg-gray-100 border-gray-400;
+}
+
+.rbc-toolbar button:active,
+.rbc-toolbar button.rbc-active {
+  @apply bg-blue-100 border-blue-400 shadow-none;
+}
+
+.rbc-toolbar button.rbc-active:hover,
+.rbc-toolbar button.rbc-active:focus {
+  @apply bg-blue-200 border-blue-500;
+}
+
+.rbc-toolbar-label {
+  @apply font-medium text-lg;
+}
+
+.rbc-header {
+  @apply font-normal py-2 text-gray-600;
+}
+
+.rbc-today {
+  @apply bg-blue-50;
+}
+
+.rbc-off-range-bg {
+  @apply bg-gray-50;
+}
+
+.rbc-event {
+  @apply rounded-md px-2 py-1;
+}
+
+.rbc-event-content {
+  @apply font-normal;
+}
+
+.rbc-show-more {
+  @apply text-blue-600 font-normal;
+}
+
+.rbc-event-label {
+  @apply font-normal;
+}
+
+.rbc-agenda-table {
+  @apply text-sm;
+}
+
+.rbc-agenda-time-cell {
+  @apply text-gray-700;
+}
+
+.rbc-agenda-event-cell {
+  @apply text-gray-900;
+}
+
+.rbc-time-view {
+  @apply border border-gray-200 rounded-md;
+}
+
+.rbc-timeslot-group {
+  @apply border-gray-100;
+}
+
+.rbc-time-header {
+  @apply border-gray-200;
+}
+
+.rbc-time-content {
+  @apply border-gray-200;
+}
+
+.rbc-day-slot .rbc-time-slot {
+  @apply border-gray-50;
+}
