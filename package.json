@@ -22,6 +22,7 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "chrono-node": "^2.8.0",
     "class-validator": "^0.14.1",
     "compromise": "^14.14.4",
     "compromise-dates": "^3.7.1",
@@ -32,6 +33,7 @@
     "helmet": "^8.1.0",
     "ical-generator": "^8.1.1",
     "jsonwebtoken": "^9.0.2",
+    "natural": "^8.0.1",
     "nodemailer": "^6.10.0",
     "pg": "^8.14.1",
     "reflect-metadata": "^0.2.2",

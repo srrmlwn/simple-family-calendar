@@ -1,6 +1,6 @@
 // src/controllers/eventController.ts
 import { Request, Response } from 'express';
-import { getRepository } from 'typeorm';
+import { AppDataSource } from '../data-source';
 import { Event } from '../entities/Event';
 import { EventRecipient } from '../entities/EventRecipient';
 import { EmailRecipient } from '../entities/EmailRecipient';
@@ -56,7 +56,7 @@ export class EventController {
             const savedEvent = await this.eventService.create(event);
 
             // Get default recipients for this user
-            const recipientRepository = getRepository(EmailRecipient);
+            const recipientRepository = AppDataSource.getRepository(EmailRecipient);
             const defaultRecipients = await recipientRepository.find({
                 where: { userId, isDefault: true }
             });
@@ -70,7 +70,7 @@ export class EventController {
                     return eventRecipient;
                 });
 
-                await getRepository(EventRecipient).save(eventRecipients);
+                await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
 
                 // Send calendar invites
                 await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients);
@@ -164,7 +164,7 @@ export class EventController {
 
             // Handle recipients if provided
             if (eventData.recipientIds && eventData.recipientIds.length > 0) {
-                const recipientRepository = getRepository(EmailRecipient);
+                const recipientRepository = AppDataSource.getRepository(EmailRecipient);
                 const recipients = await recipientRepository.findByIds(eventData.recipientIds);
 
                 const eventRecipients = recipients.map(recipient => {
@@ -174,7 +174,7 @@ export class EventController {
                     return eventRecipient;
                 });
 
-                await getRepository(EventRecipient).save(eventRecipients);
+                await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
 
                 // Send calendar invites
                 await this.emailService.sendCalendarInvites(savedEvent, recipients);
@@ -244,7 +244,7 @@ export class EventController {
             const updatedEvent = await this.eventService.update(id, existingEvent);
 
             // Get all recipients for this event
-            const recipientRepository = getRepository(EventRecipient);
+            const recipientRepository = AppDataSource.getRepository(EventRecipient);
             const eventRecipients = await recipientRepository.find({
                 where: { eventId: id },
                 relations: ['recipient']
@@ -288,7 +288,7 @@ export class EventController {
             }
 
             // Get all recipients for this event before deleting
-            const recipientRepository = getRepository(EventRecipient);
+            const recipientRepository = AppDataSource.getRepository(EventRecipient);
             const eventRecipients = await recipientRepository.find({
                 where: { eventId: id },
                 relations: ['recipient']
