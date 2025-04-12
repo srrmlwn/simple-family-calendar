@@ -567,3 +567,5 @@ export class NLPParser {
         return -1; // Not found
     }
 }
+
+export default new NLPParser();

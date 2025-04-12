@@ -7,14 +7,10 @@ config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const connectionOptions: DataSourceOptions = {
+// Base configuration with properties common to both connection methods
+const baseConfig: Partial<DataSourceOptions> = {
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'simple_family_calendar',
-  synchronize: !isProduction, // Automatically creates database schema (disable in production)
+  synchronize: !isProduction,
   logging: !isProduction,
   entities: [
     isProduction ? 'dist/entities/**/*.js' : 'src/entities/**/*.ts'
@@ -24,7 +20,33 @@ const connectionOptions: DataSourceOptions = {
   ],
   subscribers: [
     isProduction ? 'dist/subscribers/**/*.js' : 'src/subscribers/**/*.ts'
-  ]
+  ],
+  ssl: isProduction ? {
+    rejectUnauthorized: false
+  } : false
 };
+
+// Create connection options based on environment variables
+let connectionOptions: DataSourceOptions;
+
+if (process.env.DATABASE_URL) {
+  // Use URL connection
+  connectionOptions = {
+    ...baseConfig,
+    type: 'postgres',
+    url: process.env.DATABASE_URL,
+  } as DataSourceOptions;
+} else {
+  // Use individual parameters
+  connectionOptions = {
+    ...baseConfig,
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    username: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_DATABASE || 'simple_family_calendar',
+  } as DataSourceOptions;
+}
 
 export default connectionOptions;
