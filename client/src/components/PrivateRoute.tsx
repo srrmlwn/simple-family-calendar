@@ -9,6 +9,7 @@ interface PrivateRouteProps {
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
+  console.log("Loading Private Route!");
   // Show loading state while checking authentication
   if (loading) {
     return (

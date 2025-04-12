@@ -8,6 +8,7 @@ import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 
 const App: React.FC = () => {
+    console.log("Loading App!");
     return (
         <AuthProvider>
             <Router>
