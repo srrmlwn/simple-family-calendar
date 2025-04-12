@@ -137,8 +137,8 @@ const CalendarPage: React.FC = () => {
     };
 
     // Handle view change (month, week, day, agenda)
-    const handleViewChange = (newView: View) => {
-        setView(newView);
+    const handleViewChange = (newView: string) => {
+        setView(newView as View);
         // fetchEvents will be triggered by useEffect
     };
 

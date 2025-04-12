@@ -16,6 +16,7 @@ function testParser() {
         "Set a reminder to pay bills on the 25th of this month",
         "Meeting on the 25th at 10am",
         "Meeting on the 5th at 2pm",
+        "Hariniis birthday on March 15th all day"
     ];
 
     const now = new Date();

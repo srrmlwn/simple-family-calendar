@@ -14,7 +14,7 @@ interface CalendarProps {
     onSelectSlot: (slotInfo: { start: Date; end: Date }) => void;
     view: View;
     date: Date;
-    onViewChange: (view: View) => void;
+    onViewChange: (view: string) => void;
     onNavigate: (date: Date) => void;
 }
 
