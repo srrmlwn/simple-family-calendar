@@ -18,7 +18,6 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../client/build')));
 
 // Routes
 import authRoutes from './routes/auth';
@@ -34,8 +33,11 @@ app.use('/api/settings', authenticateJWT, settingsRoutes);
 
 // The "default" handler: for any request that doesn't match an API route,
 // send back the React app's index.html file.
+console.log("Where are we - " + __dirname);
+let clientPath = path.join(__dirname, '../../client/build/index.html');
+console.log("Where is the client - " + clientPath);
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+    res.sendFile(clientPath);
 });
 
 // Error handling middleware
