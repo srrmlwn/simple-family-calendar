@@ -31,14 +31,13 @@ app.use('/api/events', authenticateJWT, eventRoutes);
 app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
 
-// The "default" handler: for any request that doesn't match an API route,
-// send back the React app's index.html file.
-console.log("Where are we - " + __dirname);
-let clientPath = path.join(__dirname, '../../client/build/index.html');
-console.log("Where is the client - " + clientPath);
-app.get('/', (req, res) => {
-    res.sendFile(clientPath);
-});
+// Serve static files in production
+if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'client/build')));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'client/build/index.html'));
+    });
+}
 
 // Error handling middleware
 import { errorHandler } from './middleware/errorHandler';
