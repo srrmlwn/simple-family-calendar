@@ -1,6 +1,7 @@
 // src/config/database.ts
 import { DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 // Load environment variables
 config();
@@ -12,6 +13,7 @@ const baseConfig: Partial<DataSourceOptions> = {
   type: 'postgres',
   synchronize: !isProduction,
   logging: !isProduction,
+  namingStrategy: new SnakeNamingStrategy(),
   entities: [
     isProduction ? 'dist/entities/**/*.js' : 'src/entities/**/*.ts'
   ],
