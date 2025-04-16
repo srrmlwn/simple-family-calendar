@@ -34,7 +34,7 @@ export class NLPParser {
         // Extract dates and times
         const { startTime, endTime, duration } = this.extractTimeInformation(sanitizedInput, isAllDay);
 
-        return {
+        let parsedEvent = {
             title,
             description,
             startTime,
@@ -43,6 +43,8 @@ export class NLPParser {
             isAllDay,
             location
         };
+        console.log("=> Current Date: " + this.currentDate + "\n==> Input: " + input + "\n===> Output: " + JSON.stringify(parsedEvent));
+        return parsedEvent;
     }
 
     /**
