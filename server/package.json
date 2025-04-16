@@ -9,7 +9,10 @@
     "dev": "nodemon --exec ts-node src/app.ts",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "migration:run": "ts-node src/scripts/run-migrations.ts",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
+    "migration:create": "typeorm migration:create"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
