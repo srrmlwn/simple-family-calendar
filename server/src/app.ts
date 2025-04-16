@@ -32,10 +32,12 @@ app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
 
 // Serve static files in production
+console.log("Current Directory: " + __dirname);
+console.log(JSON.stringify(path.join(__dirname, '../../client/build')));
 if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'client/build')));
+    app.use(express.static(path.join(__dirname, '../../client/build')));
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client/build/index.html'));
+        res.sendFile(path.join(__dirname, '../../client/build/index.html'));
     });
 }
 
