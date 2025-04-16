@@ -29,11 +29,11 @@ export class EventRecipient {
     notifiedAt?: Date;
 
     @ManyToOne(() => Event, event => event.eventRecipients)
-    @JoinColumn({ name: 'eventId' })
+    @JoinColumn({ name: 'event_id' })
     event!: Event;
 
     @ManyToOne(() => EmailRecipient, recipient => recipient.eventRecipients)
-    @JoinColumn({ name: 'recipientId' })
+    @JoinColumn({ name: 'recipient_id' })
     recipient!: EmailRecipient;
 
     @CreateDateColumn()

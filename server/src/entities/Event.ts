@@ -51,7 +51,7 @@ export class Event {
   userId!: string;
 
   @ManyToOne(() => User, user => user.events)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @OneToMany(() => EventRecipient, eventRecipient => eventRecipient.event)

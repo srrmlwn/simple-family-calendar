@@ -34,7 +34,7 @@ export class EmailRecipient {
     userId!: string;
 
     @ManyToOne(() => User, user => user.emailRecipients)
-    @JoinColumn({ name: 'userId' })
+    @JoinColumn({ name: 'user_id' })
     user!: User;
 
     @OneToMany(() => EventRecipient, eventRecipient => eventRecipient.recipient)

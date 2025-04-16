@@ -31,7 +31,7 @@ export class UserSettings {
     notificationPreferences?: object;
 
     @ManyToOne(() => User, user => user.settings)
-    @JoinColumn({ name: 'userId' })
+    @JoinColumn({ name: 'user_id' })
     user!: User;
 
     @CreateDateColumn()
