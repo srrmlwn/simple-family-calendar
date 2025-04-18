@@ -1,3 +1,4 @@
+import 'openai/shims/node';  // This must be the first import
 import OpenAI from 'openai';
 import moment from 'moment-timezone';
 
@@ -65,8 +66,11 @@ Response must be valid JSON.`;
 
         try {
             console.log('Sending request to GPT-4...');
+            console.log('--------------------------------');
+            console.log(prompt);
+            console.log('--------------------------------');
             const completion = await this.openai.chat.completions.create({
-                model: "gpt-4",
+                model: "gpt-3.5-turbo",
                 messages: [
                     {
                         role: "system",

@@ -1,3 +1,4 @@
+import 'openai/shims/node';  // This must be the first import
 import { LLMParser } from '../../src/services/llmParser';
 import moment from 'moment-timezone';
 import dotenv from 'dotenv';
