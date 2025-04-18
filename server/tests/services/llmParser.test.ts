@@ -1,5 +1,5 @@
 import 'openai/shims/node';  // This must be the first import
-import { LLMParser } from '../../src/services/llmParser';
+import { LLMParser, ParsedEvent } from '../../src/services/llmParser';
 import moment from 'moment-timezone';
 import dotenv from 'dotenv';
 
@@ -19,18 +19,7 @@ describe('LLMParser Integration Tests', () => {
 
     describe('parseEvent', () => {
         // Add timeout for API calls
-        jest.setTimeout(30000); // 30 seconds
-
-        beforeEach(() => {
-            // Reset the time to 9 AM for each test
-            const mockDate = new Date('2024-02-20T09:00:00Z');
-            jest.useFakeTimers();
-            jest.setSystemTime(mockDate);
-        });
-
-        afterEach(() => {
-            jest.useRealTimers();
-        });
+        jest.setTimeout(60000); // 60 seconds
 
         it('should parse a simple event with time', async () => {
             const input = 'Meeting with John tomorrow at 2pm';
@@ -38,21 +27,20 @@ describe('LLMParser Integration Tests', () => {
             
             const result = await parser.parseEvent(input, timezone);
             
-            // Title assertions
-            expect(result.title.toLowerCase()).toContain('meeting');
-            expect(result.title.toLowerCase()).toContain('john');
-            expect(result.isAllDay).toBe(false);
-            
-            // Time assertions
-            const startTime = moment(result.startTime).tz(timezone);
-            const endTime = moment(result.endTime).tz(timezone);
-            
-            expect(startTime.format('YYYY-MM-DD')).toBe(
-                moment().tz(timezone).add(1, 'day').format('YYYY-MM-DD')
-            );
-            expect(startTime.hours()).toBe(14); // 2 PM
-            expect(startTime.minutes()).toBe(0);
-            expect(endTime.diff(startTime, 'minutes')).toBe(60); // Default duration
+            const tomorrow = moment().tz(timezone).add(1, 'day');
+            const expectedEvent: ParsedEvent = {
+                title: 'Meeting with John',
+                startTime: moment.tz(tomorrow.format('YYYY-MM-DD') + ' 14:00:00', timezone).toDate(),
+                endTime: moment.tz(tomorrow.format('YYYY-MM-DD') + ' 15:00:00', timezone).toDate(),
+                duration: 60,
+                isAllDay: false
+            };
+
+            expect(result.title).toBe(expectedEvent.title);
+            expect(result.isAllDay).toBe(expectedEvent.isAllDay);
+            expect(result.duration).toBe(expectedEvent.duration);
+            expect(result.startTime.getTime()).toBe(expectedEvent.startTime.getTime());
+            expect(result.endTime.getTime()).toBe(expectedEvent.endTime.getTime());
         });
 
         it('should parse an all-day event with specific date', async () => {
@@ -61,25 +49,19 @@ describe('LLMParser Integration Tests', () => {
             
             const result = await parser.parseEvent(input, timezone);
             
-            expect(result.title.toLowerCase()).toContain('holiday party');
-            expect(result.isAllDay).toBe(true);
-            
-            const startDate = moment(result.startTime).tz(timezone);
-            const endDate = moment(result.endTime).tz(timezone);
-            
-            // Date assertions
-            expect(startDate.month()).toBe(11); // December (0-based)
-            expect(startDate.date()).toBe(25);
-            expect(startDate.hours()).toBe(0);
-            expect(startDate.minutes()).toBe(0);
-            
-            // All-day event should end at 23:59:59
-            expect(endDate.hours()).toBe(23);
-            expect(endDate.minutes()).toBe(59);
-            expect(endDate.seconds()).toBe(59);
-            
-            // Should be same day
-            expect(startDate.format('YYYY-MM-DD')).toBe(endDate.format('YYYY-MM-DD'));
+            const expectedEvent: ParsedEvent = {
+                title: 'Company holiday party',
+                startTime: moment.tz('2024-12-25 00:00:00', timezone).toDate(),
+                endTime: moment.tz('2024-12-25 23:59:59', timezone).toDate(),
+                duration: 1439, // 23 hours and 59 minutes
+                isAllDay: true
+            };
+
+            expect(result.title).toBe(expectedEvent.title);
+            expect(result.isAllDay).toBe(expectedEvent.isAllDay);
+            expect(result.duration).toBe(expectedEvent.duration);
+            expect(result.startTime.getTime()).toBe(expectedEvent.startTime.getTime());
+            expect(result.endTime.getTime()).toBe(expectedEvent.endTime.getTime());
         });
 
         it('should parse event with location and specific time', async () => {
@@ -88,20 +70,23 @@ describe('LLMParser Integration Tests', () => {
             
             const result = await parser.parseEvent(input, timezone);
             
-            expect(result.title.toLowerCase()).toContain('team lunch');
-            expect(result.location?.toLowerCase()).toContain('pizzeria delfina');
-            expect(result.isAllDay).toBe(false);
-            
-            const startTime = moment(result.startTime).tz(timezone);
-            const endTime = moment(result.endTime).tz(timezone);
-            
-            // Time assertions
-            expect(startTime.format('YYYY-MM-DD')).toBe(
-                moment().tz(timezone).add(1, 'day').format('YYYY-MM-DD')
-            );
-            expect(startTime.hours()).toBe(12); // noon
-            expect(startTime.minutes()).toBe(0);
-            expect(endTime.diff(startTime, 'minutes')).toBe(60); // Default duration
+            const tomorrow = moment().tz(timezone).add(1, 'day');
+            const expectedEvent: ParsedEvent = {
+                title: 'Team lunch',
+                description: undefined,
+                location: 'Pizzeria Delfina',
+                startTime: moment.tz(tomorrow.format('YYYY-MM-DD') + ' 12:00:00', timezone).toDate(),
+                endTime: moment.tz(tomorrow.format('YYYY-MM-DD') + ' 13:00:00', timezone).toDate(),
+                duration: 60,
+                isAllDay: false
+            };
+
+            expect(result.title).toBe(expectedEvent.title);
+            expect(result.location).toBe(expectedEvent.location);
+            expect(result.isAllDay).toBe(expectedEvent.isAllDay);
+            expect(result.duration).toBe(expectedEvent.duration);
+            expect(result.startTime.getTime()).toBe(expectedEvent.startTime.getTime());
+            expect(result.endTime.getTime()).toBe(expectedEvent.endTime.getTime());
         });
 
         it('should parse event with explicit duration and time', async () => {
@@ -110,19 +95,20 @@ describe('LLMParser Integration Tests', () => {
             
             const result = await parser.parseEvent(input, timezone);
             
-            expect(result.title.toLowerCase()).toContain('code review');
-            expect(result.isAllDay).toBe(false);
-            expect(result.duration).toBe(45);
-            
-            const startTime = moment(result.startTime);
-            const endTime = moment(result.endTime);
-            
-            // Time assertions
-            expect(startTime.hours()).toBe(15); // 3 PM
-            expect(startTime.minutes()).toBe(0);
-            expect(endTime.diff(startTime, 'minutes')).toBe(45);
-            expect(endTime.hours()).toBe(15);
-            expect(endTime.minutes()).toBe(45);
+            const today = moment().tz(timezone);
+            const expectedEvent: ParsedEvent = {
+                title: 'Code review meeting',
+                startTime: moment.tz(today.format('YYYY-MM-DD') + ' 15:00:00', timezone).toDate(),
+                endTime: moment.tz(today.format('YYYY-MM-DD') + ' 15:45:00', timezone).toDate(),
+                duration: 45,
+                isAllDay: false
+            };
+
+            expect(result.title).toBe(expectedEvent.title);
+            expect(result.isAllDay).toBe(expectedEvent.isAllDay);
+            expect(result.duration).toBe(expectedEvent.duration);
+            expect(result.startTime.getTime()).toBe(expectedEvent.startTime.getTime());
+            expect(result.endTime.getTime()).toBe(expectedEvent.endTime.getTime());
         });
 
         it('should handle timezone conversion correctly', async () => {
@@ -131,23 +117,20 @@ describe('LLMParser Integration Tests', () => {
             
             const result = await parser.parseEvent(input, timezone);
             
-            expect(result.title.toLowerCase()).toContain('virtual meeting');
-            expect(result.isAllDay).toBe(false);
-            
-            const localTime = moment(result.startTime).tz(timezone);
-            const utcTime = moment(result.startTime);
-            
-            // Time assertions in local timezone
-            expect(localTime.format('YYYY-MM-DD')).toBe(
-                moment().tz(timezone).add(1, 'day').format('YYYY-MM-DD')
-            );
-            expect(localTime.hours()).toBe(9);
-            expect(localTime.minutes()).toBe(0);
-            
-            // Verify UTC conversion
-            // Tokyo is UTC+9, so 9 AM Tokyo time is 0 AM UTC
-            expect(utcTime.hours()).toBe(0);
-            expect(utcTime.minutes()).toBe(0);
+            const tomorrow = moment().tz(timezone).add(1, 'day');
+            const expectedEvent: ParsedEvent = {
+                title: 'Virtual meeting',
+                startTime: moment.tz(tomorrow.format('YYYY-MM-DD') + ' 09:00:00', timezone).toDate(),
+                endTime: moment.tz(tomorrow.format('YYYY-MM-DD') + ' 10:00:00', timezone).toDate(),
+                duration: 60,
+                isAllDay: false
+            };
+
+            expect(result.title).toBe(expectedEvent.title);
+            expect(result.isAllDay).toBe(expectedEvent.isAllDay);
+            expect(result.duration).toBe(expectedEvent.duration);
+            expect(result.startTime.getTime()).toBe(expectedEvent.startTime.getTime());
+            expect(result.endTime.getTime()).toBe(expectedEvent.endTime.getTime());
         });
 
         it('should parse event with date but no time as all-day event', async () => {
@@ -156,14 +139,19 @@ describe('LLMParser Integration Tests', () => {
             
             const result = await parser.parseEvent(input, timezone);
             
-            expect(result.title.toLowerCase()).toContain('team building');
-            expect(result.isAllDay).toBe(true);
-            
-            const localDate = moment(result.startTime).tz(timezone);
-            expect(localDate.month()).toBe(2); // March (0-based)
-            expect(localDate.date()).toBe(15);
-            expect(localDate.hours()).toBe(0);
-            expect(localDate.minutes()).toBe(0);
+            const expectedEvent: ParsedEvent = {
+                title: 'Team building day',
+                startTime: moment.tz('2024-03-15 00:00:00', timezone).toDate(),
+                endTime: moment.tz('2024-03-15 23:59:59', timezone).toDate(),
+                duration: 1439, // 23 hours and 59 minutes
+                isAllDay: true
+            };
+
+            expect(result.title).toBe(expectedEvent.title);
+            expect(result.isAllDay).toBe(expectedEvent.isAllDay);
+            expect(result.duration).toBe(expectedEvent.duration);
+            expect(result.startTime.getTime()).toBe(expectedEvent.startTime.getTime());
+            expect(result.endTime.getTime()).toBe(expectedEvent.endTime.getTime());
         });
 
         it('should handle invalid input gracefully', async () => {

@@ -1,5 +1,5 @@
-import 'openai/shims/node';  // This must be the first import
-import OpenAI from 'openai';
+import '@anthropic-ai/sdk/shims/node';  // This must be the first import
+import Anthropic from '@anthropic-ai/sdk';
 import moment from 'moment-timezone';
 
 export interface ParsedEvent {
@@ -13,31 +13,29 @@ export interface ParsedEvent {
 }
 
 export class LLMParser {
-    private openai: OpenAI;
+    private anthropic: Anthropic;
     private defaultDuration: number = 60; // minutes
 
     constructor(apiKey: string) {
-        this.openai = new OpenAI({
+        this.anthropic = new Anthropic({
             apiKey: apiKey
         });
     }
 
     /**
-     * Parses a natural language string into a structured event object using GPT-4
+     * Parses a natural language string into a structured event object using Claude
      * @param input Natural language description of an event
      * @param timezone The user's timezone (e.g., 'America/New_York')
      * @returns ParsedEvent object with extracted information
      */
     public async parseEvent(input: string, timezone: string = 'UTC'): Promise<ParsedEvent> {
-        console.log('\n=== LLM Parser Start ===');
         console.log('Input:', input);
         console.log('Timezone:', timezone);
         
         const currentDate = new Date();
         const userCurrentTime = moment(currentDate).tz(timezone);
-        console.log('Current time in user timezone:', userCurrentTime.format('YYYY-MM-DD HH:mm:ss z'));
         
-        // Create the prompt for GPT-4
+        // Create the prompt for Claude
         const prompt = `Parse the following event description into a structured format. Consider the user's timezone: ${timezone}
 Current time in user's timezone: ${userCurrentTime.format('YYYY-MM-DD HH:mm:ss')}
 
@@ -65,50 +63,35 @@ Rules:
 Response must be valid JSON.`;
 
         try {
-            console.log('Sending request to GPT-4...');
-            console.log('--------------------------------');
-            console.log(prompt);
-            console.log('--------------------------------');
-            const completion = await this.openai.chat.completions.create({
-                model: "gpt-3.5-turbo",
+            const message = await this.anthropic.messages.create({
+                model: "claude-3-7-sonnet-20250219",
+                max_tokens: 1000,
+                temperature: 0.1,
+                system: "You are a precise event parser that converts natural language event descriptions into structured data. Always return valid JSON.",
                 messages: [
-                    {
-                        role: "system",
-                        content: "You are a precise event parser that converts natural language event descriptions into structured data. Always return valid JSON."
-                    },
                     {
                         role: "user",
                         content: prompt
                     }
-                ],
-                temperature: 0.1, // Low temperature for more consistent outputs
+                ]
             });
 
-            const response = completion.choices[0]?.message?.content;
+            const response = message.content[0].type === 'text' ? message.content[0].text : '';
             if (!response) {
-                console.error('No response from GPT-4');
-                throw new Error('No response from GPT-4');
+                throw new Error('No response from Claude');
             }
 
-            console.log('Raw GPT-4 Response:', response);
-
-            const parsedResponse = JSON.parse(response);
+            // Clean up markdown formatting from the response
+            const jsonStr = response.replace(/```json\n?|\n?```/g, '').trim();
+            const parsedResponse = JSON.parse(jsonStr);
             console.log('Parsed JSON Response:', JSON.stringify(parsedResponse, null, 2));
             
             // Convert ISO strings to Date objects
             const startTime = new Date(parsedResponse.startTime);
             const endTime = new Date(parsedResponse.endTime);
             
-            // Log timezone conversions for debugging
-            console.log('\nTimezone Conversions:');
-            console.log('Start Time (UTC):', startTime.toISOString());
-            console.log('Start Time (User TZ):', moment(startTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss z'));
-            console.log('End Time (UTC):', endTime.toISOString());
-            console.log('End Time (User TZ):', moment(endTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss z'));
-            
             // Calculate duration in minutes
             const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-            console.log('Calculated Duration:', duration, 'minutes');
 
             const result = {
                 title: parsedResponse.title,
@@ -120,17 +103,9 @@ Response must be valid JSON.`;
                 location: parsedResponse.location
             };
 
-            console.log('\nFinal Parsed Event:', JSON.stringify(result, null, 2));
-            console.log('=== LLM Parser End ===\n');
-
             return result;
         } catch (error) {
             console.error('Error in LLM Parser:', error);
-            if (error instanceof Error) {
-                console.error('Error details:', error.message);
-                console.error('Error stack:', error.stack);
-            }
-            console.log('=== LLM Parser End (with error) ===\n');
             throw new Error('Failed to parse event details');
         }
     }

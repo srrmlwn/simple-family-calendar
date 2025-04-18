@@ -13,6 +13,7 @@
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "bcrypt": "^5.0.1",
     "class-validator": "^0.13.2",
     "compromise": "^14.1.0",
@@ -23,14 +24,14 @@
     "helmet": "^5.0.2",
     "ical-generator": "^3.4.3",
     "jsonwebtoken": "^8.5.1",
+    "moment-timezone": "^0.5.45",
     "nodemailer": "^6.7.3",
+    "openai": "^4.28.0",
     "pg": "^8.7.3",
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.3.6",
     "typeorm-naming-strategies": "^4.1.0",
-    "uuid": "^8.3.2",
-    "openai": "^4.28.0",
-    "moment-timezone": "^0.5.45"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
@@ -42,13 +43,13 @@
     "@types/nodemailer": "^6.4.4",
     "@types/supertest": "^2.0.12",
     "@types/uuid": "^8.3.4",
+    "dotenv-cli": "^7.3.0",
     "jest": "^27.5.1",
     "nodemon": "^2.0.15",
     "supertest": "^6.2.2",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^3.14.1",
-    "typescript": "^4.6.3",
-    "dotenv-cli": "^7.3.0"
+    "typescript": "^4.6.3"
   }
 }
