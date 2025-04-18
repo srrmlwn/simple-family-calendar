@@ -6,16 +6,18 @@ import { EventRecipient } from '../entities/EventRecipient';
 import { EmailRecipient } from '../entities/EmailRecipient';
 import { EventService } from '../services/eventService';
 import { EmailService } from '../services/emailService';
-import nlpParser from '../services/nlpParser';
+import { hybridParser } from '../services/hybridParser';
 import { validateOrReject } from 'class-validator';
 
 export class EventController {
     private eventService: EventService;
     private emailService: EmailService;
+    private parser: ReturnType<typeof hybridParser>;
 
     constructor() {
         this.eventService = new EventService();
         this.emailService = new EmailService();
+        this.parser = hybridParser(process.env.OPENAI_API_KEY || '');
     }
 
     /**
@@ -34,9 +36,13 @@ export class EventController {
                 return res.status(400).json({ error: 'Timezone is required' });
             }
 
+            if (!process.env.OPENAI_API_KEY) {
+                return res.status(500).json({ error: 'OpenAI API key is not configured' });
+            }
+
             console.log("Creating event from text - " + JSON.stringify(text));
-            // Parse the natural language text with timezone
-            const parsedEvent = nlpParser.parseEvent(text, timezone);
+            // Parse the natural language text with timezone using hybrid parser
+            const parsedEvent = await this.parser.parseEvent(text, timezone);
 
             if (!parsedEvent) {
                 return res.status(400).json({ error: 'Could not parse event details from text' });

@@ -8,7 +8,8 @@
     "start": "node dist/app.js",
     "dev": "nodemon --exec ts-node src/app.ts",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
-    "test": "jest",
+    "test": "dotenv -e .env.test -- jest",
+    "test:llm": "dotenv -e .env.test -- jest llmParser.test.ts --verbose",
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
@@ -27,7 +28,9 @@
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.3.6",
     "typeorm-naming-strategies": "^4.1.0",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "openai": "^4.28.0",
+    "moment-timezone": "^0.5.45"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
@@ -45,6 +48,7 @@
     "ts-jest": "^27.1.4",
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^3.14.1",
-    "typescript": "^4.6.3"
+    "typescript": "^4.6.3",
+    "dotenv-cli": "^7.3.0"
   }
 }
