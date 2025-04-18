@@ -24,6 +24,10 @@ export class NLPParser {
     public parseEvent(input: string, timezone: string = 'UTC'): ParsedEvent {
         // Create currentDate in the context of the user's timezone
         const currentDate = this.getCurrentDateInTimezone(timezone);
+        console.log('==> Starting event parsing');
+        console.log('==> Input:', input);
+        console.log('==> Timezone:', timezone);
+        console.log('==> Current date in timezone:', currentDate);
 
         // Sanitize input
         const sanitizedInput = input.trim();
@@ -33,9 +37,17 @@ export class NLPParser {
         const description = this.extractDescription(sanitizedInput);
         const location = this.extractLocation(sanitizedInput);
         const isAllDay = this.isAllDayEvent(sanitizedInput);
+        console.log('==> Extracted title:', title);
+        console.log('==> Extracted description:', description);
+        console.log('==> Extracted location:', location);
+        console.log('==> Is all day event:', isAllDay);
 
         // Extract dates and times with timezone awareness
         const { startTime, endTime, duration } = this.extractTimeInformation(sanitizedInput, isAllDay, timezone, currentDate);
+        console.log('==> Extracted time information:');
+        console.log('    Start time:', startTime);
+        console.log('    End time:', endTime); 
+        console.log('    Duration:', duration, 'minutes');
 
         let parsedEvent = {
             title,
