@@ -50,9 +50,20 @@ const EventForm: React.FC<EventFormProps> = ({
                 setEndTime(end.format('HH:mm'));
             }
         } else if (initialDate) {
-            // Creating new event
+            // Creating new event from selected time slot
             const start = moment(initialDate);
             const end = moment(initialDate).add(1, 'hour');
+
+            // Preserve the time from the selected slot
+            setStartDate(start.format('YYYY-MM-DD'));
+            setEndDate(end.format('YYYY-MM-DD'));
+            setStartTime(start.format('HH:mm'));
+            setEndTime(end.format('HH:mm'));
+        } else {
+            // Creating new event without a selected time slot
+            const now = moment();
+            const start = now.clone();
+            const end = now.clone().add(1, 'hour');
 
             setStartDate(start.format('YYYY-MM-DD'));
             setEndDate(end.format('YYYY-MM-DD'));

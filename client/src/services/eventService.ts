@@ -1,5 +1,5 @@
 import api from './api';
-import { getUserTimezone } from '../utils/timezone';
+import { getUserTimezone, convertFromUTC } from '../utils/timezone';
 
 export interface Event {
     id: string;
