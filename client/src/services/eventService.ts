@@ -1,4 +1,5 @@
 import api from './api';
+import { getUserTimezone } from '../utils/timezone';
 
 export interface Event {
     id: string;
@@ -30,7 +31,8 @@ const eventService = {
     // Create event from natural language text
     createFromText: async (text: string): Promise<Event> => {
         try {
-            const response = await api.post<Event>('/events/text', { text });
+            const timezone = getUserTimezone();
+            const response = await api.post<Event>('/events/text', { text, timezone });
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {
@@ -43,7 +45,10 @@ const eventService = {
     // Get all events
     getAll: async (startDate?: Date, endDate?: Date): Promise<Event[]> => {
         try {
-            const params: Record<string, string> = {};
+            const timezone = getUserTimezone();
+            const params: Record<string, string> = {
+                timezone
+            };
 
             if (startDate) {
                 params.start = startDate.toISOString();
@@ -66,7 +71,10 @@ const eventService = {
     // Get event by ID
     getById: async (id: string): Promise<Event> => {
         try {
-            const response = await api.get<Event>(`/events/${id}`);
+            const timezone = getUserTimezone();
+            const response = await api.get<Event>(`/events/${id}`, {
+                params: { timezone }
+            });
             return parseEventDates(response.data);
         } catch (error) {
             throw new Error('Failed to fetch event');
@@ -76,7 +84,8 @@ const eventService = {
     // Create new event
     create: async (eventData: EventInput): Promise<Event> => {
         try {
-            const response = await api.post<Event>('/events', eventData);
+            const timezone = getUserTimezone();
+            const response = await api.post<Event>('/events', { ...eventData, timezone });
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {
@@ -89,7 +98,8 @@ const eventService = {
     // Update event
     update: async (id: string, eventData: Partial<EventInput>): Promise<Event> => {
         try {
-            const response = await api.put<Event>(`/events/${id}`, eventData);
+            const timezone = getUserTimezone();
+            const response = await api.put<Event>(`/events/${id}`, { ...eventData, timezone });
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {

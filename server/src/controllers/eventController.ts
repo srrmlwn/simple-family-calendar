@@ -23,16 +23,20 @@ export class EventController {
      */
     public createEventFromText = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const { text } = req.body;
+            const { text, timezone } = req.body;
             const userId = req.user?.id;
 
             if (!text) {
                 return res.status(400).json({ error: 'Text input is required' });
             }
 
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
+
             console.log("Creating event from text - " + JSON.stringify(text));
-            // Parse the natural language text
-            const parsedEvent = nlpParser.parseEvent(text);
+            // Parse the natural language text with timezone
+            const parsedEvent = nlpParser.parseEvent(text, timezone);
 
             if (!parsedEvent) {
                 return res.status(400).json({ error: 'Could not parse event details from text' });
@@ -76,7 +80,10 @@ export class EventController {
                 await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients);
             }
 
-            return res.status(201).json(savedEvent);
+            // Convert the saved event to the client's timezone before sending response
+            const timezoneEvent = await this.eventService.findById(savedEvent.id, timezone);
+
+            return res.status(201).json(timezoneEvent);
         } catch (error) {
             console.error('Error creating event:', error);
             return res.status(500).json({
@@ -92,13 +99,22 @@ export class EventController {
     public getAllEvents = async (req: Request, res: Response): Promise<Response> => {
         try {
             const userId = req.user?.id;
-            const { start, end } = req.query;
+            const { start, end, timezone } = req.query;
+
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
 
             // Parse date range if provided
             const startDate = start ? new Date(start as string) : undefined;
             const endDate = end ? new Date(end as string) : undefined;
 
-            const events = await this.eventService.findByUserIdAndDateRange(userId!, startDate, endDate);
+            const events = await this.eventService.findByUserIdAndDateRange(
+                userId!, 
+                startDate, 
+                endDate, 
+                timezone as string
+            );
             return res.json(events);
         } catch (error) {
             console.error('Error fetching events:', error);
@@ -113,8 +129,13 @@ export class EventController {
         try {
             const { id } = req.params;
             const userId = req.user?.id;
+            const { timezone } = req.query;
 
-            const event = await this.eventService.findById(id);
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
+
+            const event = await this.eventService.findById(id, timezone as string);
 
             if (!event) {
                 return res.status(404).json({ error: 'Event not found' });
@@ -137,23 +158,22 @@ export class EventController {
      */
     public createEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
-            console.log("Creating Event for Req - " + JSON.stringify(req));
-
+            const { timezone, ...eventData } = req.body;
             const userId = req.user?.id;
-            const eventData = req.body;
 
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
+
+            // Create event entity
             const event = new Event();
             event.title = eventData.title;
             event.description = eventData.description;
-            event.startTime = new Date(eventData.startTime);
-            event.endTime = new Date(eventData.endTime);
-
-            // Calculate duration in minutes
-            event.duration = Math.round((event.endTime.getTime() - event.startTime.getTime()) / 60000);
-
-            event.isAllDay = eventData.isAllDay || false;
+            event.startTime = eventData.startTime;
+            event.endTime = eventData.endTime;
+            event.duration = eventData.duration;
+            event.isAllDay = eventData.isAllDay;
             event.location = eventData.location;
-            event.color = eventData.color;
             event.userId = userId!;
 
             // Validate event data
@@ -164,23 +184,27 @@ export class EventController {
 
             // Handle recipients if provided
             if (eventData.recipientIds && eventData.recipientIds.length > 0) {
-                const recipientRepository = AppDataSource.getRepository(EmailRecipient);
-                const recipients = await recipientRepository.findByIds(eventData.recipientIds);
-
-                const eventRecipients = recipients.map(recipient => {
+                const eventRecipients = eventData.recipientIds.map((recipientId: string) => {
                     const eventRecipient = new EventRecipient();
                     eventRecipient.eventId = savedEvent.id;
-                    eventRecipient.recipientId = recipient.id;
+                    eventRecipient.recipientId = recipientId;
                     return eventRecipient;
                 });
 
                 await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
 
+                // Get recipient details for email
+                const recipientRepository = AppDataSource.getRepository(EmailRecipient);
+                const recipients = await recipientRepository.findByIds(eventData.recipientIds);
+
                 // Send calendar invites
                 await this.emailService.sendCalendarInvites(savedEvent, recipients);
             }
 
-            return res.status(201).json(savedEvent);
+            // Convert the saved event to the client's timezone before sending response
+            const timezoneEvent = await this.eventService.findById(savedEvent.id, timezone);
+
+            return res.status(201).json(timezoneEvent);
         } catch (error) {
             console.error('Error creating event:', error);
             return res.status(500).json({
@@ -196,68 +220,61 @@ export class EventController {
     public updateEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
+            const { timezone, ...eventData } = req.body;
             const userId = req.user?.id;
-            const eventData = req.body;
 
-            // Get the existing event
-            const existingEvent = await this.eventService.findById(id);
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
 
-            if (!existingEvent) {
+            // Get existing event
+            const eventRepository = AppDataSource.getRepository(Event);
+            const event = await eventRepository.findOne({
+                where: { id, userId }
+            });
+
+            if (!event) {
                 return res.status(404).json({ error: 'Event not found' });
             }
 
-            // Make sure the event belongs to the current user
-            if (existingEvent.userId !== userId) {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
+            // Update event fields
+            Object.assign(event, eventData);
 
-            // Update the event
-            if (eventData.title) existingEvent.title = eventData.title;
-            if (eventData.description !== undefined) existingEvent.description = eventData.description;
+            // Validate event data
+            await validateOrReject(event);
 
-            if (eventData.startTime) {
-                existingEvent.startTime = new Date(eventData.startTime);
+            // Save updated event
+            const updatedEvent = await this.eventService.update(id, eventData);
 
-                // If only start time changed, adjust the end time to maintain duration
-                if (!eventData.endTime) {
-                    existingEvent.endTime = new Date(existingEvent.startTime.getTime() + existingEvent.duration * 60000);
+            // Handle recipients if provided
+            if (eventData.recipientIds) {
+                // Delete existing recipients
+                await AppDataSource.getRepository(EventRecipient).delete({ eventId: id });
+
+                // Create new recipients
+                if (eventData.recipientIds.length > 0) {
+                    const eventRecipients = eventData.recipientIds.map((recipientId: string) => {
+                        const eventRecipient = new EventRecipient();
+                        eventRecipient.eventId = id;
+                        eventRecipient.recipientId = recipientId;
+                        return eventRecipient;
+                    });
+
+                    await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
+
+                    // Get recipient details for email
+                    const recipientRepository = AppDataSource.getRepository(EmailRecipient);
+                    const recipients = await recipientRepository.findByIds(eventData.recipientIds);
+
+                    // Send calendar invites
+                    await this.emailService.sendCalendarInvites(updatedEvent, recipients);
                 }
             }
 
-            if (eventData.endTime) {
-                existingEvent.endTime = new Date(eventData.endTime);
+            // Convert the updated event to the client's timezone before sending response
+            const timezoneEvent = await this.eventService.findById(id, timezone);
 
-                // Calculate new duration
-                existingEvent.duration = Math.round(
-                    (existingEvent.endTime.getTime() - existingEvent.startTime.getTime()) / 60000
-                );
-            }
-
-            if (eventData.isAllDay !== undefined) existingEvent.isAllDay = eventData.isAllDay;
-            if (eventData.location !== undefined) existingEvent.location = eventData.location;
-            if (eventData.color !== undefined) existingEvent.color = eventData.color;
-
-            // Validate updated data
-            await validateOrReject(existingEvent);
-
-            // Save the updated event
-            const updatedEvent = await this.eventService.update(id, existingEvent);
-
-            // Get all recipients for this event
-            const recipientRepository = AppDataSource.getRepository(EventRecipient);
-            const eventRecipients = await recipientRepository.find({
-                where: { eventId: id },
-                relations: ['recipient']
-            });
-
-            const recipients = eventRecipients.map(er => er.recipient);
-
-            // Send calendar updates
-            if (recipients.length > 0) {
-                await this.emailService.sendCalendarUpdates(updatedEvent, recipients);
-            }
-
-            return res.json(updatedEvent);
+            return res.json(timezoneEvent);
         } catch (error) {
             console.error('Error updating event:', error);
             return res.status(500).json({

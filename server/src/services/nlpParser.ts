@@ -9,19 +9,22 @@ export interface ParsedEvent {
 }
 
 export class NLPParser {
-    private readonly currentDate: Date;
     private defaultDuration: number = 60; // minutes
 
     constructor() {
-        this.currentDate = new Date();
+        // Remove currentDate from constructor as it will be created per request
     }
 
     /**
      * Parses a natural language string into a structured event object
      * @param input Natural language description of an event
+     * @param timezone The user's timezone (e.g., 'America/New_York')
      * @returns ParsedEvent object with extracted information
      */
-    public parseEvent(input: string): ParsedEvent {
+    public parseEvent(input: string, timezone: string = 'UTC'): ParsedEvent {
+        // Create currentDate in the context of the user's timezone
+        const currentDate = this.getCurrentDateInTimezone(timezone);
+
         // Sanitize input
         const sanitizedInput = input.trim();
 
@@ -31,8 +34,8 @@ export class NLPParser {
         const location = this.extractLocation(sanitizedInput);
         const isAllDay = this.isAllDayEvent(sanitizedInput);
 
-        // Extract dates and times
-        const { startTime, endTime, duration } = this.extractTimeInformation(sanitizedInput, isAllDay);
+        // Extract dates and times with timezone awareness
+        const { startTime, endTime, duration } = this.extractTimeInformation(sanitizedInput, isAllDay, timezone, currentDate);
 
         let parsedEvent = {
             title,
@@ -43,8 +46,48 @@ export class NLPParser {
             isAllDay,
             location
         };
-        console.log("=> Current Date: " + this.currentDate + "\n==> Input: " + input + "\n===> Output: " + JSON.stringify(parsedEvent));
+        console.log("=> Current Date: " + currentDate + "\n==> Input: " + input + "\n===> Output: " + JSON.stringify(parsedEvent));
         return parsedEvent;
+    }
+
+    /**
+     * Gets the current date in the specified timezone
+     * @param timezone The timezone to use
+     * @returns Date object in the specified timezone
+     */
+    private getCurrentDateInTimezone(timezone: string): Date {
+        try {
+            // Create a formatter for the specified timezone
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            // Get the current date parts in the specified timezone
+            const parts = formatter.formatToParts(new Date());
+            const values: { [key: string]: string } = {};
+            
+            parts.forEach(part => {
+                if (part.type !== 'literal') {
+                    values[part.type] = part.value;
+                }
+            });
+
+            // Create a new date string in ISO format
+            const isoString = `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}`;
+            
+            // Return the date in the specified timezone
+            return new Date(isoString);
+        } catch (error) {
+            console.warn(`Failed to get current date in timezone ${timezone}, using UTC instead`, error);
+            return new Date();
+        }
     }
 
     /**
@@ -200,51 +243,77 @@ export class NLPParser {
 
     /**
      * Extracts time-related information from the input string
+     * @param input The input string
+     * @param isAllDay Whether the event is an all-day event
+     * @param timezone The user's timezone
+     * @param currentDate The current date in the user's timezone
+     * @returns Object containing startTime, endTime, and duration
      */
-    private extractTimeInformation(input: string, isAllDay: boolean): { startTime: Date, endTime: Date, duration: number } {
-        // Default is current date at 9 AM
-        let startTime = new Date(this.currentDate);
-        startTime.setHours(9, 0, 0, 0);
-
-        let duration = this.defaultDuration;
-
-        if (isAllDay) {
-            // For all-day events, set start time to midnight and duration to 24 hours
-            startTime.setHours(0, 0, 0, 0);
-            duration = 24 * 60; // 24 hours in minutes
-        } else {
-            // Extract date information
-            const dateInfo = this.extractDateInfo(input);
-            if (dateInfo) {
-                startTime = dateInfo;
-            }
-
-            // Extract time information
-            const timeInfo = this.extractTimeInfo(input);
-            if (timeInfo) {
-                // Keep the date from startTime but use hours and minutes from timeInfo
-                startTime.setHours(timeInfo.getHours(), timeInfo.getMinutes(), 0, 0);
-            }
-
-            // Extract duration if specified
-            const extractedDuration = this.extractDuration(input);
-            if (extractedDuration) {
-                duration = extractedDuration;
+    private extractTimeInformation(
+        input: string, 
+        isAllDay: boolean, 
+        timezone: string = 'UTC',
+        currentDate: Date
+    ): { startTime: Date, endTime: Date, duration: number } {
+        // Extract date information
+        const dateInfo = this.extractDateInfo(input, timezone, currentDate);
+        
+        // Extract time information
+        const startTimeInfo = this.extractTimeInfo(input, timezone, currentDate);
+        
+        // Extract duration
+        const duration = this.extractDuration(input);
+        
+        // Set default start time to current time if not provided
+        let startTime = startTimeInfo || currentDate;
+        
+        // If date is provided, use it for the start time
+        if (dateInfo) {
+            startTime = new Date(dateInfo);
+            
+            // If time is also provided, combine date and time
+            if (startTimeInfo) {
+                startTime.setHours(startTimeInfo.getHours());
+                startTime.setMinutes(startTimeInfo.getMinutes());
             }
         }
-
-        // Calculate end time based on start time and duration
-        const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
-
-        return { startTime, endTime, duration };
+        
+        // Calculate end time based on duration or default to 1 hour later
+        let endTime: Date;
+        let calculatedDuration: number;
+        
+        if (duration) {
+            calculatedDuration = duration;
+            endTime = new Date(startTime.getTime() + duration * 60000);
+        } else {
+            calculatedDuration = this.defaultDuration;
+            endTime = new Date(startTime.getTime() + this.defaultDuration * 60000);
+        }
+        
+        // For all-day events, set start time to beginning of day and end time to end of day
+        if (isAllDay) {
+            startTime.setHours(0, 0, 0, 0);
+            endTime = new Date(startTime);
+            endTime.setHours(23, 59, 59, 999);
+            calculatedDuration = 24 * 60; // 24 hours in minutes
+        }
+        
+        return {
+            startTime,
+            endTime,
+            duration: calculatedDuration
+        };
     }
 
     /**
      * Extracts date information from the input string
+     * @param input The input string
+     * @param timezone The user's timezone
+     * @param currentDate The current date in the user's timezone
+     * @returns Date object or null if no date found
      */
-    private extractDateInfo(input: string): Date | null {
-        const today = new Date(this.currentDate);
-        const result = new Date(today);
+    private extractDateInfo(input: string, timezone: string = 'UTC', currentDate: Date): Date | null {
+        const result = new Date(currentDate);
 
         // Check for specific date patterns
 
@@ -266,6 +335,45 @@ export class NLPParser {
             if (day && month !== -1) {
                 result.setDate(day);
                 result.setMonth(month);
+                
+                // When creating the final date, use the timezone
+                const finalDate = new Date(result);
+                
+                // Convert to the specified timezone
+                if (timezone !== 'UTC') {
+                    try {
+                        // Use Intl.DateTimeFormat to format the date in the specified timezone
+                        const formatter = new Intl.DateTimeFormat('en-US', {
+                            timeZone: timezone,
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        });
+                        
+                        const parts = formatter.formatToParts(finalDate);
+                        const values: { [key: string]: string } = {};
+                        
+                        parts.forEach(part => {
+                            if (part.type !== 'literal') {
+                                values[part.type] = part.value;
+                            }
+                        });
+                        
+                        // Create a new date string in ISO format
+                        const isoString = `${values.year}-${values.month}-${values.day}T${values.hour || '00'}:${values.minute || '00'}:${values.second || '00'}`;
+                        
+                        // Parse the ISO string to get a date in the target timezone
+                        return new Date(isoString);
+                    } catch (error) {
+                        console.warn(`Failed to convert date to timezone ${timezone}, using UTC instead`, error);
+                        return result;
+                    }
+                }
+                
                 return result;
             }
         }
@@ -285,6 +393,44 @@ export class NLPParser {
                 result.setMonth(result.getMonth() - 1);
             }
 
+            // When creating the final date, use the timezone
+            const finalDate = new Date(result);
+            
+            // Convert to the specified timezone
+            if (timezone !== 'UTC') {
+                try {
+                    // Use Intl.DateTimeFormat to format the date in the specified timezone
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        timeZone: timezone,
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    
+                    const parts = formatter.formatToParts(finalDate);
+                    const values: { [key: string]: string } = {};
+                    
+                    parts.forEach(part => {
+                        if (part.type !== 'literal') {
+                            values[part.type] = part.value;
+                        }
+                    });
+                    
+                    // Create a new date string in ISO format
+                    const isoString = `${values.year}-${values.month}-${values.day}T${values.hour || '00'}:${values.minute || '00'}:${values.second || '00'}`;
+                    
+                    // Parse the ISO string to get a date in the target timezone
+                    return new Date(isoString);
+                } catch (error) {
+                    console.warn(`Failed to convert date to timezone ${timezone}, using UTC instead`, error);
+                    return result;
+                }
+            }
+            
             return result;
         }
 
@@ -313,7 +459,7 @@ export class NLPParser {
             const weekday = this.getDayNumber(weekdayMatch[2]);
 
             if (weekday !== -1) {
-                const currentDay = today.getDay();
+                const currentDay = currentDate.getDay();
                 let daysToAdd;
 
                 if (prefix === 'next' || prefix === 'coming') {
@@ -325,7 +471,7 @@ export class NLPParser {
                     daysToAdd = (weekday - currentDay + 7) % 7;
                 }
 
-                result.setDate(today.getDate() + daysToAdd);
+                result.setDate(currentDate.getDate() + daysToAdd);
                 return result;
             }
         }
@@ -350,6 +496,45 @@ export class NLPParser {
 
             result.setMonth(month);
             result.setDate(day);
+            
+            // When creating the final date, use the timezone
+            const finalDate = new Date(result);
+            
+            // Convert to the specified timezone
+            if (timezone !== 'UTC') {
+                try {
+                    // Use Intl.DateTimeFormat to format the date in the specified timezone
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        timeZone: timezone,
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    
+                    const parts = formatter.formatToParts(finalDate);
+                    const values: { [key: string]: string } = {};
+                    
+                    parts.forEach(part => {
+                        if (part.type !== 'literal') {
+                            values[part.type] = part.value;
+                        }
+                    });
+                    
+                    // Create a new date string in ISO format
+                    const isoString = `${values.year}-${values.month}-${values.day}T${values.hour || '00'}:${values.minute || '00'}:${values.second || '00'}`;
+                    
+                    // Parse the ISO string to get a date in the target timezone
+                    return new Date(isoString);
+                } catch (error) {
+                    console.warn(`Failed to convert date to timezone ${timezone}, using UTC instead`, error);
+                    return result;
+                }
+            }
+            
             return result;
         }
 
@@ -358,9 +543,13 @@ export class NLPParser {
 
     /**
      * Extracts time information from the input string
+     * @param input The input string
+     * @param timezone The user's timezone
+     * @param currentDate The current date in the user's timezone
+     * @returns Date object with time set or null if no time found
      */
-    private extractTimeInfo(input: string): Date | null {
-        const result = new Date(this.currentDate);
+    private extractTimeInfo(input: string, timezone: string = 'UTC', currentDate: Date): Date | null {
+        const result = new Date(currentDate);
         result.setSeconds(0, 0);
 
         // Pattern: "at 3pm", "at 15:30", "at 3:45pm"
@@ -386,6 +575,43 @@ export class NLPParser {
             }
 
             result.setHours(hours, minutes);
+            
+            // When creating the final time, use the timezone
+            const finalTime = new Date(result);
+            
+            // Convert to the specified timezone
+            if (timezone !== 'UTC') {
+                try {
+                    // Use Intl.DateTimeFormat to format the time in the specified timezone
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        timeZone: timezone,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    
+                    const parts = formatter.formatToParts(finalTime);
+                    const values: { [key: string]: string } = {};
+                    
+                    parts.forEach(part => {
+                        if (part.type !== 'literal') {
+                            values[part.type] = part.value;
+                        }
+                    });
+                    
+                    // Create a new date with the current date and the extracted time
+                    const now = new Date();
+                    const isoString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${values.hour}:${values.minute}:${values.second}`;
+                    
+                    // Parse the ISO string to get a date in the target timezone
+                    return new Date(isoString);
+                } catch (error) {
+                    console.warn(`Failed to convert time to timezone ${timezone}, using UTC instead`, error);
+                    return result;
+                }
+            }
+            
             return result;
         }
 
@@ -410,6 +636,43 @@ export class NLPParser {
             }
 
             result.setHours(hours, minutes);
+            
+            // When creating the final time, use the timezone
+            const finalTime = new Date(result);
+            
+            // Convert to the specified timezone
+            if (timezone !== 'UTC') {
+                try {
+                    // Use Intl.DateTimeFormat to format the time in the specified timezone
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        timeZone: timezone,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    
+                    const parts = formatter.formatToParts(finalTime);
+                    const values: { [key: string]: string } = {};
+                    
+                    parts.forEach(part => {
+                        if (part.type !== 'literal') {
+                            values[part.type] = part.value;
+                        }
+                    });
+                    
+                    // Create a new date with the current date and the extracted time
+                    const now = new Date();
+                    const isoString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${values.hour}:${values.minute}:${values.second}`;
+                    
+                    // Parse the ISO string to get a date in the target timezone
+                    return new Date(isoString);
+                } catch (error) {
+                    console.warn(`Failed to convert time to timezone ${timezone}, using UTC instead`, error);
+                    return result;
+                }
+            }
+            
             return result;
         }
 
