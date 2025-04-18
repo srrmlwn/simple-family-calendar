@@ -26,8 +26,10 @@ export class NLPParser {
         const currentDate = this.getCurrentDateInTimezone(timezone);
         console.log('==> Starting event parsing');
         console.log('==> Input:', input);
-        console.log('==> Timezone:', timezone);
-        console.log('==> Current date in timezone:', currentDate);
+        console.log('==> User Timezone:', timezone);
+        console.log('==> Current date in user timezone:', currentDate);
+        console.log('==> Server Timezone:', this.getServerTimezone());
+        console.log('==> Current date in server timezone:', new Date());
 
         // Sanitize input
         const sanitizedInput = input.trim();
@@ -60,6 +62,10 @@ export class NLPParser {
         };
         console.log("=> Current Date: " + currentDate + "\n==> Input: " + input + "\n===> Output: " + JSON.stringify(parsedEvent));
         return parsedEvent;
+    }
+
+    private getServerTimezone(): String {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
 
     /**

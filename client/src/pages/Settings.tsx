@@ -225,7 +225,7 @@ const Settings: React.FC = () => {
                     </div>
 
                     {/* Add new recipient form */}
-                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                         <div className="flex flex-wrap gap-4">
                             <div className="flex-1 min-w-[200px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
