@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { Plus, Trash2, Check, X } from 'lucide-react';
 import api from '../services/api';
+import { getUserTimezone } from '../utils/timezone';
 
 interface Recipient {
     id: string;
@@ -19,6 +20,7 @@ const Settings: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [timezone] = useState(getUserTimezone());
 
     const navigate = useNavigate();
 
@@ -190,6 +192,29 @@ const Settings: React.FC = () => {
                         {successMessage}
                     </div>
                 )}
+
+                {/* Timezone Display */}
+                <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <h2 className="text-lg font-medium">Timezone</h2>
+                        <p className="text-sm text-gray-500">
+                            Your current timezone is used to display dates and times correctly.
+                        </p>
+                    </div>
+                    <div className="px-6 py-4">
+                        <div className="flex items-center">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Current Timezone</label>
+                                <input
+                                    type="text"
+                                    value={timezone}
+                                    className="w-full p-2 border border-gray-300 rounded bg-gray-50"
+                                    disabled
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
                     <div className="px-6 py-4 border-b border-gray-200">
