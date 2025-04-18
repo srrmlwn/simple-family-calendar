@@ -1,9 +1,10 @@
 import React from 'react';
-import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer, View, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Event } from '../services/eventService';
 import EventItem from './EventItem';
+import AgendaView from './AgendaView';
 
 // Setup the localizer for BigCalendar
 const localizer = momentLocalizer(moment);
@@ -19,14 +20,14 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({
-                                               events,
-                                               onSelectEvent,
-                                               onSelectSlot,
-                                               view,
-                                               date,
-                                               onViewChange,
-                                               onNavigate
-                                           }) => {
+    events,
+    onSelectEvent,
+    onSelectSlot,
+    view,
+    date,
+    onViewChange,
+    onNavigate
+}) => {
     // Format the event for the calendar
     const formattedEvents = events.map(event => ({
         ...event,
@@ -58,7 +59,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}
-                views={['month', 'week', 'day', 'agenda']}
+                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
                 step={60}
                 showMultiDayTimes
                 view={view}
@@ -71,6 +72,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 eventPropGetter={eventStyleGetter}
                 components={{
                     event: ({ event }) => <EventItem event={event} />,
+                    agenda: AgendaView
                 }}
             />
         </div>
