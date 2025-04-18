@@ -33,6 +33,7 @@ const eventService = {
         try {
             const timezone = getUserTimezone();
             const response = await api.post<Event>('/events/text', { text, timezone });
+            console.log('Event created:', JSON.stringify(response.data, null, 2));
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {
@@ -86,6 +87,7 @@ const eventService = {
         try {
             const timezone = getUserTimezone();
             const response = await api.post<Event>('/events', { ...eventData, timezone });
+            console.log('Event created:', JSON.stringify(response.data, null, 2));
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {

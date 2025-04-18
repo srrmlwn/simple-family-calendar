@@ -88,7 +88,7 @@ export class EventController {
 
             // Convert the saved event to the client's timezone before sending response
             const timezoneEvent = await this.eventService.findById(savedEvent.id, timezone);
-
+            console.log('Timezone event:', JSON.stringify(timezoneEvent, null, 2));
             return res.status(201).json(timezoneEvent);
         } catch (error) {
             console.error('Error creating event:', error);
