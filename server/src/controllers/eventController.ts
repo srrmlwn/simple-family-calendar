@@ -71,7 +71,7 @@ export class EventController {
             const defaultRecipients = await recipientRepository.find({
                 where: { userId, isDefault: true }
             });
-
+            console.log('Default recipients:', JSON.stringify(defaultRecipients, null, 2));
             // Create event recipients
             if (defaultRecipients.length > 0) {
                 const eventRecipients = defaultRecipients.map(recipient => {

@@ -71,6 +71,20 @@ export class EmailService {
             address: r.email,
         }));
 
+        console.log('Sending email to:', emailAddresses);
+        console.log('Calendar data:', calendarData);
+        console.log('Event details:', {
+            title: event.title,
+            startTime: this.formatDateTime(event.startTime),
+            endTime: this.formatDateTime(event.endTime),
+            location: event.location,
+            description: event.description
+        });
+        console.log('Sender:', {
+            name: sender.name,
+            email: sender.email
+        });
+
         await this.transporter.sendMail({
             from: {
                 name: sender.name,
