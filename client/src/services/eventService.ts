@@ -33,8 +33,10 @@ const eventService = {
         try {
             const timezone = getUserTimezone();
             const response = await api.post<Event>('/events/text', { text, timezone });
-            console.log('Event created:', JSON.stringify(response.data, null, 2));
-            return parseEventDates(response.data);
+            console.log('Returned event:', JSON.stringify(response.data, null, 2));
+            const parsedEvent = parseEventDates(response.data);
+            console.log('Parsed event:', JSON.stringify(parsedEvent, null, 2));
+            return parsedEvent;
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
@@ -123,10 +125,11 @@ const eventService = {
 
 // Helper function to convert date strings to Date objects
 function parseEventDates(event: Event): Event {
+    const timezone = getUserTimezone();
     return {
         ...event,
-        startTime: new Date(event.startTime),
-        endTime: new Date(event.endTime),
+        startTime: convertFromUTC(new Date(event.startTime), timezone),
+        endTime: convertFromUTC(new Date(event.endTime), timezone),
         createdAt: new Date(event.createdAt),
         updatedAt: new Date(event.updatedAt),
     };
