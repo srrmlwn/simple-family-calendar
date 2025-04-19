@@ -72,7 +72,7 @@ export class EmailService {
             from: `"${config.email.senderName}" <${config.email.user}>`,
             to: emailAddresses,
             subject: `Calendar Invitation: ${event.title}`,
-            text: `You've been invited to: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nWhere: ${event.location || 'Not specified'}\n\nDetails: ${event.description || 'No additional details'}`,
+            text: `You've been invited to: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nWhere: ${event.location || 'Not specified'}\n\nDetails: ${event.description || 'No additional details'}\n\nTo add this event to your calendar, please use the links in the HTML version of this email or open the attached calendar file.`,
             html: this.generateHtmlContent(event, 'invitation'),
             icalEvent: {
                 method: 'REQUEST',
@@ -98,7 +98,7 @@ export class EmailService {
             from: `"${config.email.senderName}" <${config.email.user}>`,
             to: emailAddresses,
             subject: `Calendar Update: ${event.title}`,
-            text: `An event has been updated: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nWhere: ${event.location || 'Not specified'}\n\nDetails: ${event.description || 'No additional details'}`,
+            text: `An event has been updated: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nWhere: ${event.location || 'Not specified'}\n\nDetails: ${event.description || 'No additional details'}\n\nTo update this event in your calendar, please use the links in the HTML version of this email or open the attached calendar file.`,
             html: this.generateHtmlContent(event, 'update'),
             icalEvent: {
                 method: 'REQUEST',
@@ -124,7 +124,7 @@ export class EmailService {
             from: `"${config.email.senderName}" <${config.email.user}>`,
             to: emailAddresses,
             subject: `Calendar Cancellation: ${event.title}`,
-            text: `An event has been cancelled: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}`,
+            text: `An event has been cancelled: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nTo remove this event from your calendar, please open the attached calendar file.`,
             html: this.generateHtmlContent(event, 'cancellation'),
             icalEvent: {
                 method: 'CANCEL',
@@ -150,6 +150,39 @@ export class EmailService {
     }
 
     /**
+     * Generate direct "Add to Calendar" links for popular calendar services
+     */
+    private generateCalendarLinks(event: Event): string {
+        const start = encodeURIComponent(new Date(event.startTime).toISOString());
+        const end = encodeURIComponent(new Date(event.endTime).toISOString());
+        const title = encodeURIComponent(event.title);
+        const location = encodeURIComponent(event.location || '');
+        const description = encodeURIComponent(event.description || '');
+        
+        return `
+            <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                <p style="font-size: 16px; color: #374151; margin: 8px 0;">
+                    <strong>Add to your calendar:</strong>
+                </p>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                    <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${description}&location=${location}" 
+                       style="background-color: #4285F4; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; font-size: 14px;">
+                        Google Calendar
+                    </a>
+                    <a href="https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${start}&enddt=${end}&location=${location}&body=${description}" 
+                       style="background-color: #0078D4; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; font-size: 14px;">
+                        Outlook
+                    </a>
+                    <a href="https://calendar.apple.com/?title=${title}&startdt=${start}&enddt=${end}&location=${location}&description=${description}" 
+                       style="background-color: #000000; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; font-size: 14px;">
+                        Apple Calendar
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
      * Generate HTML content for emails
      */
     private generateHtmlContent(event: Event, type: 'invitation' | 'update' | 'cancellation'): string {
@@ -164,6 +197,9 @@ export class EmailService {
             update: '#0891b2',    // Cyan
             cancellation: '#dc2626', // Red
         }[type];
+
+        // Generate calendar links
+        const calendarLinks = this.generateCalendarLinks(event);
 
         return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -188,6 +224,8 @@ export class EmailService {
               </p>
             ` : ''}
           </div>
+          
+          ${calendarLinks}
           
           <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
             This invitation was sent from Simple Family Calendar.
