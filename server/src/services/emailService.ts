@@ -136,8 +136,9 @@ export class EmailService {
     /**
      * Format date and time for email display
      */
-    private formatDateTime(date: Date): string {
-        return date.toLocaleString('en-US', {
+    private formatDateTime(date: Date | string): string {
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        return dateObj.toLocaleString('en-US', {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
