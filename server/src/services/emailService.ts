@@ -5,18 +5,23 @@ import { Event } from '../entities/Event';
 import { EmailRecipient } from '../entities/EmailRecipient';
 import config from '../config';
 
+interface EmailSender {
+    email: string;
+    name: string;
+}
+
 export class EmailService {
     private transporter: nodemailer.Transporter;
 
     constructor() {
-        // Create reusable transporter object using SMTP transport
+        // Create reusable transporter object using Gmail SMTP
         this.transporter = nodemailer.createTransport({
-            host: config.email.host,
-            port: config.email.port,
-            secure: config.email.secure,
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // true for 465, false for other ports
             auth: {
-                user: config.email.user,
-                pass: config.email.password,
+                user: process.env.GMAIL_USER || '',
+                pass: process.env.GMAIL_APP_PASSWORD || '',
             },
         });
     }
@@ -24,11 +29,11 @@ export class EmailService {
     /**
      * Generate iCalendar data for an event
      */
-    private generateICalendar(event: Event, method: string = 'REQUEST'): ICalCalendar {
+    private generateICalendar(event: Event, sender: EmailSender, method: string = 'REQUEST'): ICalCalendar {
         const calendar = ical({
             name: 'Simple Family Calendar',
             prodId: '//SimpleFamilyCalendar//Calendar//EN',
-            method: method as any, // Type assertion to bypass strict checking
+            method: method as any,
         });
 
         const eventStatus = method === 'CANCEL'
@@ -36,7 +41,6 @@ export class EmailService {
             : ICalEventStatus.CONFIRMED;
 
         calendar.createEvent({
-            // uid: event.id,
             start: event.startTime,
             end: event.endTime,
             allDay: event.isAllDay,
@@ -45,8 +49,8 @@ export class EmailService {
             location: event.location,
             status: eventStatus,
             organizer: {
-                name: config.email.senderName,
-                email: config.email.user,
+                name: sender.name,
+                email: sender.email,
             },
             created: event.createdAt,
             lastModified: event.updatedAt,
@@ -58,8 +62,8 @@ export class EmailService {
     /**
      * Send calendar invites to recipients
      */
-    public async sendCalendarInvites(event: Event, recipients: EmailRecipient[]): Promise<void> {
-        const calendar = this.generateICalendar(event, 'REQUEST');
+    public async sendCalendarInvites(event: Event, recipients: EmailRecipient[], sender: EmailSender): Promise<void> {
+        const calendar = this.generateICalendar(event, sender, 'REQUEST');
         const calendarData = calendar.toString();
 
         const emailAddresses = recipients.map(r => ({
@@ -67,9 +71,11 @@ export class EmailService {
             address: r.email,
         }));
 
-        // Send email with calendar attachment
         await this.transporter.sendMail({
-            from: `"${config.email.senderName}" <${config.email.user}>`,
+            from: {
+                name: sender.name,
+                address: sender.email
+            },
             to: emailAddresses,
             subject: `Calendar Invitation: ${event.title}`,
             text: `You've been invited to: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nWhere: ${event.location || 'Not specified'}\n\nDetails: ${event.description || 'No additional details'}\n\nTo add this event to your calendar, please use the links in the HTML version of this email or open the attached calendar file.`,
@@ -84,8 +90,8 @@ export class EmailService {
     /**
      * Send calendar updates to recipients
      */
-    public async sendCalendarUpdates(event: Event, recipients: EmailRecipient[]): Promise<void> {
-        const calendar = this.generateICalendar(event, 'REQUEST');
+    public async sendCalendarUpdates(event: Event, recipients: EmailRecipient[], sender: EmailSender): Promise<void> {
+        const calendar = this.generateICalendar(event, sender, 'REQUEST');
         const calendarData = calendar.toString();
 
         const emailAddresses = recipients.map(r => ({
@@ -93,9 +99,11 @@ export class EmailService {
             address: r.email,
         }));
 
-        // Send email with updated calendar attachment
         await this.transporter.sendMail({
-            from: `"${config.email.senderName}" <${config.email.user}>`,
+            from: {
+                name: sender.name,
+                address: sender.email
+            },
             to: emailAddresses,
             subject: `Calendar Update: ${event.title}`,
             text: `An event has been updated: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nWhere: ${event.location || 'Not specified'}\n\nDetails: ${event.description || 'No additional details'}\n\nTo update this event in your calendar, please use the links in the HTML version of this email or open the attached calendar file.`,
@@ -110,8 +118,8 @@ export class EmailService {
     /**
      * Send calendar cancellations to recipients
      */
-    public async sendCalendarCancellations(event: Event, recipients: EmailRecipient[]): Promise<void> {
-        const calendar = this.generateICalendar(event, 'CANCEL');
+    public async sendCalendarCancellations(event: Event, recipients: EmailRecipient[], sender: EmailSender): Promise<void> {
+        const calendar = this.generateICalendar(event, sender, 'CANCEL');
         const calendarData = calendar.toString();
 
         const emailAddresses = recipients.map(r => ({
@@ -119,9 +127,11 @@ export class EmailService {
             address: r.email,
         }));
 
-        // Send email with cancellation calendar attachment
         await this.transporter.sendMail({
-            from: `"${config.email.senderName}" <${config.email.user}>`,
+            from: {
+                name: sender.name,
+                address: sender.email
+            },
             to: emailAddresses,
             subject: `Calendar Cancellation: ${event.title}`,
             text: `An event has been cancelled: ${event.title}\n\nWhen: ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}\n\nTo remove this event from your calendar, please open the attached calendar file.`,

@@ -8,6 +8,7 @@ import { EventService } from '../services/eventService';
 import { EmailService } from '../services/emailService';
 import { hybridParser } from '../services/hybridParser';
 import { validateOrReject } from 'class-validator';
+import { User } from '../entities/User';
 
 export class EventController {
     private eventService: EventService;
@@ -82,8 +83,15 @@ export class EventController {
 
                 await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
 
+                // Get user details for sender information
+                const userRepository = AppDataSource.getRepository(User);
+                const user = await userRepository.findOneOrFail({ where: { id: userId } });
+
                 // Send calendar invites
-                await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients);
+                await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients, {
+                    email: user.email,
+                    name: `${user.firstName} ${user.lastName}`
+                });
             }
 
             // Convert the saved event to the client's timezone before sending response
@@ -203,14 +211,18 @@ export class EventController {
                 const recipientRepository = AppDataSource.getRepository(EmailRecipient);
                 const recipients = await recipientRepository.findByIds(eventData.recipientIds);
 
+                // Get user details for sender information
+                const userRepository = AppDataSource.getRepository(User);
+                const user = await userRepository.findOneOrFail({ where: { id: userId } });
+
                 // Send calendar invites
-                await this.emailService.sendCalendarInvites(savedEvent, recipients);
+                await this.emailService.sendCalendarInvites(savedEvent, recipients, {
+                    email: user.email,
+                    name: `${user.firstName} ${user.lastName}`
+                });
             }
 
-            // Convert the saved event to the client's timezone before sending response
-            const timezoneEvent = await this.eventService.findById(savedEvent.id, timezone);
-
-            return res.status(201).json(timezoneEvent);
+            return res.status(201).json(savedEvent);
         } catch (error) {
             console.error('Error creating event:', error);
             return res.status(500).json({
@@ -226,61 +238,44 @@ export class EventController {
     public updateEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const { timezone, ...eventData } = req.body;
             const userId = req.user?.id;
+            const updates = req.body;
 
-            if (!timezone) {
-                return res.status(400).json({ error: 'Timezone is required' });
-            }
-
-            // Get existing event
-            const eventRepository = AppDataSource.getRepository(Event);
-            const event = await eventRepository.findOne({
-                where: { id, userId }
-            });
-
-            if (!event) {
+            // Get the existing event
+            const existingEvent = await this.eventService.findById(id);
+            if (!existingEvent) {
                 return res.status(404).json({ error: 'Event not found' });
             }
 
-            // Update event fields
-            Object.assign(event, eventData);
-
-            // Validate event data
-            await validateOrReject(event);
-
-            // Save updated event
-            const updatedEvent = await this.eventService.update(id, eventData);
-
-            // Handle recipients if provided
-            if (eventData.recipientIds) {
-                // Delete existing recipients
-                await AppDataSource.getRepository(EventRecipient).delete({ eventId: id });
-
-                // Create new recipients
-                if (eventData.recipientIds.length > 0) {
-                    const eventRecipients = eventData.recipientIds.map((recipientId: string) => {
-                        const eventRecipient = new EventRecipient();
-                        eventRecipient.eventId = id;
-                        eventRecipient.recipientId = recipientId;
-                        return eventRecipient;
-                    });
-
-                    await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
-
-                    // Get recipient details for email
-                    const recipientRepository = AppDataSource.getRepository(EmailRecipient);
-                    const recipients = await recipientRepository.findByIds(eventData.recipientIds);
-
-                    // Send calendar invites
-                    await this.emailService.sendCalendarInvites(updatedEvent, recipients);
-                }
+            if (existingEvent.userId !== userId) {
+                return res.status(403).json({ error: 'Not authorized to update this event' });
             }
 
-            // Convert the updated event to the client's timezone before sending response
-            const timezoneEvent = await this.eventService.findById(id, timezone);
+            // Update the event
+            const updatedEvent = await this.eventService.update(id, updates);
 
-            return res.json(timezoneEvent);
+            // Get recipient details for email
+            const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
+            const eventRecipients = await eventRecipientRepository.find({
+                where: { eventId: id },
+                relations: ['recipient']
+            });
+
+            if (eventRecipients.length > 0) {
+                const recipients = eventRecipients.map(er => er.recipient);
+
+                // Get user details for sender information
+                const userRepository = AppDataSource.getRepository(User);
+                const user = await userRepository.findOneOrFail({ where: { id: userId } });
+
+                // Send calendar updates
+                await this.emailService.sendCalendarUpdates(updatedEvent, recipients, {
+                    email: user.email,
+                    name: `${user.firstName} ${user.lastName}`
+                });
+            }
+
+            return res.json(updatedEvent);
         } catch (error) {
             console.error('Error updating event:', error);
             return res.status(500).json({
@@ -298,39 +293,47 @@ export class EventController {
             const { id } = req.params;
             const userId = req.user?.id;
 
-            // Get the existing event
+            // Get the existing event and recipients before deletion
             const existingEvent = await this.eventService.findById(id);
-
             if (!existingEvent) {
                 return res.status(404).json({ error: 'Event not found' });
             }
 
-            // Make sure the event belongs to the current user
             if (existingEvent.userId !== userId) {
-                return res.status(403).json({ error: 'Unauthorized' });
+                return res.status(403).json({ error: 'Not authorized to delete this event' });
             }
 
-            // Get all recipients for this event before deleting
-            const recipientRepository = AppDataSource.getRepository(EventRecipient);
-            const eventRecipients = await recipientRepository.find({
+            // Get recipient details for email
+            const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
+            const eventRecipients = await eventRecipientRepository.find({
                 where: { eventId: id },
                 relations: ['recipient']
             });
 
-            const recipients = eventRecipients.map(er => er.recipient);
-
             // Delete the event
             await this.eventService.delete(id);
 
-            // Send calendar cancellations
-            if (recipients.length > 0) {
-                await this.emailService.sendCalendarCancellations(existingEvent, recipients);
+            if (eventRecipients.length > 0) {
+                const recipients = eventRecipients.map(er => er.recipient);
+
+                // Get user details for sender information
+                const userRepository = AppDataSource.getRepository(User);
+                const user = await userRepository.findOneOrFail({ where: { id: userId } });
+
+                // Send calendar cancellations
+                await this.emailService.sendCalendarCancellations(existingEvent, recipients, {
+                    email: user.email,
+                    name: `${user.firstName} ${user.lastName}`
+                });
             }
 
             return res.status(204).send();
         } catch (error) {
             console.error('Error deleting event:', error);
-            return res.status(500).json({ error: 'Failed to delete event' });
+            return res.status(500).json({
+                error: 'Failed to delete event',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            });
         }
     };
 }
