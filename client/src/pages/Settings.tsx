@@ -21,12 +21,30 @@ const Settings: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [timezone] = useState(getUserTimezone());
+    const [installPrompt, setInstallPrompt] = useState<any>(null);
+    const [showInstallButton, setShowInstallButton] = useState(false);
 
     const navigate = useNavigate();
 
     // Fetch recipients on component mount
     useEffect(() => {
         fetchRecipients();
+    }, []);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: Event) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            setInstallPrompt(e);
+            setShowInstallButton(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
     }, []);
 
     // Fetch recipients from API
@@ -172,6 +190,26 @@ const Settings: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleInstallClick = async () => {
+        if (!installPrompt) return;
+
+        // Show the install prompt
+        installPrompt.prompt();
+
+        // Wait for the user to respond to the prompt
+        const { outcome } = await installPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        } else {
+            console.log('User dismissed the install prompt');
+        }
+
+        // Clear the saved prompt since it can't be used again
+        setInstallPrompt(null);
+        setShowInstallButton(false);
     };
 
     return (
@@ -377,6 +415,41 @@ const Settings: React.FC = () => {
                                 </div>
                             ))
                         )}
+                    </div>
+                </div>
+
+                {showInstallButton && (
+                    <div className="bg-white rounded-lg shadow p-6 mb-6">
+                        <h2 className="text-xl font-semibold mb-4">Install App</h2>
+                        <p className="mb-4">Install Simple Family Calendar on your device for quick access and offline use.</p>
+                        <button
+                            onClick={handleInstallClick}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                            Install App
+                        </button>
+                    </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 className="text-xl font-semibold mb-4">Installation Help</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <h3 className="font-medium text-lg">Chrome / Edge</h3>
+                            <p className="text-gray-600">Click the install icon (+ symbol) in the address bar to install the app.</p>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-lg">Safari (iOS)</h3>
+                            <p className="text-gray-600">Tap the share button and select "Add to Home Screen" to install the app.</p>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-lg">Firefox</h3>
+                            <p className="text-gray-600">Click the install icon in the address bar to install the app.</p>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-lg">Android</h3>
+                            <p className="text-gray-600">Open in Chrome and tap the menu (three dots) &gt; "Add to Home screen".</p>
+                        </div>
                     </div>
                 </div>
 
