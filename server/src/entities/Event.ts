@@ -24,10 +24,10 @@ export class Event {
   description?: string;
 
   @Column({ type: 'timestamp' })
-  startTime!: Date;
+  startTime!: Date | string;
 
   @Column({ type: 'timestamp' })
-  endTime!: Date;
+  endTime!: Date | string;
 
   @Column()
   duration!: number;

@@ -1,6 +1,7 @@
 // src/services/eventService.ts
 import { AppDataSource } from '../data-source';
 import { Event } from '../entities/Event';
+import moment from 'moment-timezone';
 
 export class EventService {
     /**
@@ -167,26 +168,23 @@ export class EventService {
     
     /**
      * Convert a date to UTC
-     * @param date The date to convert
+     * @param date The date to convert (can be string or Date)
      * @returns The date in UTC
      */
-    private convertToUTC(date: Date): Date {
-        // If the date is already a Date object, ensure it's treated as UTC
-        if (date instanceof Date) {
-            // Create a new date with the same UTC time
-            return new Date(Date.UTC(
-                date.getUTCFullYear(),
-                date.getUTCMonth(),
-                date.getUTCDate(),
-                date.getUTCHours(),
-                date.getUTCMinutes(),
-                date.getUTCSeconds(),
-                date.getUTCMilliseconds()
-            ));
-        }
+    private convertToUTC(date: Date | string): Date {
+        // If it's a string, parse it first
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
         
-        // If it's a string, parse it as UTC
-        return new Date(date);
+        // Create a new date with the same UTC time
+        return new Date(Date.UTC(
+            dateObj.getUTCFullYear(),
+            dateObj.getUTCMonth(),
+            dateObj.getUTCDate(),
+            dateObj.getUTCHours(),
+            dateObj.getUTCMinutes(),
+            dateObj.getUTCSeconds(),
+            dateObj.getUTCMilliseconds()
+        ));
     }
 
     /**
@@ -240,11 +238,16 @@ export class EventService {
         const convertedEvent = { ...event };
         
         if (convertedEvent.startTime) {
-            convertedEvent.startTime = this.convertFromUTC(convertedEvent.startTime, timezone);
+            // Convert to moment in user's timezone and format as ISO string without Z
+            convertedEvent.startTime = moment(convertedEvent.startTime)
+                .tz(timezone)
+                .format('YYYY-MM-DDTHH:mm:ss.SSS');
         }
         
         if (convertedEvent.endTime) {
-            convertedEvent.endTime = this.convertFromUTC(convertedEvent.endTime, timezone);
+            convertedEvent.endTime = moment(convertedEvent.endTime)
+                .tz(timezone)
+                .format('YYYY-MM-DDTHH:mm:ss.SSS');
         }
         
         return convertedEvent;
