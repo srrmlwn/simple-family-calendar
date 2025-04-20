@@ -11,12 +11,9 @@ const CalendarPage: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
     const [showEventForm, setShowEventForm] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
-    // Add state for current view and date
     const [view, setView] = useState<View>('month');
     const [date, setDate] = useState(new Date());
 
@@ -75,7 +72,6 @@ const CalendarPage: React.FC = () => {
         }
     };
 
-    // Handle creating a new event from event form
     const handleCreateEvent = async (eventData: EventInput) => {
         try {
             await eventService.create(eventData);
@@ -87,7 +83,6 @@ const CalendarPage: React.FC = () => {
         }
     };
 
-    // Handle updating an existing event
     const handleUpdateEvent = async (eventData: EventInput) => {
         try {
             if (selectedEvent) {
@@ -101,7 +96,6 @@ const CalendarPage: React.FC = () => {
         }
     };
 
-    // Handle deleting an event
     const handleDeleteEvent = async () => {
         try {
             if (selectedEvent) {
@@ -115,21 +109,18 @@ const CalendarPage: React.FC = () => {
         }
     };
 
-    // Handle event selection from calendar
     const handleSelectEvent = (event: Event) => {
         setSelectedEvent(event);
         setSelectedDate(null);
         setShowEventForm(true);
     };
 
-    // Handle slot selection from calendar (for creating new events)
     const handleSelectSlot = (slotInfo: { start: Date; end: Date }) => {
         setSelectedEvent(null);
         setSelectedDate(slotInfo.start);
         setShowEventForm(true);
     };
 
-    // Close the event form
     const closeEventForm = () => {
         setShowEventForm(false);
         setSelectedEvent(null);
@@ -139,13 +130,11 @@ const CalendarPage: React.FC = () => {
     // Handle view change (month, week, day, agenda)
     const handleViewChange = (newView: string) => {
         setView(newView as View);
-        // fetchEvents will be triggered by useEffect
     };
 
     // Handle date navigation
     const handleNavigate = (newDate: Date) => {
         setDate(newDate);
-        // fetchEvents will be triggered by useEffect
     };
 
     return (

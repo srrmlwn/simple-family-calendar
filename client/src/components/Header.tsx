@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, LogOut, Download } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface HeaderProps {
     title?: string;
@@ -12,6 +13,7 @@ const Header: React.FC<HeaderProps> = ({ title = 'Simple Family Calendar' }) => 
     const navigate = useNavigate();
     const [installPrompt, setInstallPrompt] = useState<any>(null);
     const [showInstallButton, setShowInstallButton] = useState(false);
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (e: Event) => {
@@ -59,43 +61,44 @@ const Header: React.FC<HeaderProps> = ({ title = 'Simple Family Calendar' }) => 
     };
 
     return (
-        <header className="bg-white shadow-sm py-4 px-6">
+        <header className="bg-white shadow-sm py-2 px-4">
             <div className="flex justify-between items-center">
-                <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
-
-                {user && (
-                    <div className="flex items-center space-x-2">
-                        <div className="text-sm text-gray-600 mr-4">
-                            Hello, {user.firstName}
-                        </div>
-
-                        {showInstallButton && (
-                            <button
-                                onClick={handleInstallClick}
-                                className="p-2 rounded-full hover:bg-gray-100"
-                                title="Install App"
-                            >
-                                <Download size={20} className="text-gray-600" />
-                            </button>
-                        )}
-
-                        <button
-                            onClick={handleSettingsClick}
-                            className="p-2 rounded-full hover:bg-gray-100"
-                            title="Settings"
-                        >
-                            <Settings size={20} className="text-gray-600" />
-                        </button>
-
-                        <button
-                            onClick={handleLogout}
-                            className="p-2 rounded-full hover:bg-gray-100"
-                            title="Logout"
-                        >
-                            <LogOut size={20} className="text-gray-600" />
-                        </button>
+                {!isMobile && (
+                    <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
+                )}
+                {isMobile && (
+                    <div className="text-lg font-medium text-gray-800">
+                        {user?.firstName || 'Calendar'}
                     </div>
                 )}
+
+                <div className="flex items-center space-x-1">
+                    {showInstallButton && (
+                        <button
+                            onClick={handleInstallClick}
+                            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-50"
+                            title="Install App"
+                        >
+                            <Download size={18} />
+                        </button>
+                    )}
+
+                    <button
+                        onClick={handleSettingsClick}
+                        className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-50"
+                        title="Settings"
+                    >
+                        <Settings size={18} />
+                    </button>
+
+                    <button
+                        onClick={handleLogout}
+                        className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-50"
+                        title="Logout"
+                    >
+                        <LogOut size={18} />
+                    </button>
+                </div>
             </div>
         </header>
     );
