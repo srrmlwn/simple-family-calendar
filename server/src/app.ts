@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { config } from 'dotenv';
 import { AppDataSource } from './data-source';
 import path from 'path';
+import { logRequest } from './utils/logger';
 
 // Load environment variables
 config();
@@ -18,6 +19,7 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
+app.use(logRequest);
 
 // Routes
 import authRoutes from './routes/auth';

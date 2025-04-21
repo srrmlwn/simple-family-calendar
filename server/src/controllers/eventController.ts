@@ -37,10 +37,6 @@ export class EventController {
                 return res.status(400).json({ error: 'Timezone is required' });
             }
 
-            if (!process.env.OPENAI_API_KEY) {
-                return res.status(500).json({ error: 'OpenAI API key is not configured' });
-            }
-
             console.log("Creating event from text - " + JSON.stringify(text));
             // Parse the natural language text with timezone using hybrid parser
             const parsedEvent = await this.parser.parseEvent(text, timezone);

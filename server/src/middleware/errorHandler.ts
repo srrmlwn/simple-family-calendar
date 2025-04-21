@@ -1,5 +1,6 @@
 // src/middleware/errorHandler.ts
 import { Request, Response, NextFunction } from 'express';
+import { logError } from '../utils/logger';
 
 /**
  * Global error handling middleware
@@ -10,7 +11,8 @@ export const errorHandler = (
     res: Response,
     next: NextFunction
 ) => {
-    console.error(err.stack);
+    // Log the error using our logging utility
+    logError(err);
 
     // Differentiate between different types of errors
     if (err.name === 'ValidationError') {
@@ -18,6 +20,7 @@ export const errorHandler = (
             error: 'Validation Error',
             details: err.message
         });
+        return;
     }
 
     if (err.name === 'UnauthorizedError') {
@@ -25,6 +28,7 @@ export const errorHandler = (
             error: 'Authentication Error',
             details: 'Invalid or expired token'
         });
+        return;
     }
 
     if (err.name === 'ForbiddenError') {
@@ -32,6 +36,7 @@ export const errorHandler = (
             error: 'Forbidden',
             details: 'You do not have permission to access this resource'
         });
+        return;
     }
 
     // Default to 500 server error
@@ -39,6 +44,4 @@ export const errorHandler = (
         error: 'Internal Server Error',
         details: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
     });
-
-    return;
 };

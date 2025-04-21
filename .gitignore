@@ -19,6 +19,8 @@ server/dist
 .env.test.local
 .env.production.local
 server/.env.test
+server/logs/*
+client/android/*
 
 npm-debug.log*
 yarn-debug.log*
