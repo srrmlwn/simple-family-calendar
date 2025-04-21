@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
-
+      console.log("AuthContext - Logging in user - " + email + ", " + password);
       const response = await authService.login(email, password);
 
       if (response) {
@@ -68,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login');
       console.error('Login error:', err);
+      console.error('Login error details xxxx:', JSON.stringify(err));
     } finally {
       setLoading(false);
     }

@@ -19,6 +19,7 @@ server/dist
 .env.test.local
 .env.production.local
 server/.env.test
+client/.env*
 server/logs/*
 client/android/*
 

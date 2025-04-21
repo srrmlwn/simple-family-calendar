@@ -1,20 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+// Declare Capacitor for TypeScript
+declare global {
+  interface Window {
+    Capacitor?: any;
+  }
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [networkInfo, setNetworkInfo] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { login, loading, error } = useAuth();
+
+  // Log network information on component mount
+  useEffect(() => {
+    // Check if running in Capacitor
+    const isCapacitor = window.Capacitor !== undefined;
+    console.log('Running in Capacitor:', isCapacitor);
+    
+    // Log API URL
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+    console.log('API URL:', apiUrl);
+    
+    // Check network connectivity
+    if (navigator.onLine) {
+      console.log('Device is online');
+      setNetworkInfo('Device is online');
+    } else {
+      console.log('Device is offline');
+      setNetworkInfo('Device is offline');
+    }
+    
+    // Add network status change listener
+    const handleOnline = () => {
+      console.log('Device came online');
+      setNetworkInfo('Device is online');
+    };
+    
+    const handleOffline = () => {
+      console.log('Device went offline');
+      setNetworkInfo('Device is offline');
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       setSubmitError(null);
+      console.log('Attempting login with email:', email);
 
       if (!email.trim()) {
         setSubmitError('Email is required');
@@ -26,14 +74,37 @@ const Login: React.FC = () => {
         return;
       }
 
+      // Check network status before attempting login
+      if (!navigator.onLine) {
+        setSubmitError('Network error: Device is offline');
+        return;
+      }
+
+      console.log('Calling login function...');
       await login(email, password);
+      console.log('Login successful, redirecting...');
 
       // Redirect after successful login
       // AuthContext will update isAuthenticated, which will redirect in useEffect
       navigate('/');
     } catch (err) {
+      // Log detailed error information
+      console.error('Login error details:', {
+        error: err,
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      });
+      
       // Auth context will handle setting the error message
-      console.error('Login error:', err);
+      if (err instanceof Error) {
+        if (err.message.includes('Network Error')) {
+          setSubmitError('Network error: Unable to connect to the server. Please check your internet connection.');
+        } else {
+          setSubmitError(err.message);
+        }
+      } else {
+        setSubmitError('An unexpected error occurred');
+      }
     }
   };
 
@@ -54,6 +125,14 @@ const Login: React.FC = () => {
                 <div className="rounded-md bg-red-50 p-4">
                   <div className="text-sm text-red-700">
                     {submitError || error}
+                  </div>
+                </div>
+            )}
+            
+            {networkInfo && (
+                <div className="rounded-md bg-blue-50 p-4">
+                  <div className="text-sm text-blue-700">
+                    {networkInfo}
                   </div>
                 </div>
             )}
