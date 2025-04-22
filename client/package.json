@@ -28,8 +28,11 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:dev": "REACT_APP_ENV=development react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "android:debug": "REACT_APP_ENV=development react-scripts build && npx cap sync && npx cap build android",
+    "android:release": "REACT_APP_ENV=production react-scripts build && npx cap sync && npx cap build android"
   },
   "eslintConfig": {
     "extends": [

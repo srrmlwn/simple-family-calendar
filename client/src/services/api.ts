@@ -2,8 +2,10 @@ import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import {response} from "express";
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+const ENV = process.env.REACT_APP_ENV || 'development';
 
 console.log('API URL configured as:', API_URL);
+console.log('Environment:', ENV);
 
 // Create axios instance
 const api = axios.create({
@@ -12,7 +14,7 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
     // Add timeout to prevent hanging requests
-    timeout: 10000,
+    timeout: ENV === 'production' ? 5000 : 10000, // Shorter timeout in production
 });
 
 // Add request interceptor to include auth token
@@ -24,7 +26,8 @@ api.interceptors.request.use(
             method: config.method,
             baseURL: config.baseURL,
             headers: config.headers,
-            data: config.data
+            data: config.data,
+            environment: ENV
         });
         
         if (token && config.headers) {
@@ -45,35 +48,14 @@ api.interceptors.response.use(
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
-            data: response.data
+            data: response.data,
+            environment: ENV
         });
         return response;
     },
     (error: AxiosError) => {
-        console.error('API Response Error:', JSON.stringify({
-            message: error.message,
-            code: error.code,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            config: {
-                url: error.config?.url,
-                method: error.config?.method,
-                baseURL: error.config?.baseURL,
-                headers: error.config?.headers,
-                data: error.config?.data
-            }
-        }));
-        
-        // Handle session expiration
-        if (error.response?.status === 401) {
-            // localStorage.removeItem('token');
-            // localStorage.removeItem('user');
-
-            // Redirect to login if not already there
-            /*if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
-            }*/
+        if (ENV === 'development') {
+            console.error('API Response Error:', error.response?.data || error);
         }
         return Promise.reject(error);
     }
