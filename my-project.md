@@ -14,6 +14,7 @@ Simple Family Calendar is a web and mobile application designed to help families
 - **Mobile**: Capacitor for Android app
 - **Form Management**: React Hook Form
 - **API Client**: Axios
+- **Navigation**: React Router
 
 ### Backend
 - **Framework**: Node.js with Express
@@ -22,11 +23,10 @@ Simple Family Calendar is a web and mobile application designed to help families
 - **Email Service**: Nodemailer with iCalendar attachments
 - **Authentication**: JWT with HTTP-only cookies
 - **Validation**: class-validator
-
-### Database
-- **Main Database**: PostgreSQL
+- **Database**: PostgreSQL
 - **ORM**: TypeORM
 - **Migrations**: TypeORM migrations
+- **Social Login**: Google OAuth
 
 ## Database Schema
 
@@ -34,10 +34,10 @@ Simple Family Calendar is a web and mobile application designed to help families
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255),
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -51,16 +51,10 @@ CREATE TABLE events (
     description TEXT,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     end_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    duration INTEGER NOT NULL,
-    is_all_day BOOLEAN DEFAULT FALSE,
     location VARCHAR(255),
-    color VARCHAR(50),
-    status VARCHAR(50) DEFAULT 'confirmed',
-    external_id VARCHAR(255),
-    user_id UUID NOT NULL,
+    created_by UUID REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_event_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -82,15 +76,12 @@ CREATE TABLE email_recipients (
 ```sql
 CREATE TABLE event_recipients (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_id UUID NOT NULL,
-    recipient_id UUID NOT NULL,
-    notified BOOLEAN DEFAULT FALSE,
-    notified_at TIMESTAMP WITH TIME ZONE,
+    event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(50) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_event_recipient_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    CONSTRAINT fk_event_recipient_recipient FOREIGN KEY (recipient_id) REFERENCES email_recipients(id) ON DELETE CASCADE,
-    CONSTRAINT uq_event_recipient UNIQUE (event_id, recipient_id)
+    UNIQUE(event_id, user_id)
 );
 ```
 
@@ -164,6 +155,12 @@ server/
    - Time format preferences
    - Timezone support
    - Notification preferences
+
+5. **User Authentication**
+   - Email/password login
+   - Google OAuth login
+   - JWT-based session management
+   - Protected routes
 
 ## Development Guidelines
 
@@ -310,6 +307,23 @@ Response: {
 }
 ```
 
+#### POST /api/auth/google
+```typescript
+Request: {
+  code: string;
+}
+
+Response: {
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  token: string;
+}
+```
+
 ### Event Endpoints
 
 #### POST /api/events
@@ -411,6 +425,10 @@ EMAIL_SENDER_NAME=Simple Family Calendar
 # Frontend Configuration
 REACT_APP_API_URL=http://localhost:4000
 REACT_APP_WS_URL=ws://localhost:4000
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 ## Testing Strategy
@@ -508,3 +526,42 @@ REACT_APP_WS_URL=ws://localhost:4000
    - Error stack traces
    - Performance metrics
    - Security events
+
+## Authentication Implementation
+
+### Google OAuth Flow
+
+1. Client-side implementation:
+   - Uses Google's OAuth 2.0 client library
+   - Handles token acquisition and user consent
+   - Sends access token to server for verification
+
+2. Server-side implementation:
+   - Verifies Google access token
+   - Fetches user information from Google's API
+   - Creates/updates user in database
+   - Returns JWT token for session management
+
+3. Required environment variables:
+   ```
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   ```
+
+4. API Endpoints:
+   - POST `/auth/google` - Handles Google OAuth login
+   - Returns user information and JWT token
+
+### Standard Authentication
+
+1. Email/Password Login:
+   - POST `/auth/login` - Handles email/password login
+   - Returns user information and JWT token
+
+2. Registration:
+   - POST `/auth/register` - Handles new user registration
+   - Returns user information and JWT token
+
+3. User Information:
+   - GET `/auth/me` - Returns current user information
+   - Protected by JWT authentication

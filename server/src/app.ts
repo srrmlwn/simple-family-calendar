@@ -7,6 +7,8 @@ import { config } from 'dotenv';
 import { AppDataSource } from './data-source';
 import path from 'path';
 import { logRequest } from './utils/logger';
+import { errorHandler } from './middleware/errorHandler';
+import { securityHeaders } from './middleware/security';
 
 // Load environment variables
 config();
@@ -20,6 +22,7 @@ app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(logRequest);
+app.use(securityHeaders);
 
 // Routes
 import authRoutes from './routes/auth';
@@ -34,8 +37,6 @@ app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
 
 // Serve static files in production
-console.log("Current Directory: " + __dirname);
-console.log(JSON.stringify(path.join(__dirname, '../../client/build')));
 if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../../client/build')));
     app.get('*', (req, res) => {
@@ -44,7 +45,6 @@ if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production')
 }
 
 // Error handling middleware
-import { errorHandler } from './middleware/errorHandler';
 app.use(errorHandler);
 
 // Initialize database and start server
