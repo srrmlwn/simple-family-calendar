@@ -28,5 +28,9 @@ export default {
         user: process.env.EMAIL_USER || 'your_email@example.com',
         password: process.env.EMAIL_PASSWORD || 'your_email_password',
         senderName: process.env.EMAIL_SENDER_NAME || 'Simple Family Calendar'
+    },
+    google: {
+        clientId: process.env.GOOGLE_CLIENT_ID || '',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || ''
     }
 };

@@ -13,21 +13,20 @@ interface AuthResponse {
     token: string;
 }
 
-// Helper function for consistent logging
-const log = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
-    const logMessage = data ? `${message} ${JSON.stringify(data)}` : message;
+// Logging utility
+const log = (level: 'info' | 'error', message: string, data?: any) => {
+    const timestamp = new Date().toISOString();
+    const logData = {
+        timestamp,
+        level,
+        message,
+        ...data
+    };
     
-    // Use appropriate console method based on level
-    switch (level) {
-        case 'info':
-            console.info(`[AuthService] ${logMessage}`);
-            break;
-        case 'warn':
-            console.warn(`[AuthService] ${logMessage}`);
-            break;
-        case 'error':
-            console.error(`[AuthService] ${logMessage}`);
-            break;
+    if (level === 'error') {
+        console.error(JSON.stringify(logData));
+    } else {
+        console.log(JSON.stringify(logData));
     }
 };
 
@@ -99,6 +98,32 @@ const authService = {
                 throw error;
             }
             throw new Error('Failed to register');
+        }
+    },
+
+    // Google login
+    loginWithGoogle: async (token: string): Promise<AuthResponse> => {
+        try {
+            log('info', 'Attempting Google login');
+            
+            const response = await api.post<AuthResponse>('/auth/google', {
+                token,
+            });
+            
+            log('info', 'Google login successful:', { 
+                userId: response.data.user.id 
+            });
+            
+            return response.data;
+        } catch (error) {
+            log('error', 'Google login failed:', { 
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+            
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Failed to login with Google');
         }
     },
 

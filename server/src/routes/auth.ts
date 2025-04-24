@@ -18,6 +18,7 @@ console.log("ARE LOGS WORKING FOR AUTH?");
 // Public routes
 router.post('/register', asyncHandler(authController.register));
 router.post('/login', asyncHandler(authController.login));
+router.post('/google', asyncHandler(authController.loginWithGoogle));
 
 // Protected routes
 router.get('/me', authenticateJWT, asyncHandler(authController.getCurrentUser));

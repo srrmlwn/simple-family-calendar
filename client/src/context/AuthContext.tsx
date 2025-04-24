@@ -13,6 +13,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (token: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   login: async () => {},
+  loginWithGoogle: async () => {},
   register: async () => {},
   logout: () => {},
   loading: false,
@@ -98,6 +100,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Login with Google
+  const loginWithGoogle = async (token: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authService.loginWithGoogle(token);
+
+      if (response) {
+        setUser(response.user);
+        setToken(response.token);
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to login with Google');
+      console.error('Google login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Logout user
   const logout = () => {
     setUser(null);
@@ -108,20 +131,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-      <AuthContext.Provider
-          value={{
-            isAuthenticated: !!token,
-            user,
-            token,
-            login,
-            register,
-            logout,
-            loading,
-            error,
-          }}
-      >
-        {children}
-      </AuthContext.Provider>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!token,
+        user,
+        token,
+        login,
+        loginWithGoogle,
+        register,
+        logout,
+        loading,
+        error,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
 };
 
