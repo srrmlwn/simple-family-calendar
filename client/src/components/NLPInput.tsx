@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import eventService from '../services/eventService';
 
 interface NLPInputProps {
@@ -14,15 +14,14 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className = '' }) => 
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInputText(e.target.value);
-
-        // Clear error when user starts typing again
         if (error) {
             setError(null);
         }
     };
 
     const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && inputText.trim()) {
+        if (e.key === 'Enter' && inputText.trim() && !e.shiftKey) {
+            e.preventDefault();
             await processInput();
         }
     };
@@ -40,7 +39,6 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className = '' }) => 
 
             await eventService.createFromText(inputText);
 
-            // Reset input and notify parent
             setInputText('');
             onEventAdded();
         } catch (err) {
@@ -52,36 +50,32 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className = '' }) => 
     };
 
     return (
-        <div className={`${className}`}>
-            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white">
-                <div className="pl-3 pr-2">
-                    <Plus size={20} className="text-blue-500" />
-                </div>
-                <input
-                    type="text"
-                    value={inputText}
-                    onChange={handleInputChange}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Add an event... (e.g., 'Soccer practice tomorrow at 3pm')"
-                    className="w-full py-3 px-2 focus:outline-none"
-                    disabled={isLoading}
-                />
-                {inputText.trim() && (
+        <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 ${className}`}>
+            <div className="max-w-3xl mx-auto p-4">
+                <div className="relative flex items-center">
+                    <input
+                        type="text"
+                        value={inputText}
+                        onChange={handleInputChange}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Add event (e.g., 'Soccer at 3pm tomorrow')"
+                        className="w-full py-3 px-4 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base placeholder:text-gray-400"
+                        disabled={isLoading}
+                    />
                     <button
                         onClick={handleSubmit}
-                        disabled={isLoading}
-                        className="bg-blue-500 text-white px-4 py-2 hover:bg-blue-600 disabled:bg-blue-300"
+                        disabled={isLoading || !inputText.trim()}
+                        className="absolute right-2 p-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     >
-                        {isLoading ? 'Adding...' : 'Add'}
+                        <ArrowUp size={20} />
                     </button>
+                </div>
+                {error && (
+                    <div className="text-red-500 text-sm mt-2">
+                        {error}
+                    </div>
                 )}
             </div>
-
-            {error && (
-                <div className="text-red-500 text-sm mt-1 px-2">
-                    {error}
-                </div>
-            )}
         </div>
     );
 };

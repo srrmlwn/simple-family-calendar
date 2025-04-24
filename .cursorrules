@@ -1,0 +1,9 @@
+# IMPORTANT:
+
+# Always read [project-name].md before writing any code.
+
+# After adding a major feature or completing a milestone, update [project-name].md.
+
+# Document the entire database schema in [project-name].md.
+
+# For new migrations, make sure to add them to the same file.

@@ -141,18 +141,13 @@ const CalendarPage: React.FC = () => {
         <div className="flex flex-col h-screen bg-gray-50">
             <Header />
 
-            <NLPInput
-                onEventAdded={fetchEvents}
-                className="px-6 py-4 bg-white shadow-sm"
-            />
-
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-3">
                     {error}
                 </div>
             )}
 
-            <div className="flex-grow p-6 overflow-auto">
+            <div className="flex-grow p-6 overflow-auto pb-24">
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -171,6 +166,11 @@ const CalendarPage: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            <NLPInput
+                onEventAdded={fetchEvents}
+                className="z-10"
+            />
 
             {/* Event form modal */}
             {showEventForm && (
