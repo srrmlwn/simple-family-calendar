@@ -6,9 +6,10 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 interface DayViewProps {
     date: Date;
     events: Event[];
+    onNavigate: (date: Date | 'TODAY') => void;
 }
 
-const DayView: React.FC<DayViewProps> = ({ date, events }) => {
+const DayView: React.FC<DayViewProps> = ({ date, events, onNavigate }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     
     console.log('DayView render:', {

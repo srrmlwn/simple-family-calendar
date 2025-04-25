@@ -14,7 +14,7 @@ const localizer = momentLocalizer(moment);
 interface CalendarProps {
     events: Event[];
     date: Date;
-    onNavigate: (date: Date) => void;
+    onNavigate: (date: Date | 'TODAY') => void;
 }
 
 const Calendar: React.FC<CalendarProps> = ({
@@ -64,6 +64,30 @@ const Calendar: React.FC<CalendarProps> = ({
         setSelectedDate(slotInfo.start);
     };
 
+    // Custom day cell styling
+    const dayPropGetter = (date: Date) => {
+        const today = moment().startOf('day');
+        const cellDate = moment(date).startOf('day');
+        const selectedDateMoment = moment(selectedDate).startOf('day');
+        
+        const isToday = cellDate.isSame(today, 'day');
+        const isSelected = cellDate.isSame(selectedDateMoment, 'day');
+        
+        let className = 'rbc-day-cell';
+        
+        // If the date is selected, always show the background color
+        if (isSelected) {
+            className += ' bg-red-50';
+        }
+        
+        // If it's today but not selected, show blue text
+        if (isToday) {
+            className += ' text-blue-500';
+        }
+        
+        return { className };
+    };
+
     return (
         <div className={`h-full ${isMobile ? 'flex flex-col' : 'flex'}`}>
             <div className={isMobile ? 'h-1/2' : 'w-2/3'}>
@@ -83,6 +107,7 @@ const Calendar: React.FC<CalendarProps> = ({
                         event: EventIndicator,
                         toolbar: CustomToolbar
                     }}
+                    dayPropGetter={dayPropGetter}
                     popup={false}
                 />
             </div>
@@ -91,6 +116,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 <DayView
                     date={selectedDate}
                     events={events}
+                    onNavigate={onNavigate}
                 />
             </div>
         </div>

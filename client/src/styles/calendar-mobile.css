@@ -188,4 +188,24 @@
         border-top-right-radius: 1rem;
         box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
     }
+}
+
+/* Override default current date styling */
+.rbc-today {
+    background-color: transparent !important;
+}
+
+/* Custom styling for selected date */
+.rbc-day-cell.bg-red-50 {
+    background-color: rgb(254 242 242) !important;
+}
+
+/* Custom styling for current date */
+.rbc-day-cell.text-blue-500 {
+    color: rgb(59 130 246) !important;
+}
+
+/* Ensure the date number itself is blue */
+.rbc-day-cell.text-blue-500 a {
+    color: rgb(59 130 246) !important;
 } 

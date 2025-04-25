@@ -37,8 +37,12 @@ const CalendarPage: React.FC = () => {
     };
 
     // Handle date navigation
-    const handleNavigate = (newDate: Date) => {
-        setDate(newDate);
+    const handleNavigate = (newDate: Date | 'TODAY') => {
+        if (newDate === 'TODAY') {
+            setDate(new Date());
+        } else {
+            setDate(newDate);
+        }
     };
 
     return (
