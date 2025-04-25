@@ -214,7 +214,7 @@ const Settings: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
-            <Header title="Settings" />
+            <Header />
 
             <div className="max-w-4xl mx-auto p-6 w-full">
                 <h1 className="text-2xl font-bold mb-6">Settings</h1>
