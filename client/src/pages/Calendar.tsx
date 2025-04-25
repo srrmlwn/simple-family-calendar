@@ -8,7 +8,8 @@ const CalendarPage: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [date, setDate] = useState(new Date());
+    const [date, setDate] = useState<Date>(new Date());
+    const [newEvent, setNewEvent] = useState<Event | undefined>(undefined);
 
     // Fetch events on component mount and when date changes
     useEffect(() => {
@@ -43,6 +44,15 @@ const CalendarPage: React.FC = () => {
         } else {
             setDate(newDate);
         }
+        // Clear the new event highlight when navigating to a different date
+        setNewEvent(undefined);
+    };
+
+    // Handle new event
+    const handleNewEvent = (event: Event) => {
+        setEvents(prevEvents => [...prevEvents, event]);
+        setNewEvent(event);
+        setDate(new Date(event.startTime));
     };
 
     return (
@@ -66,13 +76,14 @@ const CalendarPage: React.FC = () => {
                             events={events}
                             date={date}
                             onNavigate={handleNavigate}
+                            newEvent={newEvent}
                         />
                     </div>
                 )}
             </div>
 
             <NLPInput
-                onEventAdded={fetchEvents}
+                onEventAdded={handleNewEvent}
                 className="z-10"
             />
         </div>

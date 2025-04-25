@@ -1,75 +1,81 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import moment from 'moment';
 import { Event } from '../services/eventService';
-import { format, isToday, isSameDay } from 'date-fns';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface DayViewProps {
     date: Date;
     events: Event[];
     onNavigate: (date: Date | 'TODAY') => void;
+    newEvent?: Event;
 }
 
-const DayView: React.FC<DayViewProps> = ({ date, events, onNavigate }) => {
+const DayView: React.FC<DayViewProps> = ({
+    date,
+    events,
+    onNavigate,
+    newEvent
+}) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
-    
-    console.log('DayView render:', {
-        date: date.toISOString(),
-        eventsCount: events.length,
-        isMobile
-    });
+    const [selectedDate, setSelectedDate] = React.useState<Date>(date);
+
+    // Sync selectedDate with date prop
+    useEffect(() => {
+        setSelectedDate(date);
+    }, [date]);
 
     // Filter events for the selected date
     const dayEvents = React.useMemo(() => {
-        const filteredEvents = events.filter(event => 
-            isSameDay(new Date(event.startTime), date)
-        );
-        console.log('Filtered events for date:', {
-            date: date.toISOString(),
-            filteredCount: filteredEvents.length
+        return events.filter(event => {
+            const eventDate = moment(event.startTime).startOf('day');
+            const selectedDateMoment = moment(selectedDate).startOf('day');
+            return eventDate.isSame(selectedDateMoment, 'day');
         });
-        return filteredEvents;
-    }, [events, date]);
+    }, [events, selectedDate]);
 
-    // Format the date header
-    const dateHeader = isToday(date) 
-        ? 'Today' 
-        : format(date, 'EEEE, MMMM d, yyyy');
+    // Format time for display
+    const formatTime = (date: string | Date) => {
+        return moment(date).format('h:mm A');
+    };
+
+    // Handle date selection
+    const handleDateSelect = (newDate: Date) => {
+        setSelectedDate(newDate);
+        onNavigate(newDate);
+    };
 
     return (
-        <div className="bg-white h-full flex flex-col">
+        <div className="h-full flex flex-col bg-white">
             <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">{dateHeader}</h2>
+                <h2 className="text-xl font-semibold text-gray-800">
+                    {moment(selectedDate).format('MMMM D, YYYY')}
+                </h2>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
                 {dayEvents.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                        <div className="text-center">
-                            <p className="text-lg font-medium mb-2">No events scheduled</p>
-                            <p className="text-sm">Select another date or add a new event</p>
-                        </div>
+                    <div className="text-center text-gray-500 mt-8">
+                        No events scheduled for this day
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {dayEvents.map(event => (
-                            <div 
+                        {dayEvents.map((event, index) => (
+                            <div
                                 key={event.id}
-                                className="p-3 rounded-lg border border-gray-200 hover:border-blue-500 transition-colors"
+                                className={`p-4 rounded-lg border ${
+                                    newEvent && newEvent.id === event.id
+                                        ? 'bg-blue-50 border-blue-200'
+                                        : 'bg-white border-gray-200'
+                                }`}
                             >
-                                <div className="font-medium text-gray-900">
-                                    {event.title}
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-medium text-gray-900">{event.title}</h3>
+                                        <p className="text-sm text-gray-500">
+                                            {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                                        </p>
+                                    </div>
                                 </div>
-                                {!event.isAllDay && (
-                                    <div className="text-sm text-gray-500 mt-1">
-                                        {format(new Date(event.startTime), 'h:mm a')} - 
-                                        {format(new Date(event.endTime), 'h:mm a')}
-                                    </div>
-                                )}
-                                {event.location && (
-                                    <div className="text-sm text-gray-500 mt-1">
-                                        {event.location}
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>

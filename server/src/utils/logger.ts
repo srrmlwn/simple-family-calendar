@@ -29,11 +29,12 @@ export const logRequest = (req: any, res: any, next: any) => {
     method: req.method,
     path: req.path,
     query: req.query,
-    body: req.body,
-    headers: {
-      ...req.headers,
-      authorization: req.headers.authorization ? '[REDACTED]' : undefined
-    }
+    body: req.body
+    // ,
+    // headers: {
+    //   ...req.headers,
+    //   authorization: req.headers.authorization ? '[REDACTED]' : undefined
+    // }
   });
 
   // Capture response

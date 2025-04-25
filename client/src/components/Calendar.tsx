@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -15,21 +15,17 @@ interface CalendarProps {
     events: Event[];
     date: Date;
     onNavigate: (date: Date | 'TODAY') => void;
+    newEvent?: Event;
 }
 
 const Calendar: React.FC<CalendarProps> = ({
     events,
     date,
-    onNavigate
+    onNavigate,
+    newEvent
 }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [selectedDate, setSelectedDate] = React.useState<Date>(date);
-
-    console.log('Calendar render:', {
-        isMobile,
-        selectedDate: selectedDate?.toISOString(),
-        eventsCount: events.length
-    });
 
     // Group events by date and take only one event per date
     const uniqueDateEvents = React.useMemo(() => {
@@ -46,26 +42,26 @@ const Calendar: React.FC<CalendarProps> = ({
     }, [events]);
 
     // Format the event for the calendar
-    const formattedEvents = uniqueDateEvents.map(event => ({
-        ...event,
-        title: event.title,
-        start: new Date(event.startTime),
-        end: new Date(event.endTime),
-    }));
+    const formattedEvents = React.useMemo(() => 
+        uniqueDateEvents.map(event => ({
+            ...event,
+            title: event.title,
+            start: new Date(event.startTime),
+            end: new Date(event.endTime),
+        })), [uniqueDateEvents]);
 
     // Custom event component that shows just a dot indicator
-    const EventIndicator = () => (
+    const EventIndicator = React.useCallback(() => (
         <div className="w-2 h-2 rounded-full bg-blue-500 mx-auto mt-1" />
-    );
+    ), []);
 
     // Handle date selection
-    const handleSelectSlot = (slotInfo: { start: Date; end: Date }) => {
-        console.log('Date selected:', slotInfo.start.toISOString());
+    const handleSelectSlot = useCallback((slotInfo: { start: Date; end: Date }) => {
         setSelectedDate(slotInfo.start);
-    };
+    }, []);
 
     // Custom day cell styling
-    const dayPropGetter = (date: Date) => {
+    const dayPropGetter = useCallback((date: Date) => {
         const today = moment().startOf('day');
         const cellDate = moment(date).startOf('day');
         const selectedDateMoment = moment(selectedDate).startOf('day');
@@ -86,7 +82,7 @@ const Calendar: React.FC<CalendarProps> = ({
         }
         
         return { className };
-    };
+    }, [selectedDate]);
 
     return (
         <div className={`h-full ${isMobile ? 'flex flex-col' : 'flex'}`}>
@@ -117,6 +113,7 @@ const Calendar: React.FC<CalendarProps> = ({
                     date={selectedDate}
                     events={events}
                     onNavigate={onNavigate}
+                    newEvent={newEvent}
                 />
             </div>
         </div>
