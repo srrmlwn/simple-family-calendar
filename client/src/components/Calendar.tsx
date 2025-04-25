@@ -1,99 +1,98 @@
 import React from 'react';
-import { Calendar as BigCalendar, momentLocalizer, View, Views } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../styles/calendar-mobile.css';
 import { Event } from '../services/eventService';
-import EventItem from './EventItem';
-import AgendaView from './AgendaView';
-import { useMediaQuery } from '../hooks/useMediaQuery';
 import CustomToolbar from './CustomToolbar';
+import DayView from './DayView';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 // Setup the localizer for BigCalendar
 const localizer = momentLocalizer(moment);
 
-// Constants
-const MOBILE_BREAKPOINT = '(max-width: 768px)';
-const AVAILABLE_VIEWS = {
-    MOBILE: [Views.MONTH, Views.DAY, Views.AGENDA],
-    DESKTOP: [Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]
-};
-
 interface CalendarProps {
     events: Event[];
-    onSelectEvent: (event: Event) => void;
-    onSelectSlot: (slotInfo: { start: Date; end: Date }) => void;
-    view: View;
     date: Date;
-    onViewChange: (view: string) => void;
     onNavigate: (date: Date) => void;
 }
 
 const Calendar: React.FC<CalendarProps> = ({
     events,
-    onSelectEvent,
-    onSelectSlot,
-    view,
     date,
-    onViewChange,
     onNavigate
 }) => {
-    const isMobile = useMediaQuery(MOBILE_BREAKPOINT);
+    const isMobile = useMediaQuery('(max-width: 768px)');
+    const [selectedDate, setSelectedDate] = React.useState<Date>(date);
+
+    console.log('Calendar render:', {
+        isMobile,
+        selectedDate: selectedDate?.toISOString(),
+        eventsCount: events.length
+    });
+
+    // Group events by date and take only one event per date
+    const uniqueDateEvents = React.useMemo(() => {
+        const dateMap = new Map<string, Event>();
+        
+        events.forEach(event => {
+            const dateKey = moment(event.startTime).format('YYYY-MM-DD');
+            if (!dateMap.has(dateKey)) {
+                dateMap.set(dateKey, event);
+            }
+        });
+
+        return Array.from(dateMap.values());
+    }, [events]);
 
     // Format the event for the calendar
-    const formattedEvents = events.map(event => ({
+    const formattedEvents = uniqueDateEvents.map(event => ({
         ...event,
         title: event.title,
         start: new Date(event.startTime),
         end: new Date(event.endTime),
     }));
 
-    // Custom styling for events
-    const eventStyleGetter = (event: any) => {
-        return {
-            style: {
-                backgroundColor: event.color || '#e0e7ff',
-                color: event.color ? 'white' : '#4f46e5',
-            },
-        };
+    // Custom event component that shows just a dot indicator
+    const EventIndicator = () => (
+        <div className="w-2 h-2 rounded-full bg-blue-500 mx-auto mt-1" />
+    );
+
+    // Handle date selection
+    const handleSelectSlot = (slotInfo: { start: Date; end: Date }) => {
+        console.log('Date selected:', slotInfo.start.toISOString());
+        setSelectedDate(slotInfo.start);
     };
 
-    // Determine which views to show based on screen size
-    const availableViews = isMobile ? AVAILABLE_VIEWS.MOBILE : AVAILABLE_VIEWS.DESKTOP;
-
-    // Default to agenda view on mobile if current view is week
-    React.useEffect(() => {
-        if (isMobile && view === Views.WEEK) {
-            onViewChange(Views.AGENDA);
-        }
-    }, [isMobile, view, onViewChange]);
-
     return (
-        <div className="h-full">
-            <BigCalendar
-                localizer={localizer}
-                events={formattedEvents}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: '100%' }}
-                views={availableViews}
-                step={60}
-                showMultiDayTimes
-                view={view}
-                date={date}
-                onView={onViewChange}
-                onNavigate={onNavigate}
-                selectable
-                onSelectEvent={onSelectEvent}
-                onSelectSlot={onSelectSlot}
-                eventPropGetter={eventStyleGetter}
-                components={{
-                    event: ({ event }) => <EventItem event={event} />,
-                    agenda: AgendaView,
-                    toolbar: CustomToolbar
-                }}
-                popup={isMobile}
-            />
+        <div className={`h-full ${isMobile ? 'flex flex-col' : 'flex'}`}>
+            <div className={isMobile ? 'h-1/2' : 'w-2/3'}>
+                <BigCalendar
+                    localizer={localizer}
+                    events={formattedEvents}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: '100%' }}
+                    views={['month']}
+                    defaultView="month"
+                    date={date}
+                    onNavigate={onNavigate}
+                    selectable
+                    onSelectSlot={handleSelectSlot}
+                    components={{
+                        event: EventIndicator,
+                        toolbar: CustomToolbar
+                    }}
+                    popup={false}
+                />
+            </div>
+
+            <div className={`${isMobile ? 'h-1/2 border-t border-gray-200' : 'w-1/3 border-l border-gray-200'}`}>
+                <DayView
+                    date={selectedDate}
+                    events={events}
+                />
+            </div>
         </div>
     );
 };
