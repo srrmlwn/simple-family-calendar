@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# IMPORTANT:
+
+# Always read simple-family-calendar.md before writing any code.
+
+# After adding a major feature or completing a milestone, update simple-family-calendar.md.
+
+# Document the entire database schema in simple-family-calendar.md.
+
+# For new migrations, make sure to add them to the same file.
