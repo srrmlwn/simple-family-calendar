@@ -55,6 +55,17 @@ const Calendar: React.FC<CalendarProps> = ({
         setSelectedDate(slotInfo.start);
     }, []);
 
+    // Handle navigation to a new month
+    const handleNavigate = useCallback((newDate: Date) => {
+        // Set selectedDate to the first day of the navigated month
+        const firstOfMonth = moment(newDate).startOf('month').toDate();
+        setSelectedDate(firstOfMonth);
+        // Call the parent onNavigate if needed
+        if (typeof onNavigate === 'function') {
+            onNavigate(newDate);
+        }
+    }, [onNavigate]);
+
     // Restore default day cell styling
     const dayPropGetter = useCallback((date: Date) => {
         const today = moment().startOf('day');
@@ -66,6 +77,9 @@ const Calendar: React.FC<CalendarProps> = ({
         
         const isToday = cellDate.isSame(today, 'day');
         const isSelected = cellDate.isSame(selectedDateMoment, 'day');
+
+        // Debug logs
+        console.log('cellDate:', cellDate.format('YYYY-MM-DD'), 'selectedDate:', selectedDateMoment.format('YYYY-MM-DD'), 'isSelected:', isSelected);
         
         let className = 'rbc-day-cell';
         
@@ -101,7 +115,7 @@ const Calendar: React.FC<CalendarProps> = ({
                     views={['month']}
                     defaultView="month"
                     date={date}
-                    onNavigate={onNavigate}
+                    onNavigate={handleNavigate}
                     selectable
                     onSelectSlot={handleSelectSlot}
                     components={{
