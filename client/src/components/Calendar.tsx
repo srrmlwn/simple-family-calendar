@@ -50,21 +50,19 @@ const Calendar: React.FC<CalendarProps> = ({
             end: new Date(event.endTime),
         })), [uniqueDateEvents]);
 
-    // Custom event component that shows just a dot indicator
-    const EventIndicator = React.useCallback(() => (
-        <div className="w-2 h-2 rounded-full bg-blue-500 mx-auto mt-1" />
-    ), []);
-
     // Handle date selection
     const handleSelectSlot = useCallback((slotInfo: { start: Date; end: Date }) => {
         setSelectedDate(slotInfo.start);
     }, []);
 
-    // Custom day cell styling
+    // Restore default day cell styling
     const dayPropGetter = useCallback((date: Date) => {
         const today = moment().startOf('day');
         const cellDate = moment(date).startOf('day');
         const selectedDateMoment = moment(selectedDate).startOf('day');
+        const hasEvent = uniqueDateEvents.some(event =>
+            moment(event.startTime).format('YYYY-MM-DD') === cellDate.format('YYYY-MM-DD')
+        );
         
         const isToday = cellDate.isSame(today, 'day');
         const isSelected = cellDate.isSame(selectedDateMoment, 'day');
@@ -75,6 +73,10 @@ const Calendar: React.FC<CalendarProps> = ({
         if (isSelected) {
             className += ' bg-red-50';
         }
+        // If the date has an event, add a blue background
+        else if (hasEvent) {
+            className += ' bg-blue-100';
+        }
         
         // If it's today but not selected, show blue text
         if (isToday) {
@@ -82,7 +84,10 @@ const Calendar: React.FC<CalendarProps> = ({
         }
         
         return { className };
-    }, [selectedDate]);
+    }, [selectedDate, uniqueDateEvents]);
+
+    // Custom event component for month view to hide event names
+    const EmptyEvent = () => null;
 
     return (
         <div className={`h-full ${isMobile ? 'flex flex-col' : 'flex'}`}>
@@ -100,8 +105,8 @@ const Calendar: React.FC<CalendarProps> = ({
                     selectable
                     onSelectSlot={handleSelectSlot}
                     components={{
-                        event: EventIndicator,
-                        toolbar: CustomToolbar
+                        toolbar: CustomToolbar,
+                        event: EmptyEvent
                     }}
                     dayPropGetter={dayPropGetter}
                     popup={false}
