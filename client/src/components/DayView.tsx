@@ -48,7 +48,7 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="h-full flex flex-col bg-white">
             <div className="p-4 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800">
-                    {moment(selectedDate).format('MMMM D, YYYY')}
+                    {moment(selectedDate).format('ddd, MMM Do')}
                 </h2>
             </div>
 
