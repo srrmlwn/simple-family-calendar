@@ -1,6 +1,52 @@
-import React, { useState } from 'react';
-import { ArrowUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowUp, Mic, MicOff } from 'lucide-react';
 import eventService, { Event } from '../services/eventService';
+
+// Add type definitions for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList;
+    resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+    error: string;
+    message: string;
+}
+
+interface SpeechRecognitionResultList {
+    [index: number]: SpeechRecognitionResult;
+    length: number;
+}
+
+interface SpeechRecognitionResult {
+    [index: number]: SpeechRecognitionAlternative;
+    isFinal: boolean;
+    length: number;
+}
+
+interface SpeechRecognitionAlternative {
+    transcript: string;
+    confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onerror: (event: SpeechRecognitionErrorEvent) => void;
+    onend: () => void;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+}
+
+declare global {
+    interface Window {
+        SpeechRecognition: new () => SpeechRecognition;
+        webkitSpeechRecognition: new () => SpeechRecognition;
+    }
+}
 
 interface NLPInputProps {
     onEventAdded: (event: Event) => void;
@@ -11,6 +57,44 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+
+    useEffect(() => {
+        // Initialize speech recognition
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event: SpeechRecognitionEvent) => {
+                const transcript = event.results[0][0].transcript;
+                setInputText(transcript);
+                setIsListening(false);
+            };
+
+            recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+                console.error('Speech recognition error:', event.error);
+                setError('Voice recognition failed. Please try again.');
+                setIsListening(false);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            setRecognition(recognition);
+        }
+
+        return () => {
+            if (recognition) {
+                recognition.stop();
+            }
+        };
+    }, []);
 
     const handleSubmit = async () => {
         if (!inputText.trim()) return;
@@ -35,6 +119,21 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
         }
     };
 
+    const toggleListening = () => {
+        if (!recognition) {
+            setError('Voice recognition is not supported in your browser.');
+            return;
+        }
+
+        if (isListening) {
+            recognition.stop();
+        } else {
+            setError(null);
+            recognition.start();
+            setIsListening(true);
+        }
+    };
+
     return (
         <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 ${className}`}>
             <div className="max-w-3xl mx-auto">
@@ -48,6 +147,17 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
                         className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={isLoading}
                     />
+                    <button
+                        onClick={toggleListening}
+                        className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            isListening 
+                                ? 'bg-red-500 hover:bg-red-600 text-white' 
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                        }`}
+                        title={isListening ? 'Stop listening' : 'Start voice input'}
+                    >
+                        {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                    </button>
                     <button
                         onClick={handleSubmit}
                         disabled={isLoading || !inputText.trim()}
