@@ -64,7 +64,7 @@ const eventService = {
             const response = await api.get<Event[]>('/events', { params });
             return response.data.map(parseEventDates);
         } catch (error) {
-            if (error instanceof  Error) {
+            if (error instanceof Error) {
                 console.error(error.message);
             }
             throw new Error('Failed to fetch events');
@@ -120,7 +120,7 @@ const eventService = {
         } catch (error) {
             throw new Error('Failed to delete event');
         }
-    },
+    }
 };
 
 // Helper function to convert date strings to Date objects

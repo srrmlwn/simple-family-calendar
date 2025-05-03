@@ -1,8 +1,12 @@
 // src/config/index.ts
 import { config } from 'dotenv';
+import path from 'path';
 
-// Load environment variables
-config();
+// Load environment variables from the correct path
+// Only load from .env file if not in production (Heroku)
+if (process.env.NODE_ENV !== 'production') {
+    config({ path: path.resolve(__dirname, '../../.env') });
+}
 
 export default {
     server: {
@@ -22,11 +26,11 @@ export default {
         expiresInDays: process.env.JWT_EXPIRATION_DAYS || "1 day"
     },
     email: {
-        host: process.env.EMAIL_HOST || 'smtp.example.com',
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.EMAIL_PORT || '587'),
         secure: process.env.EMAIL_SECURE === 'true',
-        user: process.env.EMAIL_USER || 'your_email@example.com',
-        password: process.env.EMAIL_PASSWORD || 'your_email_password',
+        user: process.env.EMAIL_USER || '',
+        password: process.env.EMAIL_PASSWORD || '',
         senderName: process.env.EMAIL_SENDER_NAME || 'Simple Family Calendar'
     },
     google: {

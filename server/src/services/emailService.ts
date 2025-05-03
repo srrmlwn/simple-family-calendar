@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import ical, { ICalCalendar, ICalEventStatus, ICalCalendarMethod } from 'ical-generator';
 import { Event } from '../entities/Event';
 import { EmailRecipient } from '../entities/EmailRecipient';
+import { EventRecipient } from '../entities/EventRecipient';
 import config from '../config';
 
 interface EmailSender {
@@ -23,6 +24,13 @@ export class EmailService {
                 user: process.env.EMAIL_USER || '',
                 pass: process.env.EMAIL_PASSWORD || '',
             },
+        });
+
+        // Verify SMTP connection configuration
+        this.transporter.verify((error, success) => {
+            if (error) {
+                console.error('SMTP Connection Error:', error);
+            }
         });
     }
 
@@ -104,13 +112,13 @@ export class EmailService {
     /**
      * Send calendar updates to recipients
      */
-    public async sendCalendarUpdates(event: Event, recipients: EmailRecipient[], sender: EmailSender): Promise<void> {
+    public async sendCalendarUpdates(event: Event, eventRecipients: EventRecipient[], sender: EmailSender): Promise<void> {
         const calendar = this.generateICalendar(event, sender, 'REQUEST');
         const calendarData = calendar.toString();
 
-        const emailAddresses = recipients.map(r => ({
-            name: r.name,
-            address: r.email,
+        const emailAddresses = eventRecipients.map(er => ({
+            name: er.name,
+            address: er.email,
         }));
 
         await this.transporter.sendMail({
@@ -132,13 +140,13 @@ export class EmailService {
     /**
      * Send calendar cancellations to recipients
      */
-    public async sendCalendarCancellations(event: Event, recipients: EmailRecipient[], sender: EmailSender): Promise<void> {
+    public async sendCalendarCancellations(event: Event, eventRecipients: EventRecipient[], sender: EmailSender): Promise<void> {
         const calendar = this.generateICalendar(event, sender, 'CANCEL');
         const calendarData = calendar.toString();
 
-        const emailAddresses = recipients.map(r => ({
-            name: r.name,
-            address: r.email,
+        const emailAddresses = eventRecipients.map(er => ({
+            name: er.name,
+            address: er.email,
         }));
 
         await this.transporter.sendMail({

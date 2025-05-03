@@ -3,19 +3,16 @@ import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { config } from 'dotenv';
 import { AppDataSource } from './data-source';
 import path from 'path';
 import { logRequest } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { securityHeaders } from './middleware/security';
-
-// Load environment variables
-config();
+import config from './config';
 
 // Initialize express app
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = config.server.port;
 
 // Middleware
 app.use(cors());
@@ -37,7 +34,7 @@ app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
 
 // Serve static files in production
-if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production') {
+if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production') {
     app.use(express.static(path.join(__dirname, '../../client/build')));
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../../client/build/index.html'));

@@ -74,6 +74,8 @@ export class EventController {
                     const eventRecipient = new EventRecipient();
                     eventRecipient.eventId = savedEvent.id;
                     eventRecipient.recipientId = recipient.id;
+                    eventRecipient.name = recipient.name;
+                    eventRecipient.email = recipient.email;
                     return eventRecipient;
                 });
 
@@ -192,30 +194,65 @@ export class EventController {
             // Save the event
             const savedEvent = await this.eventService.create(event);
 
-            // Handle recipients if provided
-            if (eventData.recipientIds && eventData.recipientIds.length > 0) {
-                const eventRecipients = eventData.recipientIds.map((recipientId: string) => {
+            // Get default recipients for this user
+            const recipientRepository = AppDataSource.getRepository(EmailRecipient);
+            const defaultRecipients = await recipientRepository.find({
+                where: { userId, isDefault: true }
+            });
+
+            // Create event recipients from default recipients
+            if (defaultRecipients.length > 0) {
+                const eventRecipients = defaultRecipients.map(recipient => {
                     const eventRecipient = new EventRecipient();
                     eventRecipient.eventId = savedEvent.id;
-                    eventRecipient.recipientId = recipientId;
+                    eventRecipient.recipientId = recipient.id;
+                    eventRecipient.name = recipient.name;
+                    eventRecipient.email = recipient.email;
                     return eventRecipient;
                 });
 
                 await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
-
-                // Get recipient details for email
-                const recipientRepository = AppDataSource.getRepository(EmailRecipient);
-                const recipients = await recipientRepository.findByIds(eventData.recipientIds);
 
                 // Get user details for sender information
                 const userRepository = AppDataSource.getRepository(User);
                 const user = await userRepository.findOneOrFail({ where: { id: userId } });
 
                 // Send calendar invites
-                await this.emailService.sendCalendarInvites(savedEvent, recipients, {
+                await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients, {
                     email: user.email,
                     name: `${user.firstName} ${user.lastName}`
                 });
+            }
+
+            // If specific recipients were provided, add them as well
+            if (eventData.recipientIds && eventData.recipientIds.length > 0) {
+                // Get recipient details for email
+                const specificRecipients = await recipientRepository.findByIds(eventData.recipientIds);
+
+                const additionalEventRecipients = specificRecipients
+                    .filter(recipient => !defaultRecipients.some(dr => dr.id === recipient.id))
+                    .map(recipient => {
+                        const eventRecipient = new EventRecipient();
+                        eventRecipient.eventId = savedEvent.id;
+                        eventRecipient.recipientId = recipient.id;
+                        eventRecipient.name = recipient.name;
+                        eventRecipient.email = recipient.email;
+                        return eventRecipient;
+                    });
+
+                if (additionalEventRecipients.length > 0) {
+                    await AppDataSource.getRepository(EventRecipient).save(additionalEventRecipients);
+
+                    // Get user details for sender information if not already fetched
+                    const userRepository = AppDataSource.getRepository(User);
+                    const user = await userRepository.findOneOrFail({ where: { id: userId } });
+
+                    // Send calendar invites to additional recipients
+                    await this.emailService.sendCalendarInvites(savedEvent, specificRecipients, {
+                        email: user.email,
+                        name: `${user.firstName} ${user.lastName}`
+                    });
+                }
             }
 
             return res.status(201).json(savedEvent);
@@ -253,19 +290,16 @@ export class EventController {
             // Get recipient details for email
             const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
             const eventRecipients = await eventRecipientRepository.find({
-                where: { eventId: id },
-                relations: ['recipient']
+                where: { eventId: id }
             });
 
             if (eventRecipients.length > 0) {
-                const recipients = eventRecipients.map(er => er.recipient);
-
                 // Get user details for sender information
                 const userRepository = AppDataSource.getRepository(User);
                 const user = await userRepository.findOneOrFail({ where: { id: userId } });
 
                 // Send calendar updates
-                await this.emailService.sendCalendarUpdates(updatedEvent, recipients, {
+                await this.emailService.sendCalendarUpdates(updatedEvent, eventRecipients, {
                     email: user.email,
                     name: `${user.firstName} ${user.lastName}`
                 });
@@ -302,22 +336,19 @@ export class EventController {
             // Get recipient details for email
             const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
             const eventRecipients = await eventRecipientRepository.find({
-                where: { eventId: id },
-                relations: ['recipient']
+                where: { eventId: id }
             });
 
             // Delete the event
             await this.eventService.delete(id);
 
             if (eventRecipients.length > 0) {
-                const recipients = eventRecipients.map(er => er.recipient);
-
                 // Get user details for sender information
                 const userRepository = AppDataSource.getRepository(User);
                 const user = await userRepository.findOneOrFail({ where: { id: userId } });
 
                 // Send calendar cancellations
-                await this.emailService.sendCalendarCancellations(existingEvent, recipients, {
+                await this.emailService.sendCalendarCancellations(existingEvent, eventRecipients, {
                     email: user.email,
                     name: `${user.firstName} ${user.lastName}`
                 });

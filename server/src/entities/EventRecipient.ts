@@ -22,6 +22,12 @@ export class EventRecipient {
     @Column()
     recipientId!: string;
 
+    @Column()
+    name!: string;
+
+    @Column()
+    email!: string;
+
     @Column({ default: false })
     notified!: boolean;
 

@@ -11,7 +11,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Base configuration with properties common to both connection methods
 const baseConfig: Partial<DataSourceOptions> = {
   type: 'postgres',
-  synchronize: !isProduction,
+  // Synchronize should be false in all environments
+  // Use migrations instead for database schema changes
+  synchronize: false,
   logging: !isProduction,
   namingStrategy: new SnakeNamingStrategy(),
   entities: [
@@ -32,14 +34,17 @@ const baseConfig: Partial<DataSourceOptions> = {
 let connectionOptions: DataSourceOptions;
 
 if (process.env.DATABASE_URL) {
-  // Use URL connection
+  // Use URL connection (Heroku style)
   connectionOptions = {
     ...baseConfig,
     type: 'postgres',
     url: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
   } as DataSourceOptions;
 } else {
-  // Use individual parameters
+  // Use individual parameters (local development)
   connectionOptions = {
     ...baseConfig,
     type: 'postgres',
