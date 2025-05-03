@@ -89,8 +89,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
     return (
         <div className={`${isMobile ? 'flex flex-col gap-4 p-2' : 'flex gap-6 p-6'} w-full h-full justify-center`}>
-            <div className={`${isMobile ? 'h-[400px] shrink-0' : 'w-2/3 max-w-2xl shrink-0'}`}>
-                <div className="bg-white rounded-lg shadow p-2 sm:p-4 h-full">
+            <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-2/3 max-w-2xl shrink-0'}`}>
+                <div className="bg-white rounded-lg shadow p-2 sm:p-4 h-full flex flex-col">
                     {/* Month Navigation */}
                     <div className="mb-1 flex items-center justify-between text-lg sm:text-xl">
                         <span className="text-default w-1/2 text-sm sm:text-base">
@@ -133,7 +133,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className={`relative grid grid-cols-7 ${numberOfWeeks === 6 ? 'grid-rows-6' : 'grid-rows-5'} gap-1 text-center`}>
+                    <div className={`relative grid grid-cols-7 ${numberOfWeeks === 6 ? 'grid-rows-6' : 'grid-rows-5'} gap-1 text-center flex-grow`}>
                         {days.map((day, index) => {
                             const isCurrentMonth = moment(day).month() === moment(browsingDate).month();
                             const isToday = moment(day).isSame(moment(), 'day');
@@ -169,7 +169,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             </div>
 
             {/* Day View */}
-            <div className={`${isMobile ? 'h-[400px] shrink-0' : 'w-1/3 shrink-0'}`}>
+                <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-1/3 shrink-0'}`}>
                 <DayView
                     date={selectedDate}
                     events={events}
