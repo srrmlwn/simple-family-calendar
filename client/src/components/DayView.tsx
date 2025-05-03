@@ -45,33 +45,36 @@ const DayView: React.FC<DayViewProps> = ({
     };
 
     return (
-        <div className="h-full flex flex-col bg-white">
-            <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">
-                    {moment(selectedDate).format('ddd, MMM Do')}
-                </h2>
+        <div className="h-full flex flex-col bg-white rounded-lg shadow p-2 sm:p-4">
+            <div className="mb-4 border-b border-gray-200 pb-4">            
+                <strong className="text-emphasis font-semibold">
+                    {moment(selectedDate).format('ddd')}
+                </strong>
+                <span className="text-subtle font-medium">
+                    {',  '}{moment(selectedDate).format('MMM Do')}
+                </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto">
                 {dayEvents.length === 0 ? (
                     <div className="text-center text-gray-500 mt-8">
                         No events scheduled for this day
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {dayEvents.map((event, index) => (
                             <div
                                 key={event.id}
-                                className={`p-4 rounded-lg border ${
+                                className={`p-3 rounded-lg border transition-colors ${
                                     newEvent && newEvent.id === event.id
                                         ? 'bg-blue-50 border-blue-200'
-                                        : 'bg-white border-gray-200'
+                                        : 'bg-white border-gray-200 hover:border-gray-300'
                                 }`}
                             >
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <h3 className="font-medium text-gray-900">{event.title}</h3>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-gray-500 mt-1">
                                             {formatTime(event.startTime)} - {formatTime(event.endTime)}
                                         </p>
                                     </div>

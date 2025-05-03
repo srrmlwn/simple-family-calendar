@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
-import CalendarComponent from '../components/Calendar';
+import DatePicker from '../components/DatePicker';
 import NLPInput from '../components/NLPInput';
 import eventService, { Event } from '../services/eventService';
 
@@ -71,8 +71,8 @@ const CalendarPage: React.FC = () => {
                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                 ) : (
-                    <div className="h-full bg-white rounded-lg shadow p-4">
-                        <CalendarComponent
+                    <div className="min-h-full bg-white rounded-lg shadow flex">
+                        <DatePicker
                             events={events}
                             date={date}
                             onNavigate={handleNavigate}

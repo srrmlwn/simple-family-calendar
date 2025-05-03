@@ -84,10 +84,13 @@ const DatePicker: React.FC<DatePickerProps> = ({
     const days = getDaysInMonth();
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // Calculate number of weeks needed
+    const numberOfWeeks = Math.ceil(days.length / 7);
+
     return (
-        <div className={`h-full ${isMobile ? 'flex flex-col' : 'flex'}`}>
-            <div className={isMobile ? 'h-1/2' : 'w-2/3 max-w-2xl'}>
-                <div className="bg-white rounded-lg shadow p-2 sm:p-4">
+        <div className={`${isMobile ? 'flex flex-col gap-4 p-2' : 'flex gap-6 p-6'} w-full h-full justify-center`}>
+            <div className={`${isMobile ? 'h-[400px] shrink-0' : 'w-2/3 max-w-2xl shrink-0'}`}>
+                <div className="bg-white rounded-lg shadow p-2 sm:p-4 h-full">
                     {/* Month Navigation */}
                     <div className="mb-1 flex items-center justify-between text-lg sm:text-xl">
                         <span className="text-default w-1/2 text-sm sm:text-base">
@@ -121,16 +124,16 @@ const DatePicker: React.FC<DatePickerProps> = ({
                     </div>
 
                     {/* Weekday Headers */}
-                    <div className="border-subtle mb-2 grid grid-cols-7 gap-2 sm:gap-4 border-b border-t text-center">
+                    <div className="border-subtle mb-2 grid grid-cols-7 gap-1 sm:gap-2 border-b border-t text-center">
                         {weekDays.map((day) => (
-                            <div key={day} className="text-emphasis my-2 sm:my-4 text-xs font-medium uppercase tracking-widest">
+                            <div key={day} className="text-emphasis my-2 sm:my-3 text-xs font-medium uppercase tracking-widest">
                                 {day}
                             </div>
                         ))}
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className="relative grid grid-cols-7 grid-rows-6 gap-1 text-center">
+                    <div className={`relative grid grid-cols-7 ${numberOfWeeks === 6 ? 'grid-rows-6' : 'grid-rows-5'} gap-1 text-center`}>
                         {days.map((day, index) => {
                             const isCurrentMonth = moment(day).month() === moment(browsingDate).month();
                             const isToday = moment(day).isSame(moment(), 'day');
@@ -138,11 +141,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
                             const hasEvents = eventsByDate.has(moment(day).format('YYYY-MM-DD'));
 
                             return (
-                                <div key={index} className="relative w-full pt-[100%]">
+                                <div key={index} className="relative w-full aspect-square">
                                     <button
                                         type="button"
                                         className={`
-                                            absolute bottom-0 left-0 right-0 top-0 mx-auto w-full rounded-md border-2 text-center text-xs sm:text-sm font-medium transition
+                                            absolute inset-0 mx-auto w-full rounded-md border-2 text-center text-xs sm:text-sm font-medium transition
                                             ${isSelected ? 'border-blue-500 text-blue-600' : 'border-transparent'}
                                             ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
                                             ${hasEvents ? 'bg-blue-50' : ''}
@@ -166,7 +169,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             </div>
 
             {/* Day View */}
-            <div className={`${isMobile ? 'h-1/2 border-t border-gray-200' : 'w-1/3 border-l border-gray-200'}`}>
+            <div className={`${isMobile ? 'h-[400px] shrink-0' : 'w-1/3 shrink-0'}`}>
                 <DayView
                     date={selectedDate}
                     events={events}
