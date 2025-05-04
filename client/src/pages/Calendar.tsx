@@ -55,6 +55,22 @@ const CalendarPage: React.FC = () => {
         setDate(new Date(event.startTime));
     };
 
+    // Handle event update
+    const handleEventUpdate = (updatedEvent: Event) => {
+        setEvents(prevEvents => 
+            prevEvents.map(event => 
+                event.id === updatedEvent.id ? updatedEvent : event
+            )
+        );
+    };
+
+    // Handle event delete
+    const handleEventDelete = (deletedEventId: string) => {
+        setEvents(prevEvents => 
+            prevEvents.filter(event => event.id !== deletedEventId)
+        );
+    };
+
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             <Header />
@@ -77,6 +93,8 @@ const CalendarPage: React.FC = () => {
                             date={date}
                             onNavigate={handleNavigate}
                             newEvent={newEvent}
+                            onEventUpdate={handleEventUpdate}
+                            onEventDelete={handleEventDelete}
                         />
                     </div>
                 )}

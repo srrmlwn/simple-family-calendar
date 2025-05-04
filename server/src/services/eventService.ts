@@ -12,7 +12,6 @@ export class EventService {
     public async create(event: Event): Promise<Event> {
         const eventRepository = AppDataSource.getRepository(Event);
         
-        // Ensure dates are stored in UTC
         if (event.startTime) {
             event.startTime = this.convertToUTC(event.startTime);
         }
@@ -84,15 +83,12 @@ export class EventService {
      */
     public async update(id: string, eventData: Partial<Event>): Promise<Event> {
         const eventRepository = AppDataSource.getRepository(Event);
-        
-        // Get the existing event
         const existingEvent = await this.findById(id);
         
         if (!existingEvent) {
             throw new Error('Event not found');
         }
         
-        // Ensure dates are stored in UTC
         if (eventData.startTime) {
             eventData.startTime = this.convertToUTC(eventData.startTime);
         }
@@ -101,9 +97,7 @@ export class EventService {
             eventData.endTime = this.convertToUTC(eventData.endTime);
         }
         
-        // Update the event
         Object.assign(existingEvent, eventData);
-        
         return await eventRepository.save(existingEvent);
     }
 
@@ -112,8 +106,32 @@ export class EventService {
      * @param id The event ID
      */
     public async delete(id: string): Promise<void> {
-        const eventRepository = AppDataSource.getRepository(Event);
-        await eventRepository.delete(id);
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            await queryRunner.manager
+                .createQueryBuilder()
+                .delete()
+                .from('event_recipients')
+                .where('event_id = :id', { id })
+                .execute();
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .delete()
+                .from('events')
+                .where('id = :id', { id })
+                .execute();
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -172,10 +190,7 @@ export class EventService {
      * @returns The date in UTC
      */
     private convertToUTC(date: Date | string): Date {
-        // If it's a string, parse it first
         const dateObj = typeof date === 'string' ? new Date(date) : date;
-        
-        // Create a new date with the same UTC time
         return new Date(Date.UTC(
             dateObj.getUTCFullYear(),
             dateObj.getUTCMonth(),
@@ -195,7 +210,6 @@ export class EventService {
      */
     private convertFromUTC(date: Date, timezone: string): Date {
         try {
-            // Create a formatter for the specified timezone
             const formatter = new Intl.DateTimeFormat('en-US', {
                 timeZone: timezone,
                 year: 'numeric',
@@ -207,7 +221,6 @@ export class EventService {
                 hour12: false
             });
 
-            // Get the date parts in the specified timezone
             const parts = formatter.formatToParts(date);
             const values: { [key: string]: string } = {};
             
@@ -217,10 +230,7 @@ export class EventService {
                 }
             });
 
-            // Create a new date string in ISO format
             const isoString = `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}`;
-            
-            // Return the date in the specified timezone
             return new Date(isoString);
         } catch (error) {
             console.warn(`Failed to convert date from UTC to timezone ${timezone}, using UTC instead`, error);
@@ -238,7 +248,6 @@ export class EventService {
         const convertedEvent = { ...event };
         
         if (convertedEvent.startTime) {
-            // Convert to moment in user's timezone and format as ISO string without Z
             convertedEvent.startTime = moment(convertedEvent.startTime)
                 .tz(timezone)
                 .format('YYYY-MM-DDTHH:mm:ss.SSS');

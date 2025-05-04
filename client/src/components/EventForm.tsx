@@ -8,15 +8,17 @@ interface EventFormProps {
     onSubmit: (eventData: EventInput) => Promise<void>;
     onCancel: () => void;
     onDelete?: () => Promise<void>;
+    isDeleting?: boolean;
 }
 
 const EventForm: React.FC<EventFormProps> = ({
-                                                 event,
-                                                 initialDate,
-                                                 onSubmit,
-                                                 onCancel,
-                                                 onDelete,
-                                             }) => {
+    event,
+    initialDate,
+    onSubmit,
+    onCancel,
+    onDelete,
+    isDeleting = false
+}) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -167,6 +169,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Event title"
                     required
+                    disabled={isSubmitting || isDeleting}
                 />
             </div>
 
@@ -177,6 +180,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     checked={isAllDay}
                     onChange={(e) => setIsAllDay(e.target.checked)}
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    disabled={isSubmitting || isDeleting}
                 />
                 <label htmlFor="isAllDay" className="ml-2 block text-sm text-gray-700">
                     All-day event
@@ -195,6 +199,7 @@ const EventForm: React.FC<EventFormProps> = ({
                         onChange={(e) => setStartDate(e.target.value)}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
+                        disabled={isSubmitting || isDeleting}
                     />
                 </div>
 
@@ -210,6 +215,7 @@ const EventForm: React.FC<EventFormProps> = ({
                             onChange={(e) => setStartTime(e.target.value)}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             required
+                            disabled={isSubmitting || isDeleting}
                         />
                     </div>
                 )}
@@ -224,6 +230,7 @@ const EventForm: React.FC<EventFormProps> = ({
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        disabled={isSubmitting || isDeleting}
                     />
                 </div>
 
@@ -238,6 +245,7 @@ const EventForm: React.FC<EventFormProps> = ({
                             value={endTime}
                             onChange={(e) => setEndTime(e.target.value)}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            disabled={isSubmitting || isDeleting}
                         />
                     </div>
                 )}
@@ -254,6 +262,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     onChange={(e) => setLocation(e.target.value)}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Event location"
+                    disabled={isSubmitting || isDeleting}
                 />
             </div>
 
@@ -268,6 +277,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     rows={3}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Event description"
+                    disabled={isSubmitting || isDeleting}
                 />
             </div>
 
@@ -284,38 +294,34 @@ const EventForm: React.FC<EventFormProps> = ({
                 />
             </div>
 
-            <div className="flex justify-between pt-2">
-                <div>
-                    {onDelete && (
-                        <button
-                            type="button"
-                            onClick={handleDelete}
-                            disabled={isSubmitting}
-                            className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md disabled:bg-red-300"
-                        >
-                            Delete
-                        </button>
-                    )}
-                </div>
-
-                <div className="space-x-2">
+            <div className="flex justify-between items-center pt-4">
+                <div className="flex gap-2">
+                    <button
+                        type="submit"
+                        disabled={isSubmitting || isDeleting}
+                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSubmitting ? 'Saving...' : 'Save'}
+                    </button>
                     <button
                         type="button"
                         onClick={onCancel}
-                        disabled={isSubmitting}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md disabled:bg-gray-100"
+                        disabled={isSubmitting || isDeleting}
+                        className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Cancel
                     </button>
-
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md disabled:bg-blue-300"
-                    >
-                        {isSubmitting ? 'Saving...' : event ? 'Update' : 'Create'}
-                    </button>
                 </div>
+                {onDelete && (
+                    <button
+                        type="button"
+                        onClick={onDelete}
+                        disabled={isSubmitting || isDeleting}
+                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                    </button>
+                )}
             </div>
         </form>
     );

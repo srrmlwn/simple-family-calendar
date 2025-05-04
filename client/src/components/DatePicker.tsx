@@ -1,26 +1,34 @@
 import React, { useCallback, useEffect } from 'react';
 import moment from 'moment';
-import { Event } from '../services/eventService';
+import { Event, EventInput } from '../services/eventService';
 import DayView from './DayView';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import eventService from '../services/eventService';
 
 interface DatePickerProps {
     events: Event[];
     date: Date;
     onNavigate: (date: Date | 'TODAY') => void;
     newEvent?: Event;
+    onEventUpdate?: (updatedEvent: Event) => void;
+    onEventDelete?: (deletedEventId: string) => void;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
     events,
     date,
     onNavigate,
-    newEvent
+    newEvent,
+    onEventUpdate,
+    onEventDelete
 }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [selectedDate, setSelectedDate] = React.useState<Date>(date);
     const [browsingDate, setBrowsingDate] = React.useState<Date>(date);
+    const [isUpdating, setIsUpdating] = React.useState(false);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
 
     // Sync selectedDate with date prop
     useEffect(() => {
@@ -53,6 +61,42 @@ const DatePicker: React.FC<DatePickerProps> = ({
         setBrowsingDate(newDate);
         onNavigate(newDate);
     }, [browsingDate, onNavigate]);
+
+    // Handle event update
+    const handleEventUpdate = async (eventId: string, eventData: EventInput) => {
+        try {
+            setIsUpdating(true);
+            setError(null);
+            const updatedEvent = await eventService.update(eventId, eventData);
+            if (onEventUpdate) {
+                onEventUpdate(updatedEvent);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to update event');
+            console.error('Error updating event:', err);
+            throw err;
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    // Handle event delete
+    const handleEventDelete = async (eventId: string) => {
+        try {
+            setIsDeleting(true);
+            setError(null);
+            await eventService.delete(eventId);
+            if (onEventDelete) {
+                onEventDelete(eventId);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete event');
+            console.error('Error deleting event:', err);
+            throw err;
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     // Get days for the current month
     const getDaysInMonth = useCallback(() => {
@@ -89,6 +133,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
     return (
         <div className={`${isMobile ? 'flex flex-col gap-4 p-2' : 'flex gap-6 p-6'} w-full h-full justify-center`}>
+            {error && (
+                <div className="fixed top-4 right-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md shadow-lg z-50">
+                    {error}
+                </div>
+            )}
             <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-2/3 max-w-2xl shrink-0'}`}>
                 <div className="bg-white rounded-lg shadow p-2 sm:p-4 h-full flex flex-col">
                     {/* Month Navigation */}
@@ -169,12 +218,14 @@ const DatePicker: React.FC<DatePickerProps> = ({
             </div>
 
             {/* Day View */}
-                <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-1/3 shrink-0'}`}>
+            <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-1/3 shrink-0'}`}>
                 <DayView
                     date={selectedDate}
                     events={events}
                     onNavigate={onNavigate}
                     newEvent={newEvent}
+                    onUpdateEvent={handleEventUpdate}
+                    onDeleteEvent={handleEventDelete}
                 />
             </div>
         </div>
