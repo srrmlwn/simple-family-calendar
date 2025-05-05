@@ -150,151 +150,153 @@ const EventForm: React.FC<EventFormProps> = ({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                    {error}
-                </div>
-            )}
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                        {error}
+                    </div>
+                )}
 
-            <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                    Title *
-                </label>
-                <input
-                    type="text"
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Event title"
-                    required
-                    disabled={isSubmitting || isDeleting}
-                />
-            </div>
-
-            <div className="flex items-center">
-                <input
-                    type="checkbox"
-                    id="isAllDay"
-                    checked={isAllDay}
-                    onChange={(e) => setIsAllDay(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    disabled={isSubmitting || isDeleting}
-                />
-                <label htmlFor="isAllDay" className="ml-2 block text-sm text-gray-700">
-                    All-day event
-                </label>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
-                        Start Date *
+                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                        Title *
                     </label>
                     <input
-                        type="date"
-                        id="startDate"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        type="text"
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Event title"
                         required
                         disabled={isSubmitting || isDeleting}
                     />
                 </div>
 
-                {!isAllDay && (
+                <div className="flex items-center">
+                    <input
+                        type="checkbox"
+                        id="isAllDay"
+                        checked={isAllDay}
+                        onChange={(e) => setIsAllDay(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        disabled={isSubmitting || isDeleting}
+                    />
+                    <label htmlFor="isAllDay" className="ml-2 block text-sm text-gray-700">
+                        All-day event
+                    </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
-                            Start Time *
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
+                            Start Date *
                         </label>
                         <input
-                            type="time"
-                            id="startTime"
-                            value={startTime}
-                            onChange={(e) => setStartTime(e.target.value)}
+                            type="date"
+                            id="startDate"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             required
                             disabled={isSubmitting || isDeleting}
                         />
                     </div>
-                )}
 
-                <div>
-                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
-                        End Date
-                    </label>
-                    <input
-                        type="date"
-                        id="endDate"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        disabled={isSubmitting || isDeleting}
-                    />
-                </div>
+                    {!isAllDay && (
+                        <div>
+                            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
+                                Start Time *
+                            </label>
+                            <input
+                                type="time"
+                                id="startTime"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                required
+                                disabled={isSubmitting || isDeleting}
+                            />
+                        </div>
+                    )}
 
-                {!isAllDay && (
                     <div>
-                        <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
-                            End Time
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
+                            End Date
                         </label>
                         <input
-                            type="time"
-                            id="endTime"
-                            value={endTime}
-                            onChange={(e) => setEndTime(e.target.value)}
+                            type="date"
+                            id="endDate"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             disabled={isSubmitting || isDeleting}
                         />
                     </div>
-                )}
+
+                    {!isAllDay && (
+                        <div>
+                            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
+                                End Time
+                            </label>
+                            <input
+                                type="time"
+                                id="endTime"
+                                value={endTime}
+                                onChange={(e) => setEndTime(e.target.value)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                disabled={isSubmitting || isDeleting}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                <div>
+                    <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                        Location
+                    </label>
+                    <input
+                        type="text"
+                        id="location"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Event location"
+                        disabled={isSubmitting || isDeleting}
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                        Description
+                    </label>
+                    <textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Event description"
+                        disabled={isSubmitting || isDeleting}
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="color" className="block text-sm font-medium text-gray-700">
+                        Color
+                    </label>
+                    <input
+                        type="color"
+                        id="color"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        className="mt-1 block w-full h-8 border border-gray-300 rounded-md shadow-sm p-0 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
             </div>
 
-            <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                    Location
-                </label>
-                <input
-                    type="text"
-                    id="location"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Event location"
-                    disabled={isSubmitting || isDeleting}
-                />
-            </div>
-
-            <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    Description
-                </label>
-                <textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Event description"
-                    disabled={isSubmitting || isDeleting}
-                />
-            </div>
-
-            <div>
-                <label htmlFor="color" className="block text-sm font-medium text-gray-700">
-                    Color
-                </label>
-                <input
-                    type="color"
-                    id="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="mt-1 block w-full h-8 border border-gray-300 rounded-md shadow-sm p-0 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-            </div>
-
-            <div className="flex justify-between items-center pt-4">
+            <div className="flex-shrink-0 flex justify-between items-center p-4 border-t bg-white">
                 <div className="flex gap-2">
                     <button
                         type="submit"

@@ -53,11 +53,11 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         >
             <div
                 ref={contentRef}
-                className="bg-white w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-xl transform transition-transform duration-300 ease-in-out"
+                className="bg-white w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-xl transform transition-transform duration-300 ease-in-out flex flex-col h-[90vh] sm:h-auto sm:max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
                     <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
                     <button
                         onClick={onClose}
@@ -80,7 +80,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-4 max-h-[80vh] overflow-y-auto">
+                <div className="flex-1 min-h-0">
                     {children}
                 </div>
             </div>
