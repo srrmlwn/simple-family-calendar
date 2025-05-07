@@ -1,9 +1,10 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.simplefamilycalendar.app',
-  appName: 'Simple Family Calendar',
+  appId: 'ai.famcal.app',
+  appName: 'famcal.ai',
   webDir: 'build',
+  bundledWebRuntime: false,
   server: {
     // Allow cleartext traffic for development
     cleartext: true,

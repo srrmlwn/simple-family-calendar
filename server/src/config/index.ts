@@ -31,7 +31,7 @@ export default {
         secure: process.env.EMAIL_SECURE === 'true',
         user: process.env.EMAIL_USER || '',
         password: process.env.EMAIL_PASSWORD || '',
-        senderName: process.env.EMAIL_SENDER_NAME || 'Simple Family Calendar'
+        senderName: process.env.EMAIL_SENDER_NAME || 'famcal.ai'
     },
     google: {
         clientId: process.env.GOOGLE_CLIENT_ID || '',

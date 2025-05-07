@@ -50,7 +50,7 @@ const InstallPrompt: React.FC = () => {
   return (
     <div className="fixed bottom-4 left-4 right-4 bg-white rounded-lg shadow-lg p-4 flex items-center justify-between z-50">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">Install Simple Family Calendar</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Install famcal.ai</h3>
         <p className="text-sm text-gray-600">Add this app to your home screen for quick access</p>
       </div>
       <button

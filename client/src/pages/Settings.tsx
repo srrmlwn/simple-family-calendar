@@ -421,7 +421,7 @@ const Settings: React.FC = () => {
                 {showInstallButton && (
                     <div className="bg-white rounded-lg shadow p-6 mb-6">
                         <h2 className="text-xl font-semibold mb-4">Install App</h2>
-                        <p className="mb-4">Install Simple Family Calendar on your device for quick access and offline use.</p>
+                        <p className="mb-4">Install famcal.ai on your device for quick access and offline use.</p>
                         <button
                             onClick={handleInstallClick}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
