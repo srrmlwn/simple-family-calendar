@@ -139,10 +139,21 @@ const Login: React.FC = () => {
         client_id: clientId || '',
         scope: 'email profile',
         callback: async (response) => {
-          if (response.access_token) {
-            await loginWithGoogle(response.access_token);
-            // Redirect after successful Google login
-            navigate('/');
+          try {
+            console.log('Google OAuth callback received:', response);
+            if (response.access_token) {
+              console.log('Calling loginWithGoogle with token');
+              await loginWithGoogle(response.access_token);
+              console.log('Google login successful, redirecting to /');
+              // Use window.location.href for a full page reload
+              window.location.href = '/';
+            } else {
+              console.error('No access token in response');
+              setSubmitError('Failed to get access token from Google');
+            }
+          } catch (err) {
+            console.error('Error in Google callback:', err);
+            setSubmitError('Failed to complete Google login');
           }
         },
       });
