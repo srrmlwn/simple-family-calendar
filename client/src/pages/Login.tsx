@@ -139,6 +139,7 @@ const Login: React.FC = () => {
         client_id: clientId || '',
         scope: 'email profile',
         callback: async (response) => {
+          console.log('Callback invoked, Google response:', response);
           if (response.access_token) {
             await loginWithGoogle(response.access_token);
             // Redirect after successful Google login
