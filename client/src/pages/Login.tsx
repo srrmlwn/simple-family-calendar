@@ -131,8 +131,12 @@ const Login: React.FC = () => {
         throw new Error('Google SDK not loaded');
       }
 
+      const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+      console.log('Google Client ID:', clientId);
+      console.log('Current domain:', window.location.origin);
+
       const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
+        client_id: clientId || '',
         scope: 'email profile',
         callback: async (response) => {
           if (response.access_token) {
