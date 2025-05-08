@@ -66,17 +66,38 @@ const Login: React.FC = () => {
   useEffect(() => {
     // Load Google SDK
     const loadGoogleSDK = () => {
-      if (document.getElementById('google-jssdk')) return;
+      if (document.getElementById('google-jssdk')) {
+        console.log('Google SDK already loaded');
+        return Promise.resolve();
+      }
 
-      const js = document.createElement('script');
-      js.id = 'google-jssdk';
-      js.src = 'https://accounts.google.com/gsi/client';
-      js.async = true;
-      js.defer = true;
-      document.body.appendChild(js);
+      console.log('Loading Google SDK...');
+      return new Promise<void>((resolve, reject) => {
+        const js = document.createElement('script');
+        js.id = 'google-jssdk';
+        js.src = 'https://accounts.google.com/gsi/client';
+        js.async = true;
+        js.defer = true;
+        
+        js.onload = () => {
+          console.log('Google SDK loaded successfully');
+          resolve();
+        };
+        
+        js.onerror = (error) => {
+          console.error('Failed to load Google SDK:', error);
+          reject(new Error('Failed to load Google authentication'));
+        };
+        
+        document.body.appendChild(js);
+      });
     };
 
-    loadGoogleSDK();
+    // Load SDK and handle errors
+    loadGoogleSDK().catch((error) => {
+      console.error('Error loading Google SDK:', error);
+      setSubmitError('Failed to load Google authentication');
+    });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,6 +149,7 @@ const Login: React.FC = () => {
       setSubmitError(null);
       
       if (!window.google) {
+        console.error('Google SDK not loaded');
         throw new Error('Google SDK not loaded');
       }
 
@@ -135,23 +157,39 @@ const Login: React.FC = () => {
       console.log('Google Client ID:', clientId);
       console.log('Current domain:', window.location.origin);
 
+      if (!clientId) {
+        console.error('Google Client ID is missing');
+        throw new Error('Google Client ID is not configured');
+      }
+
+      console.log('Initializing Google OAuth client...');
       const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: clientId || '',
+        client_id: clientId,
         scope: 'email profile',
         callback: async (response) => {
-          console.log('Callback invoked, Google response:', response);
-          if (response.access_token) {
-            await loginWithGoogle(response.access_token);
-            // Redirect after successful Google login
-            navigate('/');
+          try {
+            console.log('Google OAuth callback received:', response);
+            if (response.access_token) {
+              console.log('Got access token, logging in...');
+              await loginWithGoogle(response.access_token);
+              console.log('Google login successful, redirecting to /');
+              navigate('/');
+            } else {
+              console.error('No access token in response');
+              setSubmitError('Failed to get authorization from Google');
+            }
+          } catch (err) {
+            console.error('Error in Google callback:', err);
+            setSubmitError('Failed to complete Google login');
           }
         },
       });
       
+      console.log('Requesting access token...');
       client.requestAccessToken();
     } catch (err) {
-      setSubmitError('Failed to initialize Google login');
       console.error('Google login error:', err);
+      setSubmitError(err instanceof Error ? err.message : 'Failed to initialize Google login');
     }
   };
 
