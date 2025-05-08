@@ -102,12 +102,12 @@ const authService = {
     },
 
     // Google login
-    loginWithGoogle: async (code: string): Promise<AuthResponse> => {
+    loginWithGoogle: async (token: string): Promise<AuthResponse> => {
         try {
-            log('info', 'Attempting Google login with authorization code');
+            log('info', 'Attempting Google login');
             
             const response = await api.post<AuthResponse>('/auth/google', {
-                code,
+                token,
             });
             
             log('info', 'Google login successful:', { 
