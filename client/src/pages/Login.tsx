@@ -12,7 +12,12 @@ declare global {
           initTokenClient: (config: {
             client_id: string;
             scope: string;
-            callback: (response: { access_token: string }) => void;
+            prompt?: 'consent' | 'select_account';
+            callback: (response: { 
+              access_token?: string;
+              error?: string;
+              error_description?: string;
+            }) => void;
           }) => {
             requestAccessToken: () => void;
           };
@@ -165,7 +170,8 @@ const Login: React.FC = () => {
       console.log('Initializing Google OAuth client...');
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
-        scope: 'email profile',
+        scope: 'email profile openid',
+        prompt: 'consent',
         callback: async (response) => {
           try {
             console.log('Google OAuth callback received:', response);
@@ -174,6 +180,9 @@ const Login: React.FC = () => {
               await loginWithGoogle(response.access_token);
               console.log('Google login successful, redirecting to /');
               navigate('/');
+            } else if (response.error) {
+              console.error('Google OAuth error:', response.error);
+              setSubmitError(`Google authentication failed: ${response.error}`);
             } else {
               console.error('No access token in response');
               setSubmitError('Failed to get authorization from Google');
@@ -186,7 +195,13 @@ const Login: React.FC = () => {
       });
       
       console.log('Requesting access token...');
-      client.requestAccessToken();
+      try {
+        client.requestAccessToken();
+        console.log('Access token request sent successfully');
+      } catch (err) {
+        console.error('Error requesting access token:', err);
+        setSubmitError('Failed to request Google authentication');
+      }
     } catch (err) {
       console.error('Google login error:', err);
       setSubmitError(err instanceof Error ? err.message : 'Failed to initialize Google login');
