@@ -11,7 +11,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
         "script-src 'self';" +
         "style-src 'self' 'unsafe-inline';" +
         "img-src 'self' data: https:;" +
-        "connect-src 'self';" +
+        "connect-src 'self' https://simple-family-calendar-8282627220c3.herokuapp.com;" +
         "frame-src 'self';"
     );
 
