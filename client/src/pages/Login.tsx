@@ -9,12 +9,13 @@ declare global {
     google?: {
       accounts: {
         oauth2: {
-          initTokenClient: (config: {
+          initCodeClient: (config: {
             client_id: string;
             scope: string;
-            callback: (response: { access_token: string }) => void;
+            ux_mode: 'popup' | 'redirect';
+            callback: (response: { code: string }) => void;
           }) => {
-            requestAccessToken: () => void;
+            requestCode: () => void;
           };
         };
       };
@@ -156,20 +157,22 @@ const Login: React.FC = () => {
       }
 
       console.log('Initializing Google OAuth client...');
-      const client = window.google.accounts.oauth2.initTokenClient({
+      const client = window.google.accounts.oauth2.initCodeClient({
         client_id: clientId,
         scope: 'email profile',
+        ux_mode: 'popup',
         callback: async (response) => {
           try {
             console.log('Google OAuth callback received:', response);
-            if (response.access_token) {
-              console.log('Calling loginWithGoogle with token');
-              await loginWithGoogle(response.access_token);
+            if (response.code) {
+              console.log('Got authorization code, exchanging for token...');
+              // Send the code to your backend to exchange for tokens
+              await loginWithGoogle(response.code);
               console.log('Google login successful, redirecting to /');
               window.location.href = '/';
             } else {
-              console.error('No access token in response');
-              setSubmitError('Failed to get access token from Google');
+              console.error('No authorization code in response');
+              setSubmitError('Failed to get authorization from Google');
             }
           } catch (err) {
             console.error('Error in Google callback:', err);
@@ -178,8 +181,8 @@ const Login: React.FC = () => {
         },
       });
       
-      console.log('Requesting access token...');
-      client.requestAccessToken();
+      console.log('Requesting authorization code...');
+      client.requestCode();
     } catch (err) {
       console.error('Google login error:', err);
       setSubmitError(err instanceof Error ? err.message : 'Failed to initialize Google login');

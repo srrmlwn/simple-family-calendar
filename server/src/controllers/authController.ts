@@ -133,13 +133,13 @@ export class AuthController {
      */
     public loginWithGoogle = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const { token } = req.body;
+            const { code } = req.body;
 
-            if (!token) {
-                return res.status(400).json({ error: 'Google token is required' });
+            if (!code) {
+                return res.status(400).json({ error: 'Authorization code is required' });
             }
 
-            const result = await this.authService.loginWithGoogle(token);
+            const result = await this.authService.loginWithGoogle(code);
 
             return res.json({
                 user: {

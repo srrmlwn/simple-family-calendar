@@ -135,7 +135,7 @@ export class AuthService {
     /**
      * Login or register user with Google OAuth
      */
-    public async loginWithGoogle(token: string): Promise<{
+    public async loginWithGoogle(code: string): Promise<{
         id: string;
         email: string;
         firstName: string;
@@ -143,13 +143,20 @@ export class AuthService {
         token: string;
     }> {
         try {
-            // Exchange the access token for user info
-            const ticket = await this.googleClient.getTokenInfo(token);
-            
+            // Exchange the authorization code for tokens
+            const { tokens } = await this.googleClient.getToken({
+                code,
+                redirect_uri: 'postmessage'
+            });
+
+            if (!tokens.access_token) {
+                throw new Error('Failed to get access token from Google');
+            }
+
             // Get user info using the access token
             const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${tokens.access_token}`
                 }
             });
 
