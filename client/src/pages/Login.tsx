@@ -66,13 +66,27 @@ const Login: React.FC = () => {
   useEffect(() => {
     // Load Google SDK
     const loadGoogleSDK = () => {
-      if (document.getElementById('google-jssdk')) return;
+      if (document.getElementById('google-jssdk')) {
+        console.log('Google SDK already loaded');
+        return;
+      }
 
+      console.log('Loading Google SDK...');
       const js = document.createElement('script');
       js.id = 'google-jssdk';
       js.src = 'https://accounts.google.com/gsi/client';
       js.async = true;
       js.defer = true;
+      
+      js.onload = () => {
+        console.log('Google SDK loaded successfully');
+      };
+      
+      js.onerror = (error) => {
+        console.error('Failed to load Google SDK:', error);
+        setSubmitError('Failed to load Google authentication');
+      };
+      
       document.body.appendChild(js);
     };
 
@@ -128,6 +142,7 @@ const Login: React.FC = () => {
       setSubmitError(null);
       
       if (!window.google) {
+        console.error('Google SDK not loaded');
         throw new Error('Google SDK not loaded');
       }
 
@@ -135,8 +150,14 @@ const Login: React.FC = () => {
       console.log('Google Client ID:', clientId);
       console.log('Current domain:', window.location.origin);
 
+      if (!clientId) {
+        console.error('Google Client ID is missing');
+        throw new Error('Google Client ID is not configured');
+      }
+
+      console.log('Initializing Google OAuth client...');
       const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: clientId || '',
+        client_id: clientId,
         scope: 'email profile',
         callback: async (response) => {
           try {
@@ -145,7 +166,6 @@ const Login: React.FC = () => {
               console.log('Calling loginWithGoogle with token');
               await loginWithGoogle(response.access_token);
               console.log('Google login successful, redirecting to /');
-              // Use window.location.href for a full page reload
               window.location.href = '/';
             } else {
               console.error('No access token in response');
@@ -158,10 +178,11 @@ const Login: React.FC = () => {
         },
       });
       
+      console.log('Requesting access token...');
       client.requestAccessToken();
     } catch (err) {
-      setSubmitError('Failed to initialize Google login');
       console.error('Google login error:', err);
+      setSubmitError(err instanceof Error ? err.message : 'Failed to initialize Google login');
     }
   };
 
