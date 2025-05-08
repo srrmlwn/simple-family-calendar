@@ -8,11 +8,11 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     res.setHeader(
         'Content-Security-Policy',
         "default-src 'self';" +
-        "script-src 'self' https://accounts.google.com/gsi/client https://apis.google.com;" +
+        "script-src 'self';" +
         "style-src 'self' 'unsafe-inline';" +
         "img-src 'self' data: https:;" +
-        "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com;" +
-        "frame-src 'self' https://accounts.google.com;"
+        "connect-src 'self';" +
+        "frame-src 'self';"
     );
 
     // Other security headers
