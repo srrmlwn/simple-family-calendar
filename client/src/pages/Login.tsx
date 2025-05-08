@@ -55,7 +55,7 @@ const Login: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loading, error } = useAuth();
+  const { login, loading, error } = useAuth();
 
   // Check for auth error message on component mount
   useEffect(() => {
@@ -65,44 +65,6 @@ const Login: React.FC = () => {
       // Clear the error message from sessionStorage
       sessionStorage.removeItem('authError');
     }
-  }, []);
-
-  // Initialize Google SDK
-  useEffect(() => {
-    // Load Google SDK
-    const loadGoogleSDK = () => {
-      if (document.getElementById('google-jssdk')) {
-        console.log('Google SDK already loaded');
-        return Promise.resolve();
-      }
-
-      console.log('Loading Google SDK...');
-      return new Promise<void>((resolve, reject) => {
-        const js = document.createElement('script');
-        js.id = 'google-jssdk';
-        js.src = 'https://accounts.google.com/gsi/client';
-        js.async = true;
-        js.defer = true;
-        
-        js.onload = () => {
-          console.log('Google SDK loaded successfully');
-          resolve();
-        };
-        
-        js.onerror = (error) => {
-          console.error('Failed to load Google SDK:', error);
-          reject(new Error('Failed to load Google authentication'));
-        };
-        
-        document.body.appendChild(js);
-      });
-    };
-
-    // Load SDK and handle errors
-    loadGoogleSDK().catch((error) => {
-      console.error('Error loading Google SDK:', error);
-      setSubmitError('Failed to load Google authentication');
-    });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,65 +111,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setSubmitError(null);
-      
-      if (!window.google) {
-        console.error('Google SDK not loaded');
-        throw new Error('Google SDK not loaded');
-      }
-
-      const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-      console.log('Google Client ID:', clientId);
-      console.log('Current domain:', window.location.origin);
-
-      if (!clientId) {
-        console.error('Google Client ID is missing');
-        throw new Error('Google Client ID is not configured');
-      }
-
-      console.log('Initializing Google OAuth client...');
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: 'email profile openid',
-        prompt: 'consent',
-        callback: async (response) => {
-          try {
-            console.log('Google OAuth callback received:', response);
-            if (response.access_token) {
-              console.log('Got access token, logging in...');
-              await loginWithGoogle(response.access_token);
-              console.log('Google login successful, redirecting to /');
-              navigate('/');
-            } else if (response.error) {
-              console.error('Google OAuth error:', response.error);
-              setSubmitError(`Google authentication failed: ${response.error}`);
-            } else {
-              console.error('No access token in response');
-              setSubmitError('Failed to get authorization from Google');
-            }
-          } catch (err) {
-            console.error('Error in Google callback:', err);
-            setSubmitError('Failed to complete Google login');
-          }
-        },
-      });
-      
-      console.log('Requesting access token...');
-      try {
-        client.requestAccessToken();
-        console.log('Access token request sent successfully');
-      } catch (err) {
-        console.error('Error requesting access token:', err);
-        setSubmitError('Failed to request Google authentication');
-      }
-    } catch (err) {
-      console.error('Google login error:', err);
-      setSubmitError(err instanceof Error ? err.message : 'Failed to initialize Google login');
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -221,24 +124,6 @@ const Login: React.FC = () => {
         </div>
 
         <div className="mt-8 space-y-6">
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-          >
-            <GoogleIcon />
-            Sign in with Google
-          </button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
-            </div>
-          </div>
-
           <form className="space-y-6" onSubmit={handleSubmit}>
             {(submitError || error) && (
               <div className="rounded-md bg-red-50 p-4">

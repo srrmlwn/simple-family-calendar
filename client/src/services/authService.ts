@@ -101,32 +101,6 @@ const authService = {
         }
     },
 
-    // Google login
-    loginWithGoogle: async (token: string): Promise<AuthResponse> => {
-        try {
-            log('info', 'Attempting Google login');
-            
-            const response = await api.post<AuthResponse>('/auth/google', {
-                token,
-            });
-            
-            log('info', 'Google login successful:', { 
-                userId: response.data.user.id 
-            });
-            
-            return response.data;
-        } catch (error) {
-            log('error', 'Google login failed:', { 
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
-            
-            if (error instanceof Error) {
-                throw error;
-            }
-            throw new Error('Failed to login with Google');
-        }
-    },
-
     // Get current user info
     getCurrentUser: async (): Promise<User> => {
         try {

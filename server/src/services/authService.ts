@@ -4,20 +4,8 @@ import { User } from '../entities/User';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config';
-import { OAuth2Client } from 'google-auth-library';
-import fetch from 'node-fetch';
 
 export class AuthService {
-    private googleClient: OAuth2Client;
-
-    constructor() {
-        this.googleClient = new OAuth2Client(
-            config.google.clientId,
-            config.google.clientSecret,
-            'postmessage' // Required for token exchange
-        );
-    }
-
     /**
      * Register a new user
      */
@@ -130,72 +118,6 @@ export class AuthService {
         };
 
         return jwt.sign(payload, secret, options);
-    }
-
-    /**
-     * Login or register user with Google OAuth
-     */
-    public async loginWithGoogle(token: string): Promise<{
-        id: string;
-        email: string;
-        firstName: string;
-        lastName: string;
-        token: string;
-    }> {
-        try {
-            // Exchange the access token for user info
-            const ticket = await this.googleClient.getTokenInfo(token);
-            
-            // Get user info using the access token
-            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            if (!userInfoResponse.ok) {
-                throw new Error('Failed to fetch user info from Google');
-            }
-
-            const userInfo = await userInfoResponse.json();
-            const { email, given_name, family_name } = userInfo;
-
-            if (!email) {
-                throw new Error('Email not provided by Google');
-            }
-
-            const userRepository = AppDataSource.getRepository(User);
-            
-            // Check if user exists
-            let user = await userRepository.findOne({
-                where: { email }
-            });
-
-            if (!user) {
-                // Create new user if doesn't exist
-                user = new User();
-                user.email = email;
-                user.firstName = given_name || '';
-                user.lastName = family_name || '';
-                // For Google users, we don't need a password
-                user.passwordHash = '';
-                user = await userRepository.save(user);
-            }
-
-            // Generate JWT token
-            const jwtToken = this.generateToken(user);
-
-            return {
-                id: user.id,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                token: jwtToken
-            };
-        } catch (error) {
-            console.error('Google login error:', error);
-            throw new Error('Failed to authenticate with Google');
-        }
     }
 }
 

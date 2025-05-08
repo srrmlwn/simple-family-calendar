@@ -127,34 +127,6 @@ export class AuthController {
             return res.status(500).json({ error: 'Failed to get user information' });
         }
     };
-
-    /**
-     * Login with Google OAuth
-     */
-    public loginWithGoogle = async (req: Request, res: Response): Promise<Response> => {
-        try {
-            const { token } = req.body;
-
-            if (!token) {
-                return res.status(400).json({ error: 'Google token is required' });
-            }
-
-            const result = await this.authService.loginWithGoogle(token);
-
-            return res.json({
-                user: {
-                    id: result.id,
-                    email: result.email,
-                    firstName: result.firstName,
-                    lastName: result.lastName
-                },
-                token: result.token
-            });
-        } catch (error) {
-            console.error('Error logging in with Google:', error);
-            return res.status(500).json({ error: 'Failed to login with Google' });
-        }
-    };
 }
 
 export default new AuthController();
