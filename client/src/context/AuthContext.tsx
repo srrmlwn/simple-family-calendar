@@ -97,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error?: string;
           error_description?: string;
         }) => {
+          console.log("Callback invoked - Google OAuth response:", response);
           if (response.error) {
             console.error('Google OAuth error:', response.error);
             setError(response.error_description || 'Google authentication failed');
@@ -115,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         },
       });
-
+      console.log("Requesting access token. Client:", JSON.stringify(client));
       client.requestAccessToken();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initiate Google login');
