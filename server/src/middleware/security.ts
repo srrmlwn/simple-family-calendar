@@ -8,11 +8,13 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     res.setHeader(
         'Content-Security-Policy',
         "default-src 'self';" +
-        "script-src 'self' https://accounts.google.com https://apis.google.com 'unsafe-inline';" +
-        "style-src 'self' 'unsafe-inline';" +
+        "script-src 'self' https://accounts.google.com https://apis.google.com https://www.gstatic.com 'unsafe-inline' 'unsafe-eval';" +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;" +
+        "font-src 'self' https://fonts.gstatic.com data:;" +
         "img-src 'self' data: https:;" +
-        "connect-src 'self' https://simple-family-calendar-8282627220c3.herokuapp.com https://accounts.google.com https://www.googleapis.com;" +
-        "frame-src 'self' https://accounts.google.com;"
+        "connect-src 'self' https://simple-family-calendar-8282627220c3.herokuapp.com https://accounts.google.com https://www.googleapis.com https://oauth2.googleapis.com;" +
+        "frame-src 'self' https://accounts.google.com;" +
+        "worker-src 'self' blob:;"
     );
 
     // Other security headers
