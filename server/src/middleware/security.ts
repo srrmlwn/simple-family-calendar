@@ -4,7 +4,8 @@ import { Request, Response, NextFunction } from 'express';
  * Security middleware to set various security headers
  */
 export const securityHeaders = (req: Request, res: Response, next: NextFunction): void => {
-    // Content Security Policy
+    // Content Security Policy - Temporarily disabled for testing
+    /*
     res.setHeader(
         'Content-Security-Policy',
         "default-src 'self';" +
@@ -21,8 +22,10 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
         "frame-ancestors 'none';" +
         "upgrade-insecure-requests;"
     );
+    */
 
     // Other security headers
+    // res.setHeader('X-Content-Type-Options', 'nosniff');  // Already removed
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
