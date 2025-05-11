@@ -40,7 +40,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleClientLoaded, setIsGoogleClientLoaded] = useState<boolean>(false);
   const navigate = useNavigate();
+
+  // Check if Google client is loaded
+  useEffect(() => {
+    const checkGoogleClient = () => {
+      if (window.google?.accounts?.oauth2?.initTokenClient) {
+        setIsGoogleClientLoaded(true);
+      } else {
+        // Check again after a short delay
+        setTimeout(checkGoogleClient, 100);
+      }
+    };
+    checkGoogleClient();
+  }, []);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -71,14 +85,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       console.log("AuthContext - Initiating Google login with popup");
 
-      if (!window.google?.accounts?.oauth2?.initTokenClient) {
-        throw new Error('Google OAuth client not loaded');
+      if (!isGoogleClientLoaded) {
+        throw new Error('Google OAuth client is still loading. Please try again in a moment.');
       }
 
-      const client = window.google.accounts.oauth2.initTokenClient({
+      const client = (window as any).google.accounts.oauth2.initTokenClient({
         client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
         scope: 'email profile',
-        callback: async (response) => {
+        callback: async (response: { 
+          access_token?: string;
+          error?: string;
+          error_description?: string;
+        }) => {
           if (response.error) {
             console.error('Google OAuth error:', response.error);
             setError(response.error_description || 'Google authentication failed');
