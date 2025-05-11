@@ -136,19 +136,6 @@ const EventForm: React.FC<EventFormProps> = ({
         }
     };
 
-    const handleDelete = async () => {
-        if (onDelete && window.confirm('Are you sure you want to delete this event?')) {
-            try {
-                setIsSubmitting(true);
-                await onDelete();
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to delete event');
-                console.error('Error deleting event:', err);
-                setIsSubmitting(false);
-            }
-        }
-    };
-
     return (
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">

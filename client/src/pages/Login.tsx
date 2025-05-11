@@ -50,12 +50,13 @@ const GoogleIcon = () => (
 );
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
+  const { login, loginWithGoogle, loading, error } = useAuth();
   const navigate = useNavigate();
-  const { login, loading, error } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Check for auth error message on component mount
   useEffect(() => {
@@ -72,20 +73,20 @@ const Login: React.FC = () => {
 
     try {
       setSubmitError(null);
-      console.log('Attempting login with email:', email);
+      console.log('Attempting login with email:', formData.email);
 
-      if (!email.trim()) {
+      if (!formData.email.trim()) {
         setSubmitError('Email is required');
         return;
       }
 
-      if (!password) {
+      if (!formData.password) {
         setSubmitError('Password is required');
         return;
       }
 
       console.log('Calling login function...');
-      await login(email, password);
+      await login(formData.email, formData.password);
       console.log('Login successful, redirecting...');
 
       // Redirect after successful login
@@ -112,18 +113,42 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            famcal.ai
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
-          </p>
-        </div>
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <img
+          className="mx-auto h-24 w-auto"
+          src="/landing_logo.png"
+          alt="famcal.ai"
+        />
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Sign in to your account
+        </h2>
+      </div>
 
-        <div className="mt-8 space-y-6">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {/* Google Sign In Button */}
+          <div className="mb-6">
+            <button
+              onClick={loginWithGoogle}
+              disabled={loading}
+              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <GoogleIcon />
+              Sign in with Google
+            </button>
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Existing login form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             {(submitError || error) && (
               <div className="rounded-md bg-red-50 p-4">
@@ -142,8 +167,8 @@ const Login: React.FC = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Email address"
                   disabled={loading}
@@ -157,8 +182,8 @@ const Login: React.FC = () => {
                   type="password"
                   autoComplete="current-password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Password"
                   disabled={loading}
@@ -176,15 +201,15 @@ const Login: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
 
-        <div className="text-sm text-center">
-          <p>
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Register here
-            </Link>
-          </p>
+          <div className="text-sm text-center">
+            <p>
+              Don't have an account?{' '}
+              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                Register here
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

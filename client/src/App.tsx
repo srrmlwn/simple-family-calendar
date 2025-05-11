@@ -10,8 +10,8 @@ import { AuthProvider } from './context/AuthContext';
 const App: React.FC = () => {
     console.log("Loading App!");
     return (
-        <AuthProvider>
-            <Router>
+        <Router>
+            <AuthProvider>
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
@@ -26,8 +26,8 @@ const App: React.FC = () => {
                         </PrivateRoute>
                     } />
                 </Routes>
-            </Router>
-        </AuthProvider>
+            </AuthProvider>
+        </Router>
     );
 };
 

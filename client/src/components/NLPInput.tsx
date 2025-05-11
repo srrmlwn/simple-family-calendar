@@ -96,6 +96,27 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
         };
     }, []);
 
+    useEffect(() => {
+        if (recognition) {
+            recognition.onresult = (event: SpeechRecognitionEvent) => {
+                const transcript = event.results[0][0].transcript;
+                setInputText(transcript);
+                setIsListening(false);
+            };
+            recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+                console.error('Speech recognition error:', event.error);
+                setError('Voice recognition failed. Please try again.');
+                setIsListening(false);
+            };
+        }
+        return () => {
+            if (recognition) {
+                (recognition.onresult as any) = null;
+                (recognition.onerror as any) = null;
+            }
+        };
+    }, [recognition]);
+
     const handleSubmit = async () => {
         if (!inputText.trim()) return;
 

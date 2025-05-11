@@ -27,7 +27,7 @@ export class EventController {
     public createEventFromText = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { text, timezone } = req.body;
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
 
             if (!text) {
                 return res.status(400).json({ error: 'Text input is required' });
@@ -110,7 +110,7 @@ export class EventController {
      */
     public getAllEvents = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
             const { start, end, timezone } = req.query;
 
             if (!timezone) {
@@ -140,7 +140,7 @@ export class EventController {
     public getEventById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
             const { timezone } = req.query;
 
             if (!timezone) {
@@ -171,7 +171,7 @@ export class EventController {
     public createEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { timezone, ...eventData } = req.body;
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
 
             if (!timezone) {
                 return res.status(400).json({ error: 'Timezone is required' });
@@ -271,7 +271,7 @@ export class EventController {
     public updateEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
             const updates = req.body;
 
             // Get the existing event
@@ -321,7 +321,7 @@ export class EventController {
     public deleteEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
 
             // Get the existing event and recipients before deletion
             const existingEvent = await this.eventService.findById(id);

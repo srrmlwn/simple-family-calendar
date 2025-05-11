@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '../components/Header';
 import DatePicker from '../components/DatePicker';
 import NLPInput from '../components/NLPInput';
@@ -11,13 +11,8 @@ const CalendarPage: React.FC = () => {
     const [date, setDate] = useState<Date>(new Date());
     const [newEvent, setNewEvent] = useState<Event | undefined>(undefined);
 
-    // Fetch events on component mount and when date changes
-    useEffect(() => {
-        fetchEvents();
-    }, [date]);
-
     // Fetch events from API with date range filtering
-    const fetchEvents = async () => {
+    const fetchEvents = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -35,10 +30,14 @@ const CalendarPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [date]); // Only recreate when date changes
+
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
 
     // Handle date navigation
-    const handleNavigate = (newDate: Date | 'TODAY') => {
+    const handleNavigate = useCallback((newDate: Date | 'TODAY') => {
         if (newDate === 'TODAY') {
             setDate(new Date());
         } else {
@@ -46,30 +45,30 @@ const CalendarPage: React.FC = () => {
         }
         // Clear the new event highlight when navigating to a different date
         setNewEvent(undefined);
-    };
+    }, []);
 
     // Handle new event
-    const handleNewEvent = (event: Event) => {
+    const handleNewEvent = useCallback((event: Event) => {
         setEvents(prevEvents => [...prevEvents, event]);
         setNewEvent(event);
         setDate(new Date(event.startTime));
-    };
+    }, []);
 
     // Handle event update
-    const handleEventUpdate = (updatedEvent: Event) => {
+    const handleEventUpdate = useCallback((updatedEvent: Event) => {
         setEvents(prevEvents => 
             prevEvents.map(event => 
                 event.id === updatedEvent.id ? updatedEvent : event
             )
         );
-    };
+    }, []);
 
     // Handle event delete
-    const handleEventDelete = (deletedEventId: string) => {
+    const handleEventDelete = useCallback((deletedEventId: string) => {
         setEvents(prevEvents => 
             prevEvents.filter(event => event.id !== deletedEventId)
         );
-    };
+    }, []);
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">

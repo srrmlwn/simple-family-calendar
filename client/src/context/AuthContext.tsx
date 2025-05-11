@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 
 interface User {
@@ -14,6 +15,8 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => void;
+  handleGoogleCallback: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   error: string | null;
@@ -25,6 +28,8 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   login: async () => {},
   register: async () => {},
+  loginWithGoogle: () => {},
+  handleGoogleCallback: async () => {},
   logout: () => {},
   loading: false,
   error: null,
@@ -35,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Check if user is already logged in
   useEffect(() => {
@@ -49,6 +55,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+  // Handle successful authentication
+  const handleAuthSuccess = useCallback((authResponse: { user: User; token: string }) => {
+    setUser(authResponse.user);
+    setToken(authResponse.token);
+    localStorage.setItem('token', authResponse.token);
+    localStorage.setItem('user', JSON.stringify(authResponse.user));
+    navigate('/', { replace: true });
+  }, [navigate]);
+
+  // Login with Google
+  const loginWithGoogle = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("AuthContext - Initiating Google login with popup");
+
+      if (!window.google?.accounts?.oauth2?.initTokenClient) {
+        throw new Error('Google OAuth client not loaded');
+      }
+
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
+        scope: 'email profile',
+        callback: async (response) => {
+          if (response.error) {
+            console.error('Google OAuth error:', response.error);
+            setError(response.error_description || 'Google authentication failed');
+            return;
+          }
+
+          if (response.access_token) {
+            try {
+              // Send the token to our backend
+              const authResponse = await authService.verifyGoogleToken(response.access_token);
+              handleAuthSuccess(authResponse);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Failed to complete Google authentication');
+              console.error('Google token verification error:', err);
+            }
+          }
+        },
+      });
+
+      client.requestAccessToken();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to initiate Google login');
+      console.error('Google login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Login user
   const login = async (email: string, password: string) => {
     try {
@@ -56,19 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       console.log("AuthContext - Logging in user - " + email + ", " + password);
       const response = await authService.login(email, password);
-
       if (response) {
-        setUser(response.user);
-        setToken(response.token);
-
-        console.log("Storing token " + response.token + " and user " + response.user + " in local storage");
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        handleAuthSuccess(response);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login');
       console.error('Login error:', err);
-      console.error('Login error details xxxx:', JSON.stringify(err));
     } finally {
       setLoading(false);
     }
@@ -79,20 +130,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
-
       console.log("AuthContext - Registering user - " + firstName + ", " + lastName);
       const response = await authService.register(firstName, lastName, email, password);
-
       if (response) {
-        setUser(response.user);
-        setToken(response.token);
-
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        handleAuthSuccess(response);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to register');
       console.error('Registration error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Google OAuth callback
+  const handleGoogleCallback = async (token: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("AuthContext - Handling Google callback");
+      
+      const response = await authService.handleGoogleCallback(token);
+      
+      setUser(response.user);
+      setToken(response.token);
+      
+      console.log("Storing Google auth token and user in local storage");
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete Google authentication');
+      console.error('Google callback error:', err);
     } finally {
       setLoading(false);
     }
@@ -110,11 +178,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!token,
+        isAuthenticated: !!user,
         user,
         token,
         login,
         register,
+        loginWithGoogle,
+        handleGoogleCallback,
         logout,
         loading,
         error,

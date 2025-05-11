@@ -4,6 +4,8 @@ import { AuthService } from '../services/authService';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import bcrypt from "bcrypt";
+import passport from 'passport';
+import { NextFunction } from 'express';
 
 export class AuthController {
     private authService: AuthService;
@@ -104,7 +106,7 @@ export class AuthController {
      */
     public getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = req.user?.id;
+            const userId = (req.user as any)?.id;
 
             if (!userId) {
                 return res.status(401).json({ error: 'Not authenticated' });
@@ -125,6 +127,31 @@ export class AuthController {
         } catch (error) {
             console.error('Error getting current user:', error);
             return res.status(500).json({ error: 'Failed to get user information' });
+        }
+    };
+
+    /**
+     * Verify Google OAuth token and create/update user
+     */
+    public verifyGoogleToken = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { accessToken } = req.body;
+            
+            if (!accessToken) {
+                res.status(400).json({ error: 'Access token is required' });
+                return;
+            }
+
+            // Verify token and get user info from Google
+            const user = await this.authService.verifyGoogleToken(accessToken);
+            
+            // Generate JWT token
+            const token = this.authService.generateToken(user);
+            
+            res.json({ user, token });
+        } catch (error) {
+            console.error('Google token verification error:', error);
+            res.status(401).json({ error: 'Failed to verify Google token' });
         }
     };
 }

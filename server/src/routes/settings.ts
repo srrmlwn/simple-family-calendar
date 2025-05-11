@@ -9,7 +9,7 @@ const router = Router();
 
 // Get user settings
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);
     let settings = await settingsRepository.findOne({
@@ -36,7 +36,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
 // Update user settings
 router.put('/', asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
     const { theme, timeFormat, timezone, notificationPreferences } = req.body;
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);

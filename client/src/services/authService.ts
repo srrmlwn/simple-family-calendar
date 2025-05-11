@@ -1,5 +1,4 @@
 import api from './api';
-import { Capacitor } from '@capacitor/core';
 
 interface User {
     id: string;
@@ -15,18 +14,8 @@ interface AuthResponse {
 
 // Logging utility
 const log = (level: 'info' | 'error', message: string, data?: any) => {
-    const timestamp = new Date().toISOString();
-    const logData = {
-        timestamp,
-        level,
-        message,
-        ...data
-    };
-    
-    if (level === 'error') {
-        console.error(JSON.stringify(logData));
-    } else {
-        console.log(JSON.stringify(logData));
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`[AuthService] ${level.toUpperCase()}: ${message}`, data || '');
     }
 };
 
@@ -120,6 +109,58 @@ const authService = {
             });
             
             throw new Error('Failed to get user information');
+        }
+    },
+
+    // Handle Google OAuth callback
+    handleGoogleCallback: async (token: string): Promise<AuthResponse> => {
+        try {
+            log('info', 'Handling Google OAuth callback', { token: token.substring(0, 10) + '...' });
+            
+            // Get user info using the token
+            const response = await api.get<User>('/auth/me', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            log('info', 'Google OAuth callback successful', { 
+                userId: response.data.id,
+                email: response.data.email 
+            });
+
+            return {
+                user: response.data,
+                token
+            };
+        } catch (error) {
+            log('error', 'Google OAuth callback failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+            throw new Error('Failed to complete Google authentication');
+        }
+    },
+
+    // Verify Google OAuth token
+    verifyGoogleToken: async (accessToken: string): Promise<AuthResponse> => {
+        try {
+            log('info', 'Verifying Google OAuth token');
+            
+            const response = await api.post<AuthResponse>('/auth/google/verify', {
+                accessToken
+            });
+            
+            log('info', 'Google token verification successful', { 
+                userId: response.data.user.id,
+                email: response.data.user.email 
+            });
+            
+            return response.data;
+        } catch (error) {
+            log('error', 'Google token verification failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+            throw new Error('Failed to verify Google token');
         }
     },
 };

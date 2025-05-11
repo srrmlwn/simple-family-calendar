@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
 import DayView from './DayView';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import eventService from '../services/eventService';
 
 interface DatePickerProps {
@@ -24,11 +24,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
     onEventDelete
 }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const [selectedDate, setSelectedDate] = React.useState<Date>(date);
-    const [browsingDate, setBrowsingDate] = React.useState<Date>(date);
-    const [isUpdating, setIsUpdating] = React.useState(false);
-    const [isDeleting, setIsDeleting] = React.useState(false);
-    const [error, setError] = React.useState<string | null>(null);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [browsingDate, setBrowsingDate] = useState<Date>(date);
+    const [error, setError] = useState<string | null>(null);
 
     // Sync selectedDate with date prop
     useEffect(() => {
@@ -65,7 +63,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
     // Handle event update
     const handleEventUpdate = async (eventId: string, eventData: EventInput) => {
         try {
-            setIsUpdating(true);
             setError(null);
             const updatedEvent = await eventService.update(eventId, eventData);
             if (onEventUpdate) {
@@ -75,15 +72,12 @@ const DatePicker: React.FC<DatePickerProps> = ({
             setError(err instanceof Error ? err.message : 'Failed to update event');
             console.error('Error updating event:', err);
             throw err;
-        } finally {
-            setIsUpdating(false);
         }
     };
 
     // Handle event delete
     const handleEventDelete = async (eventId: string) => {
         try {
-            setIsDeleting(true);
             setError(null);
             await eventService.delete(eventId);
             if (onEventDelete) {
@@ -93,8 +87,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
             setError(err instanceof Error ? err.message : 'Failed to delete event');
             console.error('Error deleting event:', err);
             throw err;
-        } finally {
-            setIsDeleting(false);
         }
     };
 

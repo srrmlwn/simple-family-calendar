@@ -9,6 +9,7 @@ import { logRequest } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { securityHeaders } from './middleware/security';
 import config from './config';
+import passport from './config/passport';
 
 // Initialize express app
 const app = express();
@@ -20,6 +21,9 @@ app.use(helmet());
 app.use(express.json());
 app.use(logRequest);
 app.use(securityHeaders);
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Routes
 import authRoutes from './routes/auth';

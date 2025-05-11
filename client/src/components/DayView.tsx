@@ -21,11 +21,10 @@ const DayView: React.FC<DayViewProps> = ({
     onUpdateEvent,
     onDeleteEvent
 }) => {
-    const isMobile = useMediaQuery('(max-width: 768px)');
     const [selectedDate, setSelectedDate] = useState<Date>(date);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Sync selectedDate with date prop
@@ -47,12 +46,6 @@ const DayView: React.FC<DayViewProps> = ({
         return moment(date).format('h:mm A');
     };
 
-    // Handle date selection
-    const handleDateSelect = (newDate: Date) => {
-        setSelectedDate(newDate);
-        onNavigate(newDate);
-    };
-
     // Handle event click
     const handleEventClick = (event: Event) => {
         setSelectedEvent(event);
@@ -67,7 +60,7 @@ const DayView: React.FC<DayViewProps> = ({
         }
 
         try {
-            setIsUpdating(true);
+            setIsEditing(true);
             setError(null);
             await onUpdateEvent(selectedEvent.id, eventData);
             setSelectedEvent(null);
@@ -75,7 +68,7 @@ const DayView: React.FC<DayViewProps> = ({
             setError(err instanceof Error ? err.message : 'Failed to update event');
             console.error('Error updating event:', err);
         } finally {
-            setIsUpdating(false);
+            setIsEditing(false);
         }
     };
 
@@ -87,7 +80,7 @@ const DayView: React.FC<DayViewProps> = ({
         }
 
         try {
-            setIsDeleting(true);
+            setIsCreating(true);
             setError(null);
             await onDeleteEvent(selectedEvent.id);
             setSelectedEvent(null);
@@ -95,7 +88,7 @@ const DayView: React.FC<DayViewProps> = ({
             setError(err instanceof Error ? err.message : 'Failed to delete event');
             console.error('Error deleting event:', err);
         } finally {
-            setIsDeleting(false);
+            setIsCreating(false);
         }
     };
 

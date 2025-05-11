@@ -4,6 +4,7 @@ import { User } from '../entities/User';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config';
+import fetch from 'node-fetch';
 
 export class AuthService {
     /**
@@ -105,7 +106,7 @@ export class AuthService {
     /**
      * Generate JWT token for a user
      */
-    private generateToken(user: User): string {
+    public generateToken(user: User): string {
         const payload = {
             id: user.id,
             email: user.email
@@ -118,6 +119,54 @@ export class AuthService {
         };
 
         return jwt.sign(payload, secret, options);
+    }
+
+    /**
+     * Verify Google OAuth token and get/create user
+     */
+    public async verifyGoogleToken(accessToken: string): Promise<User> {
+        try {
+            // Use the access token to get user info from Google
+            const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch user info from Google');
+            }
+
+            const userInfo = await response.json();
+            
+            if (!userInfo.email) {
+                throw new Error('Invalid Google user info');
+            }
+
+            const userRepository = AppDataSource.getRepository(User);
+            
+            // Check if user exists
+            let user = await userRepository.findOne({
+                where: { email: userInfo.email }
+            });
+
+            if (!user) {
+                // Create new user if doesn't exist
+                user = new User();
+                user.email = userInfo.email;
+                user.firstName = userInfo.given_name || '';
+                user.lastName = userInfo.family_name || '';
+                // For Google users, we'll set a random password since they'll use Google to login
+                user.passwordHash = 'google-oauth-' + Math.random().toString(36).slice(-8);
+                
+                user = await userRepository.save(user);
+            }
+
+            return user;
+        } catch (error) {
+            console.error('Google token verification error:', error);
+            throw new Error('Failed to verify Google token');
+        }
     }
 }
 
