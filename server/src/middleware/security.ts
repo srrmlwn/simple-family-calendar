@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
  * Security middleware to set various security headers
  */
 export const securityHeaders = (req: Request, res: Response, next: NextFunction): void => {
+    console.log("CSP is disabled for now!!");
     // Content Security Policy - Temporarily disabled for testing
     /*
     res.setHeader(

@@ -17,7 +17,9 @@ const PORT = config.server.port;
 
 // Middleware
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false  // Disable helmet's CSP
+}));
 app.use(express.json());
 app.use(logRequest);
 app.use(securityHeaders);
