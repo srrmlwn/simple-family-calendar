@@ -1,9 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GoogleLogin from '../components/GoogleLogin';
 import styled from 'styled-components';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Error boundary component
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('LoginPage Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <h2>Something went wrong loading the login page.</h2>
+          <pre style={{ textAlign: 'left', color: 'red' }}>
+            {this.state.error?.toString()}
+          </pre>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const LoginContainer = styled.div`
   display: flex;
@@ -53,16 +84,27 @@ const ErrorMessage = styled.div`
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Debug logs for component mounting
+    console.log('LoginPage mounted');
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Google Client ID exists:', !!process.env.REACT_APP_GOOGLE_CLIENT_ID);
+    
+    // Check if required environment variables are set
+    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+      console.error('REACT_APP_GOOGLE_CLIENT_ID is not set');
+      setError('Google Client ID is not configured. Please check environment variables.');
+    }
+    
+    setIsLoading(false);
+  }, []);
 
   const handleLoginSuccess = async (idToken: string) => {
     try {
-      // Here you would typically:
-      // 1. Send the token to your backend
-      // 2. Get a session token
-      // 3. Store the session token
-      // 4. Redirect to the main app
-      console.log('Login successful with token:', idToken);
+      console.log('Login attempt with token:', idToken.substring(0, 10) + '...');
       
       // For testing, we'll just show a success message and redirect
       setError(null);
@@ -81,6 +123,7 @@ const LoginPage: React.FC = () => {
       }, 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      console.error('Login error:', err);
       setError(errorMessage);
       toast.error(errorMessage, {
         position: "top-center",
@@ -90,23 +133,36 @@ const LoginPage: React.FC = () => {
         pauseOnHover: true,
         draggable: true,
       });
-      console.error('Login error:', err);
     }
   };
 
+  if (isLoading) {
+    return (
+      <LoginContainer>
+        <LoginCard>
+          <div>Loading login page...</div>
+        </LoginCard>
+      </LoginContainer>
+    );
+  }
+
   return (
-    <LoginContainer>
-      <ToastContainer />
-      <LoginCard>
-        <Logo>famcal.ai</Logo>
-        <Title>Welcome to FamCal</Title>
-        <Subtitle>Test Login Page</Subtitle>
-        
-        <GoogleLogin onLoginSuccess={handleLoginSuccess} />
-        
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-      </LoginCard>
-    </LoginContainer>
+    <ErrorBoundary>
+      <LoginContainer>
+        <ToastContainer />
+        <LoginCard>
+          <Logo>famcal.ai</Logo>
+          <Title>Welcome to FamCal</Title>
+          <Subtitle>Test Login Page</Subtitle>
+          
+          {error ? (
+            <ErrorMessage>{error}</ErrorMessage>
+          ) : (
+            <GoogleLogin onLoginSuccess={handleLoginSuccess} />
+          )}
+        </LoginCard>
+      </LoginContainer>
+    </ErrorBoundary>
   );
 };
 
