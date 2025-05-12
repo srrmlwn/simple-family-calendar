@@ -38,35 +38,46 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
         crossOriginResourcePolicy: { policy: "cross-origin" }, // Required for Google Sign-In
         contentSecurityPolicy: {
             directives: {
-                defaultSrc: ["'self'"],
+                defaultSrc: ["'self'", "https://accounts.google.com/gsi/"],
                 scriptSrc: [
                     "'self'",
                     "'unsafe-inline'",
-                    "https://accounts.google.com",
+                    "https://accounts.google.com/gsi/client", // Google Identity Services client library
                     "https://apis.google.com"
                 ],
                 frameSrc: [
                     "'self'",
-                    "https://accounts.google.com"
+                    "https://accounts.google.com/gsi/" // Required for One Tap and Sign In With Google button iframes
                 ],
                 connectSrc: [
                     "'self'",
-                    "https://accounts.google.com"
+                    "https://accounts.google.com/gsi/", // Required for Google Identity Services server-side endpoints
+                    "https://famcal.ai",
+                    "https://simple-family-calendar-8282627220c3.herokuapp.com",
+                    "https://www.googleapis.com",
+                    "https://oauth2.googleapis.com"
+                ],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://fonts.googleapis.com",
+                    "https://accounts.google.com/gsi/style" // Required for Google Identity Services stylesheets
                 ],
                 imgSrc: [
                     "'self'",
                     "data:",
                     "https:"
                 ],
-                styleSrc: [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "https://fonts.googleapis.com"
-                ],
                 fontSrc: [
                     "'self'",
                     "https://fonts.gstatic.com"
-                ]
+                ],
+                workerSrc: ["'self'", "blob:"],
+                objectSrc: ["'none'"],
+                baseUri: ["'self'"],
+                formAction: ["'self'"],
+                frameAncestors: ["'none'"],
+                upgradeInsecureRequests: []
             }
         }
     })(req, res, next);
