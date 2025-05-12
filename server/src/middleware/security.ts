@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
 
 /**
  * Security middleware to set various security headers
@@ -25,11 +26,48 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     );
     */
 
-    // Other security headers
-    // res.setHeader('X-Content-Type-Options', 'nosniff');  // Already removed
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    // Set Cross-Origin-Opener-Policy header for Google Sign-In
+    res.setHeader(
+        'Cross-Origin-Opener-Policy',
+        'same-origin-allow-popups'
+    );
 
-    next();
+    // Set other security headers using Helmet
+    helmet({
+        crossOriginEmbedderPolicy: false, // Required for Google Sign-In
+        crossOriginResourcePolicy: { policy: "cross-origin" }, // Required for Google Sign-In
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://accounts.google.com",
+                    "https://apis.google.com"
+                ],
+                frameSrc: [
+                    "'self'",
+                    "https://accounts.google.com"
+                ],
+                connectSrc: [
+                    "'self'",
+                    "https://accounts.google.com"
+                ],
+                imgSrc: [
+                    "'self'",
+                    "data:",
+                    "https:"
+                ],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://fonts.googleapis.com"
+                ],
+                fontSrc: [
+                    "'self'",
+                    "https://fonts.gstatic.com"
+                ]
+            }
+        }
+    })(req, res, next);
 }; 
