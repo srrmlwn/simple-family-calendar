@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const client = (window as any).google.accounts.oauth2.initTokenClient({
         client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
-        scope: 'email profile',
+        scope: 'email profile openid',
         callback: async (response: { 
           access_token?: string;
           error?: string;

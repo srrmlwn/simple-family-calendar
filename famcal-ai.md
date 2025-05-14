@@ -247,7 +247,7 @@ server/
 
 #### Cross-Origin Resource Sharing (CORS)
 - Basic CORS enabled with default settings
-- Cross-Origin-Opener-Policy: `same-origin-allow-popups` (for Google Sign-In)
+- Cross-Origin-Opener-Policy: `same-origin, same-origin-allow-popups` (provides strict same-origin policy while allowing Google Sign-In popups)
 - Cross-Origin-Embedder-Policy: Disabled (for Google Sign-In compatibility)
 - Cross-Origin-Resource-Policy: `cross-origin`
 

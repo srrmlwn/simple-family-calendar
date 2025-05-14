@@ -8,7 +8,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     // Set Cross-Origin-Opener-Policy header for Google Sign-In
     res.setHeader(
         'Cross-Origin-Opener-Policy',
-        'same-origin-allow-popups'
+        'same-origin, same-origin-allow-popups'
     );
 
     // Set security headers using Helmet with consolidated CSP
