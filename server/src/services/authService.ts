@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import fetch from 'node-fetch';
+import { Request } from 'express';
 
 export class AuthService {
     /**
@@ -124,8 +125,15 @@ export class AuthService {
     /**
      * Verify Google OAuth token and get/create user
      */
-    public async verifyGoogleToken(accessToken: string): Promise<User> {
+    public async verifyGoogleToken(accessToken: string, req?: Request): Promise<User> {
         try {
+            console.log('Verifying Google token from request:', {
+                origin: req?.headers.origin,
+                referer: req?.headers.referer,
+                host: req?.headers.host,
+                userAgent: req?.headers['user-agent']
+            });
+
             // Use the access token to get user info from Google
             const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: {
@@ -134,6 +142,11 @@ export class AuthService {
             });
 
             if (!response.ok) {
+                console.error('Google API response not OK:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    origin: req?.headers.origin
+                });
                 throw new Error('Failed to fetch user info from Google');
             }
 

@@ -143,7 +143,7 @@ export class AuthController {
             }
 
             // Verify token and get user info from Google
-            const user = await this.authService.verifyGoogleToken(accessToken);
+            const user = await this.authService.verifyGoogleToken(accessToken, req);
             
             // Generate JWT token
             const token = this.authService.generateToken(user);

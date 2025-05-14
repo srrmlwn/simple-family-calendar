@@ -83,7 +83,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
-      console.log("AuthContext - Initiating Google login with popup");
+      console.log("AuthContext - Initiating Google login with popup", {
+        origin: window.location.origin,
+        hostname: window.location.hostname,
+        href: window.location.href,
+        domain: window.location.host
+      });
 
       if (!isGoogleClientLoaded) {
         throw new Error('Google OAuth client is still loading. Please try again in a moment.');
@@ -97,7 +102,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error?: string;
           error_description?: string;
         }) => {
-          console.log("Callback invoked - Google OAuth response:", response);
+          console.log("Callback invoked - Google OAuth response:", {
+            response,
+            origin: window.location.origin,
+            hostname: window.location.hostname,
+            href: window.location.href,
+            domain: window.location.host
+          });
           if (response.error) {
             console.error('Google OAuth error:', response.error);
             setError(response.error_description || 'Google authentication failed');
@@ -117,6 +128,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
       console.log("Requesting access token. Client:", JSON.stringify(client));
+      console.log("Setting up Google OAuth callback with current state:", {
+        origin: window.location.origin,
+        hostname: window.location.hostname,
+        href: window.location.href,
+        domain: window.location.host,
+        isGoogleClientLoaded,
+        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'present' : 'missing'
+      });
       client.requestAccessToken();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initiate Google login');
