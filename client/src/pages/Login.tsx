@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Add Google Fonts import
+const fontLink = document.createElement('link');
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap';
+fontLink.rel = 'stylesheet';
+document.head.appendChild(fontLink);
+
 // Type declarations for Google SDK
 declare global {
   interface Window {
@@ -113,20 +119,42 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <img
-          className="mx-auto h-24 w-auto"
-          src="/landing_logo.png"
-          alt="famcal.ai"
-        />
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
-        </h2>
+        <div className="flex flex-col items-center">
+          <img
+            className="h-32 w-auto mb-4"
+            src="/landing_page_logo_1024x1024.png"
+            alt="FamCal Logo"
+          />
+          <h1 
+            className="text-4xl font-extrabold text-gray-900 mb-2"
+            style={{ 
+              fontFamily: 'Nunito, sans-serif',
+              letterSpacing: '-0.03em',
+              background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 800
+            }}
+          >
+            famcal.io
+          </h1>
+          <p 
+            className="text-sm text-gray-600 mb-8"
+            style={{
+              fontFamily: 'Nunito, sans-serif',
+              fontWeight: 500,
+              letterSpacing: '-0.01em'
+            }}
+          >
+            Planning made easy—type it, say it, done.
+          </p>
+        </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-xl sm:px-10 border border-gray-100">
           {/* Google Sign In Button */}
           <div className="mb-6">
             <button

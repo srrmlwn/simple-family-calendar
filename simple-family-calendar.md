@@ -109,6 +109,14 @@ CREATE TABLE user_settings (
 ```
 client/
 ├── public/                 # Static files
+│   ├── landing_page_logo_1024x1024.png  # Main application logo
+│   ├── android_app_icon_512x512.png     # Android app icon
+│   ├── favicon.svg                      # Vector favicon
+│   ├── favicon_32x32.png               # Small favicon
+│   ├── favicon_64x64.png               # Medium favicon
+│   ├── favicon.ico                     # Legacy favicon
+│   ├── index.html                      # HTML template
+│   └── robots.txt                      # Search engine rules
 ├── src/
 │   ├── components/         # Reusable UI components
 │   │   ├── calendar/      # Calendar-related components
@@ -619,3 +627,44 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 3. User Information:
    - GET `/auth/me` - Returns current user information
    - Protected by JWT authentication
+
+## Branding Assets
+
+### Logo and Icons
+The application uses a consistent set of branding assets across different platforms:
+
+1. **Main Logo**
+   - File: `landing_page_logo_1024x1024.png`
+   - Size: 1024x1024 pixels
+   - Usage: Landing page, marketing materials
+   - Format: PNG with transparency
+
+2. **Android App Icon**
+   - File: `android_app_icon_512x512.png`
+   - Size: 512x512 pixels
+   - Usage: Android app store and device home screen
+   - Format: PNG with transparency
+
+3. **Favicon Set**
+   - Vector: `favicon.svg` (primary source)
+   - PNG sizes: 32x32, 64x64 pixels
+   - Legacy: `favicon.ico`
+   - Usage: Browser tabs, bookmarks, and shortcuts
+   - Formats: SVG, PNG, ICO
+
+### Brand Guidelines
+1. **Logo Usage**
+   - Maintain minimum clear space around the logo
+   - Use the full-color version on light backgrounds
+   - Ensure proper contrast in all applications
+   - Do not stretch or distort the logo
+
+2. **Icon Usage**
+   - Use appropriate size for each context
+   - Maintain aspect ratio
+   - Follow platform-specific guidelines for app icons
+
+3. **Color Palette**
+   - Primary colors are defined in the Tailwind configuration
+   - Use consistent colors across all platforms
+   - Ensure accessibility compliance for all color combinations
