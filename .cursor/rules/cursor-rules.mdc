@@ -5,10 +5,10 @@ alwaysApply: true
 ---
 # IMPORTANT:
 
-# Always read simple-family-calendar.md before writing any code.
+# Always read famcal-ai.md before writing any code.
 
-# After adding a major feature or completing a milestone, update simple-family-calendar.md.
+# After adding a major feature or completing a milestone, update famcal-ai.md.
 
-# Document the entire database schema in simple-family-calendar.md.
+# Document the entire database schema in famcal-ai.md.
 
 # For new migrations, make sure to add them to the same file.

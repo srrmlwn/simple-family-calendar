@@ -1,7 +1,7 @@
-# Simple Family Calendar Project Documentation
+# famcal.ai Project Documentation
 
 ## Project Overview
-Simple Family Calendar is a web and mobile application designed to help families manage their schedules using natural language processing. The app allows users to create and edit events using natural language input (e.g., "Soccer Practice at 3pm on Saturday at Ballard Soccer Field") and send email invitations to family members.
+famcal.ai is a web and mobile application designed to help families manage their schedules using natural language processing. The app allows users to create and edit events using natural language input (e.g., "Soccer Practice at 3pm on Saturday at Ballard Soccer Field") and send email invitations to family members.
 
 ## Technical Stack
 
@@ -243,6 +243,82 @@ server/
    - Sanitize user inputs
    - Use HTTPS in production
 
+### Security Configurations
+
+#### Cross-Origin Resource Sharing (CORS)
+- Basic CORS enabled with default settings
+- Cross-Origin-Opener-Policy: `same-origin-allow-popups` (for Google Sign-In)
+- Cross-Origin-Embedder-Policy: Disabled (for Google Sign-In compatibility)
+- Cross-Origin-Resource-Policy: `cross-origin`
+
+#### Content Security Policy (CSP)
+The application implements a comprehensive CSP using Helmet with the following directives:
+
+- `default-src`: 
+  - `'self'`
+  - `https://accounts.google.com/gsi/`
+
+- `script-src`:
+  - `'self'`
+  - `'unsafe-inline'` (required for React development)
+  - `https://accounts.google.com/gsi/client`
+  - `https://apis.google.com`
+  - `https://www.gstatic.com`
+  - `https://*.google.com`
+
+- `style-src`:
+  - `'self'`
+  - `'unsafe-inline'` (required for dynamic styles)
+  - `https://fonts.googleapis.com`
+  - `https://accounts.google.com/gsi/style`
+
+- `font-src`:
+  - `'self'`
+  - `https://fonts.gstatic.com`
+  - `data:` (for font loading)
+
+- `img-src`:
+  - `'self'`
+  - `data:` (for inline images)
+  - `https:` (for external images)
+
+- `connect-src`:
+  - `'self'`
+  - `https://accounts.google.com/gsi/`
+  - `https://famcal.ai`
+  - `https://simple-family-calendar-8282627220c3.herokuapp.com`
+  - `https://www.googleapis.com`
+  - `https://oauth2.googleapis.com`
+  - `https://*.google.com`
+
+- `frame-src`:
+  - `'self'`
+  - `https://accounts.google.com/gsi/`
+  - `https://accounts.google.com`
+  - `https://*.google.com`
+
+- `worker-src`:
+  - `'self'`
+  - `blob:` (for web workers)
+
+- Additional Security Directives:
+  - `object-src`: `'none'` (prevents object/embed/applet)
+  - `base-uri`: `'self'` (restricts base tag)
+  - `form-action`: `'self'` (restricts form submissions)
+  - `frame-ancestors`: `'none'` (prevents framing)
+  - `upgrade-insecure-requests`: enabled (upgrades HTTP to HTTPS)
+
+#### Additional Security Headers (via Helmet)
+- `X-Content-Type-Options`: `nosniff`
+- `X-Frame-Options`: `SAMEORIGIN`
+- `X-XSS-Protection`: `1; mode=block`
+- `Strict-Transport-Security`: `max-age=15552000; includeSubDomains`
+- `X-DNS-Prefetch-Control`: `off`
+- `Expect-CT`: `max-age=0`
+- `Referrer-Policy`: `no-referrer`
+
+Note: The CSP configuration is designed to support Google Sign-In and other third-party integrations while maintaining security. The use of `unsafe-inline` is currently required for React development but should be reviewed for production deployment.
+
 4. **Performance**
    - Optimize database queries
    - Implement proper caching
@@ -470,7 +546,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=your_password
-DB_DATABASE=simple_family_calendar
+DB_DATABASE=famcal_ai
 
 # JWT Configuration
 JWT_SECRET=your_jwt_secret_key
@@ -482,7 +558,7 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your_email@example.com
 EMAIL_PASSWORD=your_email_password
-EMAIL_SENDER_NAME=Simple Family Calendar
+EMAIL_SENDER_NAME=famcal.ai
 
 # Frontend Configuration
 REACT_APP_API_URL=http://localhost:4000
@@ -668,3 +744,54 @@ The application uses a consistent set of branding assets across different platfo
    - Primary colors are defined in the Tailwind configuration
    - Use consistent colors across all platforms
    - Ensure accessibility compliance for all color combinations
+
+### Email Service
+```typescript
+private generateICalendar(event: Event, sender: EmailSender, method: string = 'REQUEST'): ICalCalendar {
+    const calendar = ical({
+        name: 'famcal.ai',
+        prodId: '//famcal.ai//Calendar//EN',
+        method: method as any,
+    });
+    // ... rest of the function
+}
+
+private generateHtmlContent(event: Event, type: 'invitation' | 'update' | 'cancellation'): string {
+    // ... existing code ...
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+        This invitation was sent from famcal.ai.
+    </p>
+    // ... rest of the function
+}
+```
+
+### Heroku Configuration
+```json
+{
+  "name": "famcal.ai",
+  "description": "A family calendar app with natural language processing",
+  "repository": "https://github.com/yourusername/famcal-ai",
+  "keywords": ["node", "express", "react", "calendar", "nlp"],
+  // ... rest of the configuration
+}
+```
+
+### Mobile App Configuration
+```json
+{
+  "short_name": "famcal.ai",
+  "name": "famcal.ai",
+  "icons": [
+    // ... icon configuration
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#3B82F6",
+  "background_color": "#ffffff"
+}
+```
+
+### React Native Mobile App
+```bash
+npx react-native init FamcalAiMobile --template react-native-template-typescript
+```

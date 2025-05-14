@@ -1,7 +1,7 @@
-# Simple Family Calendar
+# famcal.ai
 
 ### Deployed Version
-https://simple-family-calendar-8282627220c3.herokuapp.com/
+https://famcal.ai/
 
 ---
 
@@ -25,8 +25,8 @@ A simple calendar app that makes it easy to manage your family's schedule using 
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/simple-family-calendar.git
-cd simple-family-calendar
+git clone https://github.com/yourusername/famcal-ai.git
+cd famcal-ai
 ```
 
 2. Install dependencies
@@ -35,7 +35,7 @@ npm install
 ```
 
 3. Set up your PostgreSQL database
-   - Create a new database named `simple_family_calendar`
+   - Create a new database named `famcal_ai`
    - Update the `.env` file with your database credentials
 
 4. Start the development server
