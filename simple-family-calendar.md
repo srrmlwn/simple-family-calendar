@@ -51,8 +51,13 @@ CREATE TABLE events (
     description TEXT,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    duration INTEGER NOT NULL,
+    is_all_day BOOLEAN DEFAULT FALSE,
     location VARCHAR(255),
-    created_by UUID REFERENCES users(id),
+    color VARCHAR(50),
+    status VARCHAR(50) DEFAULT 'confirmed',
+    external_id VARCHAR(255),
+    user_id UUID NOT NULL REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -65,10 +70,9 @@ CREATE TABLE email_recipients (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     is_default BOOLEAN DEFAULT FALSE,
-    user_id UUID NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_recipient_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -76,8 +80,8 @@ CREATE TABLE email_recipients (
 ```sql
 CREATE TABLE event_recipients (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(50) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -89,14 +93,13 @@ CREATE TABLE event_recipients (
 ```sql
 CREATE TABLE user_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL UNIQUE,
+    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     theme VARCHAR(50) DEFAULT 'light',
     time_format VARCHAR(10) DEFAULT '12h',
     timezone VARCHAR(100) DEFAULT 'America/New_York',
     notification_preferences JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_settings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -107,11 +110,18 @@ CREATE TABLE user_settings (
 client/
 ├── public/                 # Static files
 ├── src/
-│   ├── components/         # UI components
-│   ├── context/           # React context for state management
+│   ├── components/         # Reusable UI components
+│   │   ├── calendar/      # Calendar-related components
+│   │   ├── forms/         # Form components
+│   │   ├── layout/        # Layout components
+│   │   └── ui/            # Basic UI components
+│   ├── context/           # React context providers
 │   ├── hooks/             # Custom React hooks
 │   ├── pages/             # Page components
-│   ├── services/          # API services
+│   ├── services/          # API services and client
+│   ├── store/             # State management
+│   ├── styles/            # Global styles and Tailwind
+│   ├── types/             # TypeScript type definitions
 │   ├── utils/             # Utility functions
 │   └── App.tsx            # Main application component
 ├── android/               # Capacitor Android configuration
@@ -123,44 +133,88 @@ client/
 server/
 ├── src/
 │   ├── config/            # Configuration files
+│   │   ├── database.ts    # Database configuration
+│   │   └── auth.ts        # Authentication settings
 │   ├── controllers/       # API controllers
+│   │   ├── auth.ts        # Authentication endpoints
+│   │   ├── events.ts      # Event management
+│   │   └── users.ts       # User management
 │   ├── entities/          # TypeORM entities
+│   │   ├── Event.ts       # Event model
+│   │   ├── User.ts        # User model
+│   │   ├── UserSettings.ts # User settings model
+│   │   ├── EmailRecipient.ts # Email recipient model
+│   │   └── EventRecipient.ts # Event recipient model
 │   ├── middleware/        # Express middleware
-│   ├── migrations/        # Database migrations
+│   │   ├── auth.ts        # Authentication middleware
+│   │   └── error.ts       # Error handling
 │   ├── routes/            # API routes
-│   ├── services/          # Business logic services
+│   ├── services/          # Business logic
+│   │   ├── auth.ts        # Authentication service
+│   │   ├── event.ts       # Event management
+│   │   └── email.ts       # Email service
+│   ├── utils/             # Utility functions
 │   └── app.ts             # Express application setup
-└── tests/                 # Backend tests
+├── tests/                 # Backend tests
+└── logs/                  # Application logs
 ```
 
-## Key Features
+## Current Implementation Status
 
-1. **Natural Language Processing**
-   - Accepts event creation/editing in natural language
-   - Parses dates, times, and locations
-   - Future support for voice input
-
-2. **Email Integration**
-   - Send calendar invites to family members
-   - Manage email recipient lists
-   - Customizable email templates
-
-3. **Mobile Support**
-   - Android app via Capacitor
-   - Responsive web design
-   - Offline capabilities
-
-4. **User Settings**
-   - Customizable themes
-   - Time format preferences
-   - Timezone support
-   - Notification preferences
-
-5. **User Authentication**
-   - Email/password login
-   - Google OAuth login
+### Completed Features
+1. **User Authentication**
+   - Email/password registration and login
    - JWT-based session management
-   - Protected routes
+   - Protected API routes
+   - User settings management
+
+2. **Event Management**
+   - Create, read, update, and delete events
+   - Event duration tracking
+   - All-day event support
+   - Event status management
+   - Event color coding
+   - Location support
+
+3. **Calendar Interface**
+   - Monthly, weekly, and daily views
+   - Event creation and editing
+   - Drag-and-drop event management
+   - Responsive design
+
+4. **Email Integration**
+   - Email recipient management
+   - Default recipient lists
+   - Email invitation system
+
+### In Progress Features
+1. **Natural Language Processing**
+   - Basic date/time parsing
+   - Location extraction
+   - Event creation from text
+
+2. **Mobile Support**
+   - Android app setup with Capacitor
+   - Basic mobile UI adaptation
+   - Offline capabilities (planned)
+
+### Planned Features
+1. **Advanced Calendar Features**
+   - Recurring events
+   - Event categories and tags
+   - Calendar sharing
+   - External calendar integration
+
+2. **Enhanced User Experience**
+   - Voice input support
+   - Advanced notification system
+   - Family member roles and permissions
+   - Event templates
+
+3. **Analytics and Reporting**
+   - Usage statistics
+   - Family schedule insights
+   - Activity reports
 
 ## Development Guidelines
 
