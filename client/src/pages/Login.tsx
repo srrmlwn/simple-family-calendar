@@ -138,7 +138,7 @@ const Login: React.FC = () => {
               fontWeight: 800
             }}
           >
-            famcal.io
+            famcal.ai
           </h1>
           <p 
             className="text-sm text-gray-600 mb-8"
@@ -167,12 +167,39 @@ const Login: React.FC = () => {
             </button>
           </div>
 
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with
+                </span>
+              </div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+
+            <div className="mt-6">
+              <div 
+                id="g_id_onload"
+                data-client_id={process.env.REACT_APP_GOOGLE_CLIENT_ID}
+                data-context="signin"
+                data-ux_mode="popup"
+                data-callback="handleGoogleSignIn"
+                data-auto_prompt="false"
+              />
+
+              <div 
+                className="g_id_signin"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="outline"
+                data-text="signin_with"
+                data-size="large"
+                data-logo_alignment="left"
+                data-width="400"
+                data-domain="famcal.ai"
+              />
             </div>
           </div>
 
