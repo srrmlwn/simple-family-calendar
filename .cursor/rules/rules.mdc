@@ -1,0 +1,36 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Rules for famcal.ai
+
+# IMPORTANT: These rules will be loaded for every chat session
+
+# Documentation
+- Always read famcal-ai.md before writing any code
+- After adding a major feature or completing a milestone, update famcal-ai.md
+- Document the entire database schema in famcal-ai.md
+- For new migrations, make sure to add them to the same file
+
+# Code Style
+- Use TypeScript for all new code
+- Follow the existing project structure
+- Use proper error handling and logging
+- Add comments for complex logic
+
+# Security
+- Never commit sensitive data or API keys
+- Use environment variables for configuration
+- Follow security best practices for authentication
+- Validate all user input
+
+# Testing
+- Write tests for new features
+- Maintain existing test coverage
+- Test edge cases and error conditions
+
+# Git
+- Use meaningful commit messages
+- Create feature branches for new work
+- Keep commits focused and atomic
