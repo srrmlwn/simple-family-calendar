@@ -10,18 +10,25 @@ graph TB
         UI[UI Components]
         Auth[Auth Context]
         Calendar[Calendar Components]
-        Services[API Services]
-        State[State Management]
+        API[API Client Services]
     end
 
-    subgraph Server["Server (Node.js + Express)"]
-        API[API Routes]
-        Controllers[Controllers]
-        Services[Services]
+    subgraph API["API Layer (Express)"]
+        AuthAPI["/api/auth/*"]
+        EventAPI["/api/events/*"]
+        RecipientAPI["/api/recipients/*"]
+        SettingsAPI["/api/settings/*"]
+    end
+
+    subgraph Services["Service Layer"]
+        AuthService[Auth Service]
+        EventService[Event Service]
+        EmailService[Email Service]
+        ParserService[Natural Language Parser]
+    end
+
+    subgraph Storage["Data Storage"]
         DB[(PostgreSQL)]
-        Email[Email Service]
-        Auth[Auth Service]
-        Event[Event Service]
     end
 
     subgraph External["External Services"]
@@ -30,31 +37,39 @@ graph TB
         SMTP[SMTP Server]
     end
 
-    %% Client to Server connections
-    UI --> Services
-    Auth --> Services
-    Calendar --> Services
-    Services --> API
+    %% Client to API connections
+    UI --> API
+    Auth --> API
+    Calendar --> API
 
-    %% Server internal connections
-    API --> Controllers
-    Controllers --> Services
-    Services --> DB
-    Event --> Email
-    Auth --> Google
-    Event --> OpenAI
-    Email --> SMTP
+    %% API to Service connections
+    AuthAPI --> AuthService
+    EventAPI --> EventService
+    EventAPI --> EmailService
+    EventAPI --> ParserService
+    RecipientAPI --> EmailService
+    SettingsAPI --> AuthService
+
+    %% Service to Storage/External connections
+    AuthService --> DB
+    EventService --> DB
+    AuthService --> Google
+    ParserService --> OpenAI
+    EmailService --> SMTP
+    EmailService --> DB
 
     %% Styling
     classDef client fill:#e1f5fe,stroke:#01579b
-    classDef server fill:#f3e5f5,stroke:#4a148c
-    classDef external fill:#e8f5e9,stroke:#1b5e20
-    classDef database fill:#fff3e0,stroke:#e65100
+    classDef api fill:#f3e5f5,stroke:#4a148c
+    classDef service fill:#fff3e0,stroke:#e65100
+    classDef storage fill:#e8f5e9,stroke:#1b5e20
+    classDef external fill:#fce4ec,stroke:#880e4f
 
     class Client client
-    class Server server
+    class API api
+    class Services service
+    class Storage storage
     class External external
-    class DB database
 ```
 
 ## Key Components
