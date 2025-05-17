@@ -1,14 +1,14 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # Cursor Rules for famcal.ai
 
 # IMPORTANT: These rules will be loaded for every chat session
 
 # Documentation
-- Always read famcal-ai.md before writing any code
+- You MUST read famcal-ai.md before writing any code
 - After adding a major feature or completing a milestone, update famcal-ai.md
 - Document the entire database schema in famcal-ai.md
 - For new migrations, make sure to add them to the same file

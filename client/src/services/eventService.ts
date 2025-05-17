@@ -28,15 +28,30 @@ export interface EventInput {
 }
 
 const eventService = {
+    // Parse event from natural language text without saving
+    parseFromText: async (text: string): Promise<Event> => {
+        try {
+            const timezone = getUserTimezone();
+            const response = await api.post<Event>('/api/events/parse', { text, timezone });
+            console.log('Parsed event:', JSON.stringify(response.data, null, 2));
+            const parsedEvent = parseEventDates(response.data);
+            return parsedEvent;
+        } catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Failed to parse event');
+        }
+    },
+
     // Create event from natural language text
     createFromText: async (text: string): Promise<Event> => {
         try {
-            const timezone = getUserTimezone();
-            const response = await api.post<Event>('/api/events/text', { text, timezone });
-            console.log('Returned event:', JSON.stringify(response.data, null, 2));
-            const parsedEvent = parseEventDates(response.data);
-            console.log('Parsed event:', JSON.stringify(parsedEvent, null, 2));
-            return parsedEvent;
+            // First parse the text to get event details
+            const parsedEvent = await eventService.parseFromText(text);
+            
+            // Then create the event with the parsed details
+            return await eventService.create(parsedEvent);
         } catch (error) {
             if (error instanceof Error) {
                 throw error;

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
+import { EventState } from '../utils/eventValidation';
 import DayView from './DayView';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -11,8 +12,11 @@ interface DatePickerProps {
     date: Date;
     onNavigate: (date: Date | 'TODAY') => void;
     newEvent?: Event;
-    onEventUpdate?: (updatedEvent: Event) => void;
-    onEventDelete?: (deletedEventId: string) => void;
+    onEventUpdate: (eventId: string, eventData: EventInput) => Promise<void>;
+    onEventDelete: (eventId: string) => Promise<void>;
+    eventStates: Record<string, EventState>;
+    onEventSave: (eventData: EventInput) => Promise<Event>;
+    selectedEventId?: string;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -21,7 +25,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
     onNavigate,
     newEvent,
     onEventUpdate,
-    onEventDelete
+    onEventDelete,
+    eventStates,
+    onEventSave,
+    selectedEventId
 }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -59,36 +66,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
         setBrowsingDate(newDate);
         onNavigate(newDate);
     }, [browsingDate, onNavigate]);
-
-    // Handle event update
-    const handleEventUpdate = async (eventId: string, eventData: EventInput) => {
-        try {
-            setError(null);
-            const updatedEvent = await eventService.update(eventId, eventData);
-            if (onEventUpdate) {
-                onEventUpdate(updatedEvent);
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update event');
-            console.error('Error updating event:', err);
-            throw err;
-        }
-    };
-
-    // Handle event delete
-    const handleEventDelete = async (eventId: string) => {
-        try {
-            setError(null);
-            await eventService.delete(eventId);
-            if (onEventDelete) {
-                onEventDelete(eventId);
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to delete event');
-            console.error('Error deleting event:', err);
-            throw err;
-        }
-    };
 
     // Get days for the current month
     const getDaysInMonth = useCallback(() => {
@@ -216,8 +193,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
                     events={events}
                     onNavigate={onNavigate}
                     newEvent={newEvent}
-                    onUpdateEvent={handleEventUpdate}
-                    onDeleteEvent={handleEventDelete}
+                    onUpdateEvent={onEventUpdate}
+                    onDeleteEvent={onEventDelete}
+                    eventStates={eventStates}
+                    onEventSave={onEventSave}
+                    selectedEventId={selectedEventId}
                 />
             </div>
         </div>

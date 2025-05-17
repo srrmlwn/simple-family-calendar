@@ -14,6 +14,9 @@ router.get('/:id', asyncHandler(eventController.getEventById));
 // Create event from natural language text
 router.post('/text', asyncHandler(eventController.createEventFromText));
 
+// Parse event from natural language text without saving
+router.post('/parse', asyncHandler(eventController.parseEventFromText));
+
 // Create a new event
 router.post('/', asyncHandler(eventController.createEvent));
 

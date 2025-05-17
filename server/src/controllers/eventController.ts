@@ -22,6 +22,52 @@ export class EventController {
     }
 
     /**
+     * Parse event from natural language input without saving
+     */
+    public parseEventFromText = async (req: Request, res: Response): Promise<Response> => {
+        try {
+            const { text, timezone } = req.body;
+
+            if (!text) {
+                return res.status(400).json({ error: 'Text input is required' });
+            }
+
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
+
+            console.log("Parsing event from text - " + JSON.stringify(text));
+            // Parse the natural language text with timezone using hybrid parser
+            const parsedEvent = await this.parser.parseEvent(text, timezone);
+
+            if (!parsedEvent) {
+                return res.status(400).json({ error: 'Could not parse event details from text' });
+            }
+
+            // Create event entity but don't save it
+            const event = new Event();
+            event.title = parsedEvent.title;
+            event.description = parsedEvent.description;
+            event.startTime = parsedEvent.startTime;
+            event.endTime = parsedEvent.endTime;
+            event.duration = parsedEvent.duration;
+            event.isAllDay = parsedEvent.isAllDay;
+            event.location = parsedEvent.location;
+
+            // Validate event data
+            await validateOrReject(event);
+
+            // Return the parsed event without saving
+            return res.json(event);
+        } catch (error) {
+            console.error('Error parsing event:', error);
+            return res.status(400).json({ 
+                error: error instanceof Error ? error.message : 'Failed to parse event'
+            });
+        }
+    };
+
+    /**
      * Create event from natural language input
      */
     public createEventFromText = async (req: Request, res: Response): Promise<Response> => {
@@ -37,8 +83,7 @@ export class EventController {
                 return res.status(400).json({ error: 'Timezone is required' });
             }
 
-            console.log("Creating event from text - " + JSON.stringify(text));
-            // Parse the natural language text with timezone using hybrid parser
+            // Parse the event first
             const parsedEvent = await this.parser.parseEvent(text, timezone);
 
             if (!parsedEvent) {
@@ -67,40 +112,12 @@ export class EventController {
             const defaultRecipients = await recipientRepository.find({
                 where: { userId, isDefault: true }
             });
-            console.log('Default recipients:', JSON.stringify(defaultRecipients, null, 2));
-            // Create event recipients
-            if (defaultRecipients.length > 0) {
-                const eventRecipients = defaultRecipients.map(recipient => {
-                    const eventRecipient = new EventRecipient();
-                    eventRecipient.eventId = savedEvent.id;
-                    eventRecipient.recipientId = recipient.id;
-                    eventRecipient.name = recipient.name;
-                    eventRecipient.email = recipient.email;
-                    return eventRecipient;
-                });
 
-                await AppDataSource.getRepository(EventRecipient).save(eventRecipients);
-
-                // Get user details for sender information
-                const userRepository = AppDataSource.getRepository(User);
-                const user = await userRepository.findOneOrFail({ where: { id: userId } });
-
-                // Send calendar invites
-                await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients, {
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`
-                });
-            }
-
-            // Convert the saved event to the client's timezone before sending response
-            const timezoneEvent = await this.eventService.findById(savedEvent.id, timezone);
-            console.log('Timezone event:', JSON.stringify(timezoneEvent, null, 2));
-            return res.status(201).json(timezoneEvent);
+            return res.json(savedEvent);
         } catch (error) {
             console.error('Error creating event:', error);
-            return res.status(500).json({
-                error: 'Failed to create event',
-                details: error instanceof Error ? error.message : 'Unknown error'
+            return res.status(400).json({ 
+                error: error instanceof Error ? error.message : 'Failed to create event'
             });
         }
     };

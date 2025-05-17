@@ -1,34 +1,41 @@
 import React, { useState } from 'react';
 import { Event, EventInput } from '../services/eventService';
+import { EventState, EventStatus } from '../utils/eventValidation';
 import BottomSheet from './BottomSheet';
 import EventForm from './EventForm';
 
 interface EventDetailsProps {
-    event: Event;
-    isOpen: boolean;
+    event?: Event;
     onClose: () => void;
-    onUpdate: (eventData: EventInput) => Promise<void>;
+    onUpdate?: (eventData: EventInput) => Promise<void>;
     onDelete?: () => Promise<void>;
+    onSave?: (eventData: EventInput) => Promise<Event>;
+    eventState?: EventState;
 }
 
 const EventDetails: React.FC<EventDetailsProps> = ({
     event,
-    isOpen,
     onClose,
     onUpdate,
-    onDelete
+    onDelete,
+    onSave,
+    eventState
 }) => {
     const [error, setError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleSubmit = async (eventData: EventInput) => {
         try {
-            setError(null);
-            await onUpdate(eventData);
-            onClose();
+            if (event?.id && onUpdate) {
+                await onUpdate(eventData);
+                onClose();
+            } else if (onSave) {
+                const savedEvent = await onSave(eventData);
+                // Close the bottom sheet after saving
+                onClose();
+            }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update event');
-            console.error('Error updating event:', err);
+            setError(err instanceof Error ? err.message : 'Failed to save event');
         }
     };
 
@@ -57,9 +64,9 @@ const EventDetails: React.FC<EventDetailsProps> = ({
 
     return (
         <BottomSheet
-            isOpen={isOpen}
+            isOpen={!!event}
             onClose={onClose}
-            title={event.title}
+            title={event?.title || 'New Event'}
         >
             {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
@@ -72,6 +79,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({
                 onCancel={onClose}
                 onDelete={handleDelete}
                 isDeleting={isDeleting}
+                eventState={eventState}
             />
         </BottomSheet>
     );

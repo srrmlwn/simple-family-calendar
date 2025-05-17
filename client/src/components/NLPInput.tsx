@@ -123,7 +123,9 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
         try {
             setIsLoading(true);
             setError(null);
+            // Parse and save the event in one step
             const event = await eventService.createFromText(inputText);
+            // Pass the saved event to the parent component
             onEventAdded(event);
             setInputText('');
         } catch (err) {

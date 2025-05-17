@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
+import { validateEvent, EventState, EventStatus, getEventStatusMessage, getValidationMessage } from '../utils/eventValidation';
 
 interface EventFormProps {
     event?: Event;
@@ -9,6 +10,7 @@ interface EventFormProps {
     onCancel: () => void;
     onDelete?: () => Promise<void>;
     isDeleting?: boolean;
+    eventState?: EventState;
 }
 
 const EventForm: React.FC<EventFormProps> = ({
@@ -17,7 +19,8 @@ const EventForm: React.FC<EventFormProps> = ({
     onSubmit,
     onCancel,
     onDelete,
-    isDeleting = false
+    isDeleting = false,
+    eventState
 }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -30,6 +33,7 @@ const EventForm: React.FC<EventFormProps> = ({
     const [color, setColor] = useState('#3B82F6'); // Default blue
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [validation, setValidation] = useState(() => validateEvent({}));
 
     // Initialize form with existing event data or defaults
     useEffect(() => {
@@ -56,7 +60,6 @@ const EventForm: React.FC<EventFormProps> = ({
             const start = moment(initialDate);
             const end = moment(initialDate).add(1, 'hour');
 
-            // Preserve the time from the selected slot
             setStartDate(start.format('YYYY-MM-DD'));
             setEndDate(end.format('YYYY-MM-DD'));
             setStartTime(start.format('HH:mm'));
@@ -74,6 +77,17 @@ const EventForm: React.FC<EventFormProps> = ({
         }
     }, [event, initialDate]);
 
+    // Update validation whenever form data changes
+    useEffect(() => {
+        const eventData = {
+            title,
+            startTime: startDate && startTime ? moment(`${startDate} ${startTime}`).toDate() : undefined,
+            endTime: endDate && endTime ? moment(`${endDate} ${endTime}`).toDate() : undefined,
+            isAllDay
+        };
+        setValidation(validateEvent(eventData));
+    }, [title, startDate, startTime, endDate, endTime, isAllDay]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -81,41 +95,21 @@ const EventForm: React.FC<EventFormProps> = ({
             setIsSubmitting(true);
             setError(null);
 
-            // Validate form
-            if (!title.trim()) {
-                setError('Event title is required');
-                return;
-            }
-
-            if (!startDate) {
-                setError('Start date is required');
-                return;
-            }
-
-            if (!isAllDay && !startTime) {
-                setError('Start time is required for non-all-day events');
-                return;
-            }
-
             // Create start and end datetime objects
             let startDateTime, endDateTime;
 
             if (isAllDay) {
-                // For all-day events, set time to start/end of day
                 startDateTime = moment(startDate).startOf('day').toDate();
                 endDateTime = moment(endDate || startDate).endOf('day').toDate();
             } else {
-                // For time-specific events, combine date and time
                 startDateTime = moment(`${startDate} ${startTime}`).toDate();
                 endDateTime = moment(`${endDate || startDate} ${endTime || startTime}`).toDate();
 
-                // Ensure end time is after start time
                 if (endDateTime <= startDateTime) {
                     endDateTime = moment(startDateTime).add(1, 'hour').toDate();
                 }
             }
 
-            // Prepare event data
             const eventData: EventInput = {
                 title,
                 description: description || undefined,
@@ -126,7 +120,6 @@ const EventForm: React.FC<EventFormProps> = ({
                 color,
             };
 
-            // Submit the form
             await onSubmit(eventData);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save event');
@@ -136,9 +129,42 @@ const EventForm: React.FC<EventFormProps> = ({
         }
     };
 
+    const getStatusMessage = () => {
+        if (eventState) {
+            return getEventStatusMessage(eventState);
+        }
+        return validation.isValid ? 'Great! Your event is ready to save' : getValidationMessage(validation);
+    };
+
+    const getStatusMessageClass = () => {
+        if (eventState) {
+            switch (eventState.status) {
+                case 'saved':
+                    return 'bg-green-50 border-green-200 text-green-700';
+                case 'saving':
+                    return 'bg-blue-50 border-blue-200 text-blue-700';
+                case 'error':
+                    return 'bg-red-50 border-red-200 text-red-700';
+                case 'draft':
+                    return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+                default:
+                    return '';
+            }
+        }
+        return validation.isValid 
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : 'bg-yellow-50 border-yellow-200 text-yellow-700';
+    };
+
     return (
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
+                {/* Status message */}
+                <div className={`border rounded-md px-4 py-3 ${getStatusMessageClass()}`}>
+                    {getStatusMessage()}
+                </div>
+
+                {/* Error message */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
                         {error}
@@ -154,11 +180,18 @@ const EventForm: React.FC<EventFormProps> = ({
                         id="title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className={`mt-1 block w-full border rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                            validation.title.status === 'invalid' 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                        }`}
                         placeholder="Event title"
                         required
                         disabled={isSubmitting || isDeleting}
                     />
+                    {validation.title.status === 'invalid' && (
+                        <p className="mt-1 text-sm text-red-600">{validation.title.message}</p>
+                    )}
                 </div>
 
                 <div className="flex items-center">
@@ -287,8 +320,12 @@ const EventForm: React.FC<EventFormProps> = ({
                 <div className="flex gap-2">
                     <button
                         type="submit"
-                        disabled={isSubmitting || isDeleting}
-                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isSubmitting || isDeleting || !validation.isValid}
+                        className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
+                            validation.isValid 
+                                ? 'bg-blue-600 hover:bg-blue-700' 
+                                : 'bg-gray-400 cursor-not-allowed'
+                        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                     >
                         {isSubmitting ? 'Saving...' : 'Save'}
                     </button>
