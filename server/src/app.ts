@@ -8,6 +8,7 @@ import path from 'path';
 import { logRequest } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { securityHeaders } from './middleware/security';
+import { apiLimiter } from './middleware/rateLimiter';
 import config from './config';
 import passport from './config/passport';
 
@@ -17,12 +18,14 @@ const PORT = config.server.port;
 
 // Middleware
 app.use(cors());
-app.use(helmet({
-    contentSecurityPolicy: false  // Disable helmet's CSP
-}));
+app.use(helmet()); // Use default helmet configuration except CSP
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(logRequest);
-app.use(securityHeaders);
+app.use(securityHeaders); // This includes our custom CSP configuration
+
+// Apply rate limiting to all routes
+app.use('/api', apiLimiter);
 
 // Initialize Passport
 app.use(passport.initialize());
