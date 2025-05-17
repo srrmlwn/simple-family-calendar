@@ -16,7 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: () => void;
-  handleGoogleCallback: (token: string) => Promise<void>;
+  handleAuthCallback: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   error: string | null;
@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   loginWithGoogle: () => {},
-  handleGoogleCallback: async () => {},
+  handleAuthCallback: async () => {},
   logout: () => {},
   loading: false,
   error: null,
@@ -40,21 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isGoogleClientLoaded, setIsGoogleClientLoaded] = useState<boolean>(false);
   const navigate = useNavigate();
-
-  // Check if Google client is loaded
-  useEffect(() => {
-    const checkGoogleClient = () => {
-      if (window.google?.accounts?.oauth2?.initTokenClient) {
-        setIsGoogleClientLoaded(true);
-      } else {
-        // Check again after a short delay
-        setTimeout(checkGoogleClient, 100);
-      }
-    };
-    checkGoogleClient();
-  }, []);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -79,63 +65,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [navigate]);
 
   // Login with Google
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("AuthContext - Initiating Google login with popup", {
-        origin: window.location.origin,
-        hostname: window.location.hostname,
-        href: window.location.href,
-        domain: window.location.host
-      });
-
-      if (!isGoogleClientLoaded || !window.google?.accounts?.oauth2?.initTokenClient) {
-        throw new Error('Google OAuth client is still loading. Please try again in a moment.');
-      }
-
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
-        scope: 'email profile openid',
-        prompt: 'select_account',
-        callback: async (response) => {
-          console.log("Google OAuth callback triggered:", response);
-          
-          if (response.error) {
-            console.error('Google OAuth error:', response.error);
-            setError(response.error_description || 'Google authentication failed');
-            setLoading(false);
-            return;
-          }
-
-          if (response.access_token) {
-            try {
-              console.log("Received access token, sending to backend");
-              const authResponse = await authService.verifyGoogleToken(response.access_token);
-              handleAuthSuccess(authResponse);
-            } catch (err) {
-              setError(err instanceof Error ? err.message : 'Failed to complete Google authentication');
-              console.error('Google token verification error:', err);
-            } finally {
-              setLoading(false);
-            }
-          }
-        },
+      
+      // Log the environment variables and constructed URL
+      console.log('Environment variables:', {
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+        NODE_ENV: process.env.NODE_ENV
       });
       
-      console.log("Setting up Google OAuth callback with current state:", {
-        origin: window.location.origin,
-        hostname: window.location.hostname,
-        href: window.location.href,
-        domain: window.location.host,
-        isGoogleClientLoaded,
-        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'present' : 'missing'
-      });
-
-      client.requestAccessToken();
+      const redirectUrl = `${process.env.REACT_APP_API_URL}/api/auth/google`;
+      console.log('Redirecting to Google OAuth URL:', redirectUrl);
+      
+      // Redirect to Google OAuth endpoint
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initiate Google login');
       console.error('Google login error:', err);
+      setLoading(false);
+    }
+  };
+
+  // Handle auth callback
+  const handleAuthCallback = async (token: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get user info using the token
+      const user = await authService.getCurrentUser(token);
+      
+      handleAuthSuccess({
+        user,
+        token
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete authentication');
+      console.error('Auth callback error:', err);
+      navigate('/login', { 
+        state: { error: 'Authentication failed. Please try again.' }
+      });
     } finally {
       setLoading(false);
     }
@@ -177,29 +148,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Handle Google OAuth callback
-  const handleGoogleCallback = async (token: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log("AuthContext - Handling Google callback");
-      
-      const response = await authService.handleGoogleCallback(token);
-      
-      setUser(response.user);
-      setToken(response.token);
-      
-      console.log("Storing Google auth token and user in local storage");
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete Google authentication');
-      console.error('Google callback error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Logout user
   const logout = () => {
     setUser(null);
@@ -218,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         loginWithGoogle,
-        handleGoogleCallback,
+        handleAuthCallback,
         logout,
         loading,
         error,

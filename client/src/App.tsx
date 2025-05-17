@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import LoginPage from './pages/LoginPage';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
+import AuthCallback from './pages/AuthCallback';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -17,6 +18,7 @@ const App: React.FC = () => {
                     <Route path="/login" element={<Login />} />
                     <Route path="/login-test" element={<LoginPage />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/" element={
                         <PrivateRoute>
                             <Calendar />

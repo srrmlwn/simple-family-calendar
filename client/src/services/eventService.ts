@@ -32,7 +32,7 @@ const eventService = {
     createFromText: async (text: string): Promise<Event> => {
         try {
             const timezone = getUserTimezone();
-            const response = await api.post<Event>('/events/text', { text, timezone });
+            const response = await api.post<Event>('/api/events/text', { text, timezone });
             console.log('Returned event:', JSON.stringify(response.data, null, 2));
             const parsedEvent = parseEventDates(response.data);
             console.log('Parsed event:', JSON.stringify(parsedEvent, null, 2));
@@ -61,7 +61,7 @@ const eventService = {
                 params.end = endDate.toISOString();
             }
 
-            const response = await api.get<Event[]>('/events', { params });
+            const response = await api.get<Event[]>('/api/events', { params });
             return response.data.map(parseEventDates);
         } catch (error) {
             if (error instanceof Error) {
@@ -75,7 +75,7 @@ const eventService = {
     getById: async (id: string): Promise<Event> => {
         try {
             const timezone = getUserTimezone();
-            const response = await api.get<Event>(`/events/${id}`, {
+            const response = await api.get<Event>(`/api/events/${id}`, {
                 params: { timezone }
             });
             return parseEventDates(response.data);
@@ -88,7 +88,7 @@ const eventService = {
     create: async (eventData: EventInput): Promise<Event> => {
         try {
             const timezone = getUserTimezone();
-            const response = await api.post<Event>('/events', { ...eventData, timezone });
+            const response = await api.post<Event>('/api/events', { ...eventData, timezone });
             console.log('Event created:', JSON.stringify(response.data, null, 2));
             return parseEventDates(response.data);
         } catch (error) {
@@ -103,7 +103,7 @@ const eventService = {
     update: async (id: string, eventData: Partial<EventInput>): Promise<Event> => {
         try {
             const timezone = getUserTimezone();
-            const response = await api.put<Event>(`/events/${id}`, { ...eventData, timezone });
+            const response = await api.put<Event>(`/api/events/${id}`, { ...eventData, timezone });
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {
@@ -116,7 +116,7 @@ const eventService = {
     // Delete event
     delete: async (id: string): Promise<void> => {
         try {
-            await api.delete(`/events/${id}`);
+            await api.delete(`/api/events/${id}`);
         } catch (error) {
             throw new Error('Failed to delete event');
         }

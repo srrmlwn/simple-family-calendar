@@ -25,7 +25,7 @@ const authService = {
         try {
             log('info', 'Attempting login for user:', { email });
             
-            const response = await api.post<AuthResponse>('/auth/login', {
+            const response = await api.post<AuthResponse>('/api/auth/login', {
                 email,
                 password,
             });
@@ -64,7 +64,7 @@ const authService = {
                 lastName 
             });
             
-            const response = await api.post<AuthResponse>('/auth/register', {
+            const response = await api.post<AuthResponse>('/api/auth/register', {
                 firstName,
                 lastName,
                 email,
@@ -91,23 +91,18 @@ const authService = {
     },
 
     // Get current user info
-    getCurrentUser: async (): Promise<User> => {
+    getCurrentUser: async (token: string): Promise<User> => {
         try {
-            log('info', 'Fetching current user information');
-            
-            const response = await api.get<User>('/auth/me');
-            
-            log('info', 'Current user info retrieved:', { 
-                userId: response.data.id,
-                email: response.data.email 
+            const response = await api.get<User>('/api/auth/me', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             });
-            
             return response.data;
         } catch (error) {
-            log('error', 'Failed to get user information:', {
+            log('error', 'Failed to get current user:', {
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
-            
             throw new Error('Failed to get user information');
         }
     },
@@ -118,7 +113,7 @@ const authService = {
             log('info', 'Handling Google OAuth callback', { token: token.substring(0, 10) + '...' });
             
             // Get user info using the token
-            const response = await api.get<User>('/auth/me', {
+            const response = await api.get<User>('/api/auth/me', {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -146,7 +141,7 @@ const authService = {
         try {
             log('info', 'Verifying Google OAuth token');
             
-            const response = await api.post<AuthResponse>('/auth/google/verify', {
+            const response = await api.post<AuthResponse>('/api/auth/google/verify', {
                 accessToken
             });
             

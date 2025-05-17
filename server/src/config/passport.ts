@@ -9,8 +9,16 @@ passport.use(
         {
             clientID: process.env.GOOGLE_CLIENT_ID || '',
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-            callbackURL: '/api/auth/google/callback',
-            scope: ['profile', 'email']
+            callbackURL: (() => {
+                const url = `${process.env.API_URL || 'http://localhost:4000'}/api/auth/google/callback`;
+                console.log('Google OAuth callback URL configured as:', url);
+                console.log('Environment variables:', {
+                    API_URL: process.env.API_URL,
+                    NODE_ENV: process.env.NODE_ENV
+                });
+                return url;
+            })(),
+            scope: ['profile', 'email', 'openid']
         },
         async (accessToken, refreshToken, profile, done) => {
             try {

@@ -53,7 +53,7 @@ const Settings: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            const response = await api.get('/recipients');
+            const response = await api.get('/api/recipients');
             setRecipients(response.data);
         } catch (err) {
             setError('Failed to load recipients. Please try again later.');
@@ -74,9 +74,9 @@ const Settings: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            const response = await api.post('/recipients', newRecipient);
+            const addResponse = await api.post('/api/recipients', newRecipient);
 
-            setRecipients([...recipients, response.data]);
+            setRecipients([...recipients, addResponse.data]);
             setNewRecipient({ name: '', email: '', isDefault: false });
             setSuccessMessage('Recipient added successfully');
 
@@ -104,7 +104,7 @@ const Settings: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            await api.delete(`/recipients/${id}`);
+            await api.delete(`/api/recipients/${id}`);
 
             setRecipients(recipients.filter(r => r.id !== id));
             setSuccessMessage('Recipient deleted successfully');
@@ -140,10 +140,10 @@ const Settings: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            const response = await api.put(`/recipients/${editingId}`, editForm);
+            const updateResponse = await api.put(`/api/recipients/${editingId}`, editForm);
 
             setRecipients(recipients.map(r =>
-                r.id === editingId ? response.data : r
+                r.id === editingId ? updateResponse.data : r
             ));
             setEditingId(null);
             setSuccessMessage('Recipient updated successfully');
@@ -177,12 +177,12 @@ const Settings: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            const response = await api.put(`/recipients/${id}`, {
+            const toggleResponse = await api.put(`/api/recipients/${id}`, {
                 isDefault: !recipient.isDefault
             });
 
             setRecipients(recipients.map(r =>
-                r.id === id ? response.data : r
+                r.id === id ? toggleResponse.data : r
             ));
         } catch (err) {
             setError('Failed to update recipient');

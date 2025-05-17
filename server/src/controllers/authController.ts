@@ -154,6 +154,44 @@ export class AuthController {
             res.status(401).json({ error: 'Failed to verify Google token' });
         }
     };
+
+    /**
+     * Handle Google OAuth callback
+     * This method is called after successful Google authentication
+     * It generates a JWT token and redirects to the client with the token
+     */
+    public handleGoogleCallback = async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!req.user) {
+                throw new Error('No user found after Google authentication');
+            }
+
+            // Generate JWT token
+            const token = this.authService.generateToken(req.user as User);
+            
+            // Log environment variables
+            console.log('Environment variables in handleGoogleCallback:', {
+                CLIENT_URL: process.env.CLIENT_URL,
+                NODE_ENV: process.env.NODE_ENV,
+                API_URL: process.env.API_URL
+            });
+            
+            // Redirect to client with token
+            const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+            console.log('Using client URL:', clientUrl);
+            
+            const redirectUrl = new URL(clientUrl);
+            redirectUrl.pathname = '/auth/callback';
+            redirectUrl.searchParams.set('token', token);
+            
+            console.log('Redirecting to:', redirectUrl.toString());
+            res.redirect(redirectUrl.toString());
+        } catch (error) {
+            console.error('Google callback error:', error);
+            const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+            res.redirect(`${clientUrl}/login?error=auth_failed`);
+        }
+    };
 }
 
 export default new AuthController();
