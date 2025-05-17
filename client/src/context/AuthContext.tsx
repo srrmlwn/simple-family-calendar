@@ -9,7 +9,7 @@ interface User {
   lastName: string;
 }
 
-interface AuthContextType {
+interface AuthContextType { 
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
@@ -90,44 +90,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         domain: window.location.host
       });
 
-      if (!isGoogleClientLoaded) {
+      if (!isGoogleClientLoaded || !window.google?.accounts?.oauth2?.initTokenClient) {
         throw new Error('Google OAuth client is still loading. Please try again in a moment.');
       }
 
-      const client = (window as any).google.accounts.oauth2.initTokenClient({
+      const client = window.google.accounts.oauth2.initTokenClient({
         client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
         scope: 'email profile openid',
-        callback: async (response: { 
-          access_token?: string;
-          error?: string;
-          error_description?: string;
-        }) => {
-          console.log("Callback invoked - Google OAuth response:", {
-            response,
-            origin: window.location.origin,
-            hostname: window.location.hostname,
-            href: window.location.href,
-            domain: window.location.host
-          });
+        prompt: 'select_account',
+        callback: async (response) => {
+          console.log("Google OAuth callback triggered:", response);
+          
           if (response.error) {
             console.error('Google OAuth error:', response.error);
             setError(response.error_description || 'Google authentication failed');
+            setLoading(false);
             return;
           }
 
           if (response.access_token) {
             try {
-              // Send the token to our backend
+              console.log("Received access token, sending to backend");
               const authResponse = await authService.verifyGoogleToken(response.access_token);
               handleAuthSuccess(authResponse);
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Failed to complete Google authentication');
               console.error('Google token verification error:', err);
+            } finally {
+              setLoading(false);
             }
           }
         },
       });
-      console.log("Requesting access token. Client:", JSON.stringify(client));
+      
       console.log("Setting up Google OAuth callback with current state:", {
         origin: window.location.origin,
         hostname: window.location.hostname,
@@ -136,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isGoogleClientLoaded,
         clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'present' : 'missing'
       });
+
       client.requestAccessToken();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initiate Google login');

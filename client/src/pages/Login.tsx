@@ -8,31 +8,6 @@ fontLink.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;60
 fontLink.rel = 'stylesheet';
 document.head.appendChild(fontLink);
 
-// Type declarations for Google SDK
-declare global {
-  interface Window {
-    Capacitor?: any;
-    google?: {
-      accounts: {
-        oauth2: {
-          initTokenClient: (config: {
-            client_id: string;
-            scope: string;
-            prompt?: 'consent' | 'select_account';
-            callback: (response: { 
-              access_token?: string;
-              error?: string;
-              error_description?: string;
-            }) => void;
-          }) => {
-            requestAccessToken: () => void;
-          };
-        };
-      };
-    };
-  }
-}
-
 // SVG Icon
 const GoogleIcon = () => (
   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
