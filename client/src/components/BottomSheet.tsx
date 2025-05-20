@@ -6,13 +6,15 @@ interface BottomSheetProps {
     onClose: () => void;
     children: React.ReactNode;
     title?: string;
+    className?: string;
 }
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
     isOpen,
     onClose,
     children,
-    title
+    title,
+    className = ''
 }) => {
     const overlayRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -68,7 +70,14 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             >
                 <div
                     ref={contentRef}
-                    className="bg-white w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-xl transform transition-all duration-300 ease-in-out flex flex-col h-[90vh] sm:h-auto sm:max-h-[90vh] translate-y-0 opacity-100"
+                    className={`
+                        bg-white w-full max-w-2xl shadow-xl 
+                        transform transition-all duration-300 ease-in-out 
+                        flex flex-col translate-y-0 opacity-100 
+                        !rounded-t-2xl sm:!rounded-2xl sm:mx-4
+                        overflow-hidden
+                        ${className}
+                    `}
                     style={{
                         animation: 'slideUp 0.3s ease-out'
                     }}
@@ -98,7 +107,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 min-h-0 overflow-y-auto">
+                    <div className="flex flex-col">
                         {children}
                     </div>
                 </div>
