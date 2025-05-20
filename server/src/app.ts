@@ -11,6 +11,7 @@ import { securityHeaders } from './middleware/security';
 import { apiLimiter } from './middleware/rateLimiter';
 import config from './config';
 import passport from './config/passport';
+import { schedulerService } from './services/SchedulerService';
 
 // Initialize express app
 const app = express();
@@ -35,12 +36,14 @@ import authRoutes from './routes/auth';
 import eventRoutes from './routes/event';
 import recipientRoutes from './routes/recipient';
 import settingsRoutes from './routes/settings';
+import notificationRoutes from './routes/notificationRoutes';
 import { authenticateJWT } from './middleware/auth';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', authenticateJWT, eventRoutes);
 app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Serve static files in production
 if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production') {
@@ -57,6 +60,7 @@ app.use(errorHandler);
 AppDataSource.initialize()
     .then(() => {
         console.log('Data Source has been initialized!');
+        schedulerService.start(); // Start the scheduler
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
