@@ -11,6 +11,8 @@ import { IsEmail, IsNotEmpty } from 'class-validator';
 import { Event } from './Event';
 import { EmailRecipient } from './EmailRecipient';
 import { UserSettings } from './UserSettings';
+import { NotificationPreferences } from './NotificationPreferences';
+import { DigestLog } from './DigestLog';
 
 @Entity('users')
 export class User {
@@ -41,6 +43,12 @@ export class User {
 
   @OneToMany(() => UserSettings, settings => settings.user)
   settings?: UserSettings[];
+
+  @OneToMany(() => NotificationPreferences, prefs => prefs.user)
+  notificationPreferences?: NotificationPreferences[];
+
+  @OneToMany(() => DigestLog, log => log.user)
+  digestLogs?: DigestLog[];
 
   @CreateDateColumn()
   createdAt!: Date;
