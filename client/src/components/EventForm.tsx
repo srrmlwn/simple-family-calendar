@@ -23,27 +23,24 @@ const EventForm: React.FC<EventFormProps> = ({
     eventState
 }) => {
     const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endDate, setEndDate] = useState('');
     const [endTime, setEndTime] = useState('');
     const [isAllDay, setIsAllDay] = useState(false);
     const [location, setLocation] = useState('');
-    const [color, setColor] = useState('#3B82F6'); // Default blue
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [validation, setValidation] = useState(() => validateEvent({}));
+    const [activeField, setActiveField] = useState<string | null>(null);
+    const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
 
     // Initialize form with existing event data or defaults
     useEffect(() => {
         if (event) {
-            // Editing existing event
             setTitle(event.title || '');
-            setDescription(event.description || '');
             setIsAllDay(event.isAllDay);
             setLocation(event.location || '');
-            setColor(event.color || '#3B82F6');
 
             const start = moment(event.startTime);
             const end = moment(event.endTime);
@@ -56,7 +53,6 @@ const EventForm: React.FC<EventFormProps> = ({
                 setEndTime(end.format('HH:mm'));
             }
         } else if (initialDate) {
-            // Creating new event from selected time slot
             const start = moment(initialDate);
             const end = moment(initialDate).add(1, 'hour');
 
@@ -65,7 +61,6 @@ const EventForm: React.FC<EventFormProps> = ({
             setStartTime(start.format('HH:mm'));
             setEndTime(end.format('HH:mm'));
         } else {
-            // Creating new event without a selected time slot
             const now = moment();
             const start = now.clone();
             const end = now.clone().add(1, 'hour');
@@ -95,7 +90,6 @@ const EventForm: React.FC<EventFormProps> = ({
             setIsSubmitting(true);
             setError(null);
 
-            // Create start and end datetime objects
             let startDateTime, endDateTime;
 
             if (isAllDay) {
@@ -112,12 +106,10 @@ const EventForm: React.FC<EventFormProps> = ({
 
             const eventData: EventInput = {
                 title,
-                description: description || undefined,
                 startTime: startDateTime,
                 endTime: endDateTime,
                 isAllDay,
                 location: location || undefined,
-                color,
             };
 
             await onSubmit(eventData);
@@ -156,186 +148,227 @@ const EventForm: React.FC<EventFormProps> = ({
             : 'bg-yellow-50 border-yellow-200 text-yellow-700';
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
-                {/* Status message */}
-                <div className={`border rounded-md px-4 py-3 ${getStatusMessageClass()}`}>
-                    {getStatusMessage()}
-                </div>
+    const formatDisplayTime = (date: string, time: string) => {
+        if (!date) return '';
+        const momentDate = moment(`${date} ${time || '00:00'}`);
+        return isAllDay ? momentDate.format('MMM D') : momentDate.format('MMM D, h:mm A');
+    };
 
+    const validateDateTime = (value: string, isStart: boolean): { isValid: boolean; message?: string } => {
+        // Try parsing with different formats
+        const formats = [
+            'MMM D',           // "Jan 15"
+            'MMM D, h:mm A',   // "Jan 15, 3:30 PM"
+            'h:mm A',          // "3:30 PM"
+            'MMM D YYYY',      // "Jan 15 2024"
+            'MMM D YYYY, h:mm A', // "Jan 15 2024, 3:30 PM"
+            'YYYY-MM-DD',      // "2024-01-15"
+            'YYYY-MM-DD HH:mm' // "2024-01-15 15:30"
+        ];
+
+        const parsed = moment(value, formats, true);
+        
+        if (!parsed.isValid()) {
+            return {
+                isValid: false,
+                message: 'Please enter a valid date and time'
+            };
+        }
+
+        // For end time, ensure it's after start time
+        if (!isStart && parsed.isValid()) {
+            const startMoment = moment(`${startDate} ${startTime}`);
+            if (parsed.isSameOrBefore(startMoment)) {
+                return {
+                    isValid: false,
+                    message: 'End time must be after start time'
+                };
+            }
+        }
+
+        return { isValid: true };
+    };
+
+    const handleFieldChange = (field: string, value: string, isDateTime: boolean, isStart: boolean, onChange: (value: string) => void) => {
+        if (isDateTime) {
+            const validation = validateDateTime(value, isStart);
+            if (!validation.isValid) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    [field]: validation.message || 'Invalid date/time'
+                }));
+                return;
+            }
+            setValidationErrors(prev => ({
+                ...prev,
+                [field]: null
+            }));
+        }
+        onChange(value);
+    };
+
+    const renderEditableField = (field: string, value: string, placeholder: string, onChange: (value: string) => void, isDateTime: boolean = false, isStart: boolean = true) => {
+        const isActive = activeField === field;
+        const validationError = validationErrors[field];
+
+        return (
+            <div className="inline-block relative group">
+                <span
+                    onClick={() => setActiveField(field)}
+                    className={`
+                        inline-block px-2 py-1 rounded-md cursor-pointer
+                        transition-all duration-200
+                        ${isActive 
+                            ? 'bg-blue-50 border border-blue-200 ring-2 ring-blue-100' 
+                            : 'hover:bg-gray-50 border border-transparent group-hover:border-gray-200'
+                        }
+                        ${validationError ? 'border-red-200 bg-red-50' : ''}
+                    `}
+                >
+                    {isActive ? (
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={value}
+                                onChange={(e) => handleFieldChange(field, e.target.value, isDateTime, isStart, onChange)}
+                                onBlur={() => {
+                                    setActiveField(null);
+                                    setValidationErrors(prev => ({
+                                        ...prev,
+                                        [field]: null
+                                    }));
+                                }}
+                                className={`
+                                    bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full
+                                    ${validationError ? 'text-red-600' : ''}
+                                `}
+                                placeholder={placeholder}
+                                autoFocus
+                            />
+                            {validationError && (
+                                <div className="absolute top-full left-0 mt-1 text-xs text-red-600 whitespace-nowrap">
+                                    {validationError}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1">
+                            <span className={validationError ? 'text-red-600' : ''}>
+                                {value || placeholder}
+                            </span>
+                            <svg 
+                                className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    strokeWidth={2} 
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" 
+                                />
+                            </svg>
+                        </div>
+                    )}
+                </span>
+            </div>
+        );
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="flex flex-col">
+            <div className="p-4">
                 {/* Error message */}
                 {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-md mb-3">
                         {error}
                     </div>
                 )}
 
+                {/* Natural language sentence */}
+                <div className="text-lg leading-relaxed mb-3">
+                    <div className="flex flex-wrap items-baseline">
+                        {renderEditableField('title', title, 'Event title', setTitle)}
+                        <span className="mx-1 text-gray-500">from</span>
+                        {renderEditableField(
+                            'startTime', 
+                            formatDisplayTime(startDate, startTime), 
+                            'start time', 
+                            (value) => {
+                                const parsed = moment(value, ['MMM D', 'MMM D, h:mm A', 'h:mm A', 'YYYY-MM-DD', 'YYYY-MM-DD HH:mm'], true);
+                                if (parsed.isValid()) {
+                                    setStartDate(parsed.format('YYYY-MM-DD'));
+                                    if (!isAllDay) {
+                                        setStartTime(parsed.format('HH:mm'));
+                                    }
+                                }
+                            },
+                            true,
+                            true
+                        )}
+                        <span className="mx-1 text-gray-500">to</span>
+                        {renderEditableField(
+                            'endTime', 
+                            formatDisplayTime(endDate, endTime), 
+                            'end time', 
+                            (value) => {
+                                const parsed = moment(value, ['MMM D', 'MMM D, h:mm A', 'h:mm A', 'YYYY-MM-DD', 'YYYY-MM-DD HH:mm'], true);
+                                if (parsed.isValid()) {
+                                    setEndDate(parsed.format('YYYY-MM-DD'));
+                                    if (!isAllDay) {
+                                        setEndTime(parsed.format('HH:mm'));
+                                    }
+                                }
+                            },
+                            true,
+                            false
+                        )}
+                        {location && <span className="mx-1 text-gray-500">at</span>}
+                        {renderEditableField('location', location, 'location', setLocation)}
+                    </div>
+                </div>
+
+                {/* All-day toggle */}
                 <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                        Title *
-                    </label>
-                    <input
-                        type="text"
-                        id="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className={`mt-1 block w-full border rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                            validation.title.status === 'invalid' 
-                                ? 'border-red-300 bg-red-50' 
-                                : 'border-gray-300'
-                        }`}
-                        placeholder="Event title"
-                        required
-                        disabled={isSubmitting || isDeleting}
-                    />
-                    {validation.title.status === 'invalid' && (
-                        <p className="mt-1 text-sm text-red-600">{validation.title.message}</p>
-                    )}
-                </div>
-
-                <div className="flex items-center">
-                    <input
-                        type="checkbox"
-                        id="isAllDay"
-                        checked={isAllDay}
-                        onChange={(e) => setIsAllDay(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        disabled={isSubmitting || isDeleting}
-                    />
-                    <label htmlFor="isAllDay" className="ml-2 block text-sm text-gray-700">
-                        All-day event
-                    </label>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
-                            Start Date *
-                        </label>
+                    <label className="inline-flex items-center cursor-pointer">
                         <input
-                            type="date"
-                            id="startDate"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            required
+                            type="checkbox"
+                            checked={isAllDay}
+                            onChange={(e) => setIsAllDay(e.target.checked)}
+                            className="sr-only peer"
                             disabled={isSubmitting || isDeleting}
                         />
-                    </div>
-
-                    {!isAllDay && (
-                        <div>
-                            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
-                                Start Time *
-                            </label>
-                            <input
-                                type="time"
-                                id="startTime"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                required
-                                disabled={isSubmitting || isDeleting}
-                            />
-                        </div>
-                    )}
-
-                    <div>
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
-                            End Date
-                        </label>
-                        <input
-                            type="date"
-                            id="endDate"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            disabled={isSubmitting || isDeleting}
-                        />
-                    </div>
-
-                    {!isAllDay && (
-                        <div>
-                            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
-                                End Time
-                            </label>
-                            <input
-                                type="time"
-                                id="endTime"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                disabled={isSubmitting || isDeleting}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                        Location
+                        <span className="text-sm text-gray-600 hover:text-gray-900">
+                            All-day event
+                        </span>
                     </label>
-                    <input
-                        type="text"
-                        id="location"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Event location"
-                        disabled={isSubmitting || isDeleting}
-                    />
-                </div>
-
-                <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                        Description
-                    </label>
-                    <textarea
-                        id="description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Event description"
-                        disabled={isSubmitting || isDeleting}
-                    />
-                </div>
-
-                <div>
-                    <label htmlFor="color" className="block text-sm font-medium text-gray-700">
-                        Color
-                    </label>
-                    <input
-                        type="color"
-                        id="color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        className="mt-1 block w-full h-8 border border-gray-300 rounded-md shadow-sm p-0 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
                 </div>
             </div>
 
-            <div className="flex-shrink-0 flex justify-between items-center p-4 border-t bg-white">
-                <div className="flex gap-2">
+            {/* Action buttons */}
+            <div className="flex justify-between items-center p-3 border-t bg-white">
+                <div className="flex gap-3">
                     <button
                         type="submit"
                         disabled={isSubmitting || isDeleting || !validation.isValid}
-                        className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
-                            validation.isValid 
-                                ? 'bg-blue-600 hover:bg-blue-700' 
-                                : 'bg-gray-400 cursor-not-allowed'
-                        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                        className="p-2 text-gray-600 hover:text-green-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                        title={!validation.isValid ? 'Please fill in all required fields' : 'Save'}
                     >
-                        {isSubmitting ? 'Saving...' : 'Save'}
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                     </button>
                     <button
                         type="button"
                         onClick={onCancel}
                         disabled={isSubmitting || isDeleting}
-                        className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-gray-600 hover:text-red-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                        title="Cancel"
                     >
-                        Cancel
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
                 {onDelete && (
@@ -343,9 +376,12 @@ const EventForm: React.FC<EventFormProps> = ({
                         type="button"
                         onClick={onDelete}
                         disabled={isSubmitting || isDeleting}
-                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-gray-600 hover:text-red-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                        title="Delete"
                     >
-                        {isDeleting ? 'Deleting...' : 'Delete'}
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                     </button>
                 )}
             </div>

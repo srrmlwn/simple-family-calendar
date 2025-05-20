@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Event, EventInput } from '../services/eventService';
-import { EventState, EventStatus } from '../utils/eventValidation';
+import { EventState } from '../utils/eventValidation';
 import BottomSheet from './BottomSheet';
 import EventForm from './EventForm';
 
@@ -31,7 +31,6 @@ const EventDetails: React.FC<EventDetailsProps> = ({
                 onClose();
             } else if (onSave) {
                 const savedEvent = await onSave(eventData);
-                // Close the bottom sheet after saving
                 onClose();
             }
         } catch (err) {
@@ -67,20 +66,23 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             isOpen={!!event}
             onClose={onClose}
             title={event?.title || 'New Event'}
+            className="max-h-[85vh] sm:max-h-[600px]"
         >
-            {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
-                    {error}
-                </div>
-            )}
-            <EventForm
-                event={event}
-                onSubmit={handleSubmit}
-                onCancel={onClose}
-                onDelete={handleDelete}
-                isDeleting={isDeleting}
-                eventState={eventState}
-            />
+            <div className="flex flex-col">
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+                        {error}
+                    </div>
+                )}
+                <EventForm
+                    event={event}
+                    onSubmit={handleSubmit}
+                    onCancel={onClose}
+                    onDelete={handleDelete}
+                    isDeleting={isDeleting}
+                    eventState={eventState}
+                />
+            </div>
         </BottomSheet>
     );
 };
