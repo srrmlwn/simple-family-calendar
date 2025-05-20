@@ -266,6 +266,24 @@ export class EmailService {
       </div>
     `;
     }
+
+    /**
+     * Send a regular email (non-calendar)
+     */
+    public async sendEmail(options: {
+        to: { name: string; address: string } | { name: string; address: string }[];
+        subject: string;
+        html: string;
+        text: string;
+    }): Promise<void> {
+        await this.transporter.sendMail({
+            from: {
+                name: 'famcal.ai',
+                address: process.env.EMAIL_USER || ''
+            },
+            ...options
+        });
+    }
 }
 
 export default new EmailService();
