@@ -1,0 +1,110 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Rules for famcal.ai
+
+# IMPORTANT: These rules will be loaded for every chat session
+
+# Project Overview
+- This is a modern family calendar application built with React + TypeScript (frontend) and Node.js + Express (backend)
+- The project uses PostgreSQL as the database and integrates with Google OAuth, OpenAI API, and SMTP services
+- Follow the system architecture as documented in famcal-ai.md
+
+# Documentation
+- You MUST read famcal-ai.md before writing any code
+- After adding a major feature or completing a milestone, update famcal-ai.md
+- Document the entire database schema in famcal-ai.md
+- For new migrations, make sure to add them to the same file
+
+# Code Style
+- Use TypeScript for all new code
+- Follow the existing project structure:
+  - Client: components/, context/, hooks/, pages/, services/, store/, styles/, types/, utils/
+  - Server: config/, controllers/, entities/, middleware/, routes/, services/, utils/
+- Use proper error handling and logging
+- Add comments for complex logic
+- Follow the established naming conventions:
+  - Components: PascalCase (e.g., CalendarView.tsx)
+  - Files: kebab-case (e.g., auth-service.ts)
+  - Functions: camelCase
+  - Constants: UPPER_SNAKE_CASE
+
+# Security
+- Never commit sensitive data or API keys
+- Use environment variables for configuration (see famcal-ai.md for required variables)
+- Follow security best practices:
+  - Implement proper authentication (JWT, Google OAuth)
+  - Use password hashing (bcrypt)
+  - Enable CORS protection
+  - Use Helmet security headers
+  - Implement rate limiting
+  - Validate all user input
+  - Prevent SQL injection and XSS attacks
+
+# Testing
+- Write tests for new features
+- Maintain existing test coverage
+- Test edge cases and error conditions
+- Include both unit tests and integration tests
+- Test security features thoroughly
+
+# Git
+- Use meaningful commit messages
+- Create feature branches for new work
+- Keep commits focused and atomic
+- Follow the branching strategy:
+  - main: production-ready code
+  - develop: development branch
+  - feature/*: new features
+  - bugfix/*: bug fixes
+  - release/*: release preparation
+
+# Development Environment
+- Ensure Node.js v16+ is installed
+- Use PostgreSQL v13+ for database
+- Set up all required environment variables
+- Follow the development setup steps in famcal-ai.md
+- Use npm or yarn for package management
+
+# Mobile Support
+- Ensure responsive design for all new components
+- Test on multiple screen sizes
+- Follow mobile-first design principles
+- Consider Capacitor integration for mobile apps
+
+# Performance
+- Optimize database queries
+- Implement proper caching strategies
+- Minimize bundle size
+- Use lazy loading where appropriate
+- Monitor and optimize API response times
+
+# Accessibility
+- Follow WCAG 2.1 guidelines
+- Ensure proper ARIA attributes
+- Maintain good color contrast
+- Support keyboard navigation
+- Test with screen readers
+
+# API Design
+- Follow RESTful principles
+- Use proper HTTP methods and status codes
+- Implement proper error handling
+- Document all API endpoints
+- Version APIs appropriately
+
+# Dependencies
+- Keep dependencies up to date
+- Review and audit dependencies regularly
+- Document any new dependencies added
+- Prefer stable, well-maintained packages
+- Minimize external dependencies
+
+# Deployment
+- Follow deployment checklist
+- Test in staging environment
+- Ensure proper environment variables
+- Monitor application logs
+- Set up proper backup strategies
