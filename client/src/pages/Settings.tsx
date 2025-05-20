@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import NotificationPreferences from '../components/NotificationPreferences';
 import { Plus, Trash2, Check, X } from 'lucide-react';
 import api from '../services/api';
 import { getUserTimezone } from '../utils/timezone';
@@ -252,6 +253,11 @@ const Settings: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Notification Preferences */}
+                <div className="mb-6">
+                    <NotificationPreferences />
                 </div>
 
                 <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
