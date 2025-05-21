@@ -95,11 +95,11 @@ const DayView: React.FC<DayViewProps> = ({
                                     >
                                         <div className="flex gap-4 items-center">
                                             {/* Left Section - Time */}
-                                            <div className="flex flex-col items-center justify-center min-w-[60px]">
-                                                <span className="text-lg font-bold text-blue-600">
+                                            <div className="flex flex-col items-center justify-center min-w-[50px]">
+                                                <span className="text-base font-bold text-blue-600">
                                                     {moment(event.startTime).format('h:mm')}
                                                 </span>
-                                                <span className="text-sm text-gray-500">
+                                                <span className="text-xs text-gray-500">
                                                     {moment(event.startTime).format('A')}
                                                 </span>
                                             </div>
@@ -112,17 +112,30 @@ const DayView: React.FC<DayViewProps> = ({
                                                         {event.title}
                                                     </h3>
                                                 </div>
-                                                <div className="mt-1 text-sm text-gray-500 flex items-center gap-1">
-                                                    {event.location && (
-                                                        <>
-                                                            <span>{event.location}</span>
-                                                            <span className="text-gray-300">•</span>
-                                                        </>
-                                                    )}
-                                                    <span>
-                                                        {moment(event.startTime).format('h:mm A')} – {moment(event.endTime).format('h:mm A')}
-                                                    </span>
-                                                </div>
+                                                {isMobile ? (
+                                                    <>
+                                                        {event.location && (
+                                                            <div className="mt-1 text-sm text-gray-500">
+                                                                {event.location}
+                                                            </div>
+                                                        )}
+                                                        <div className="mt-1 text-sm text-gray-500">
+                                                            {moment(event.startTime).format('h:mm A')} – {moment(event.endTime).format('h:mm A')}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="mt-1 text-sm text-gray-500 flex items-center gap-1">
+                                                        {event.location && (
+                                                            <>
+                                                                <span>{event.location}</span>
+                                                                <span className="text-gray-300">•</span>
+                                                            </>
+                                                        )}
+                                                        <span>
+                                                            {moment(event.startTime).format('h:mm A')} – {moment(event.endTime).format('h:mm A')}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Right Section - Edit Icon */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
 import { validateEvent, EventState, EventStatus, getEventStatusMessage, getValidationMessage } from '../utils/eventValidation';
+import { getEventIcon } from '../utils/eventIcons';
 
 interface EventFormProps {
     event?: Event;
@@ -27,7 +28,6 @@ const EventForm: React.FC<EventFormProps> = ({
     const [startTime, setStartTime] = useState('');
     const [endDate, setEndDate] = useState('');
     const [endTime, setEndTime] = useState('');
-    const [isAllDay, setIsAllDay] = useState(false);
     const [location, setLocation] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,6 @@ const EventForm: React.FC<EventFormProps> = ({
     useEffect(() => {
         if (event) {
             setTitle(event.title || '');
-            setIsAllDay(event.isAllDay);
             setLocation(event.location || '');
 
             const start = moment(event.startTime);
@@ -47,11 +46,8 @@ const EventForm: React.FC<EventFormProps> = ({
 
             setStartDate(start.format('YYYY-MM-DD'));
             setEndDate(end.format('YYYY-MM-DD'));
-
-            if (!event.isAllDay) {
-                setStartTime(start.format('HH:mm'));
-                setEndTime(end.format('HH:mm'));
-            }
+            setStartTime(start.format('HH:mm'));
+            setEndTime(end.format('HH:mm'));
         } else if (initialDate) {
             const start = moment(initialDate);
             const end = moment(initialDate).add(1, 'hour');
@@ -78,10 +74,10 @@ const EventForm: React.FC<EventFormProps> = ({
             title,
             startTime: startDate && startTime ? moment(`${startDate} ${startTime}`).toDate() : undefined,
             endTime: endDate && endTime ? moment(`${endDate} ${endTime}`).toDate() : undefined,
-            isAllDay
+            isAllDay: false // Always false now
         };
         setValidation(validateEvent(eventData));
-    }, [title, startDate, startTime, endDate, endTime, isAllDay]);
+    }, [title, startDate, startTime, endDate, endTime]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,25 +86,18 @@ const EventForm: React.FC<EventFormProps> = ({
             setIsSubmitting(true);
             setError(null);
 
-            let startDateTime, endDateTime;
+            const startDateTime = moment(`${startDate} ${startTime}`).toDate();
+            let endDateTime = moment(`${endDate || startDate} ${endTime || startTime}`).toDate();
 
-            if (isAllDay) {
-                startDateTime = moment(startDate).startOf('day').toDate();
-                endDateTime = moment(endDate || startDate).endOf('day').toDate();
-            } else {
-                startDateTime = moment(`${startDate} ${startTime}`).toDate();
-                endDateTime = moment(`${endDate || startDate} ${endTime || startTime}`).toDate();
-
-                if (endDateTime <= startDateTime) {
-                    endDateTime = moment(startDateTime).add(1, 'hour').toDate();
-                }
+            if (endDateTime <= startDateTime) {
+                endDateTime = moment(startDateTime).add(1, 'hour').toDate();
             }
 
             const eventData: EventInput = {
                 title,
                 startTime: startDateTime,
                 endTime: endDateTime,
-                isAllDay,
+                isAllDay: false, // Always false now
                 location: location || undefined,
             };
 
@@ -118,7 +107,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     title: event.title,
                     startTime: moment(event.startTime).toDate(),
                     endTime: moment(event.endTime).toDate(),
-                    isAllDay: event.isAllDay,
+                    isAllDay: false, // Always false now
                     location: event.location || undefined,
                 };
 
@@ -127,11 +116,9 @@ const EventForm: React.FC<EventFormProps> = ({
                     originalEvent.title !== eventData.title ||
                     !moment(originalEvent.startTime).isSame(eventData.startTime) ||
                     !moment(originalEvent.endTime).isSame(eventData.endTime) ||
-                    originalEvent.isAllDay !== eventData.isAllDay ||
                     originalEvent.location !== eventData.location;
 
                 if (!hasChanges) {
-                    // No changes, just close the form
                     onCancel();
                     return;
                 }
@@ -176,7 +163,7 @@ const EventForm: React.FC<EventFormProps> = ({
     const formatDisplayTime = (date: string, time: string) => {
         if (!date) return '';
         const momentDate = moment(`${date} ${time || '00:00'}`);
-        return isAllDay ? momentDate.format('MMM D') : momentDate.format('MMM D, h:mm A');
+        return momentDate.format('MMM D, h:mm A');
     };
 
     const validateDateTime = (value: string, isStart: boolean): { isValid: boolean; message?: string } => {
@@ -301,6 +288,8 @@ const EventForm: React.FC<EventFormProps> = ({
         );
     };
 
+    const EventIcon = getEventIcon(title);
+
     return (
         <form onSubmit={handleSubmit} className="flex flex-col">
             <div className="p-4">
@@ -311,68 +300,82 @@ const EventForm: React.FC<EventFormProps> = ({
                     </div>
                 )}
 
-                {/* Natural language sentence */}
-                <div className="text-lg leading-relaxed mb-3">
-                    <div className="flex flex-wrap items-baseline">
-                        {renderEditableField('title', title, 'Event title', setTitle)}
-                        <span className="mx-1 text-gray-500">from</span>
-                        {renderEditableField(
-                            'startTime', 
-                            formatDisplayTime(startDate, startTime), 
-                            'start time', 
-                            (value) => {
-                                const parsed = moment(value, ['MMM D', 'MMM D, h:mm A', 'h:mm A', 'YYYY-MM-DD', 'YYYY-MM-DD HH:mm'], true);
-                                if (parsed.isValid()) {
-                                    setStartDate(parsed.format('YYYY-MM-DD'));
-                                    if (!isAllDay) {
-                                        setStartTime(parsed.format('HH:mm'));
-                                    }
-                                }
-                            },
-                            true,
-                            true
-                        )}
-                        <span className="mx-1 text-gray-500">to</span>
-                        {renderEditableField(
-                            'endTime', 
-                            formatDisplayTime(endDate, endTime), 
-                            'end time', 
-                            (value) => {
-                                const parsed = moment(value, ['MMM D', 'MMM D, h:mm A', 'h:mm A', 'YYYY-MM-DD', 'YYYY-MM-DD HH:mm'], true);
-                                if (parsed.isValid()) {
-                                    setEndDate(parsed.format('YYYY-MM-DD'));
-                                    if (!isAllDay) {
-                                        setEndTime(parsed.format('HH:mm'));
-                                    }
-                                }
-                            },
-                            true,
-                            false
-                        )}
-                        {location && <span className="mx-1 text-gray-500">at</span>}
-                        {renderEditableField('location', location, 'location', setLocation)}
-                    </div>
-                </div>
+                {/* Header */}
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Event Details</h2>
 
-                {/* All-day toggle */}
-                <div>
-                    <label className="inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={isAllDay}
-                            onChange={(e) => setIsAllDay(e.target.checked)}
-                            className="sr-only peer"
-                            disabled={isSubmitting || isDeleting}
-                        />
-                        <span className="text-sm text-gray-600 hover:text-gray-900">
-                            All-day event
-                        </span>
-                    </label>
+                {/* Event Card Layout */}
+                <div className="space-y-3">
+                    {/* Title */}
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 w-20">
+                            Title:
+                        </label>
+                        <div className="flex-1">
+                            {renderEditableField('title', title, 'Event title', setTitle)}
+                        </div>
+                    </div>
+
+                    {/* Location */}
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 w-20">
+                            Location:
+                        </label>
+                        <div className="flex-1">
+                            {renderEditableField('location', location, 'Add location', setLocation)}
+                        </div>
+                    </div>
+
+                    {/* Time Range */}
+                    <div className="space-y-3">
+                        {/* Start Time */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700 w-20">
+                                Start Time:
+                            </label>
+                            <div className="flex-1">
+                                {renderEditableField(
+                                    'startTime', 
+                                    moment(`${startDate} ${startTime}`).format('h:mm A'), 
+                                    'start time', 
+                                    (value) => {
+                                        const parsed = moment(value, ['h:mm A', 'HH:mm'], true);
+                                        if (parsed.isValid()) {
+                                            setStartTime(parsed.format('HH:mm'));
+                                        }
+                                    },
+                                    true,
+                                    true
+                                )}
+                            </div>
+                        </div>
+
+                        {/* End Time */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700 w-20">
+                                End Time:
+                            </label>
+                            <div className="flex-1">
+                                {renderEditableField(
+                                    'endTime', 
+                                    moment(`${endDate} ${endTime}`).format('h:mm A'), 
+                                    'end time', 
+                                    (value) => {
+                                        const parsed = moment(value, ['h:mm A', 'HH:mm'], true);
+                                        if (parsed.isValid()) {
+                                            setEndTime(parsed.format('HH:mm'));
+                                        }
+                                    },
+                                    true,
+                                    false
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex justify-between items-center p-3 border-t bg-white">
+            <div className="flex justify-between items-center mt-6 p-3 border-t bg-white">
                 {onDelete && (
                     <button
                         type="button"
