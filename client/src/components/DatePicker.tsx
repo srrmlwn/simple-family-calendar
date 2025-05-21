@@ -79,17 +79,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
                 <div className="bg-white rounded-lg shadow p-2 sm:p-4 h-full flex flex-col">
                     {/* Month Navigation */}
                     <div className="mb-1 flex items-center justify-between text-lg sm:text-xl">
-                        <span className="text-default w-1/2 text-sm sm:text-base">
-                            <time dateTime={moment(browsingDate).format('YYYY-MM')}>
-                                <strong className="text-emphasis font-semibold">
-                                    {moment(browsingDate).format('MMMM')}
-                                </strong>
-                                <span className="text-subtle font-medium">
-                                    {' '}{moment(browsingDate).format('YYYY')}
-                                </span>
-                            </time>
-                        </span>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={() => changeMonth(-1)}
                                 className="p-1 hover:bg-gray-100 rounded-md"
@@ -97,13 +87,16 @@ const DatePicker: React.FC<DatePickerProps> = ({
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
-                            <button
-                                onClick={() => onNavigate('TODAY')}
-                                className="px-2 py-1 text-sm hover:bg-gray-100 rounded-md"
-                                title="Go to today"
-                            >
-                                Today
-                            </button>
+                            <span className="text-default text-base sm:text-lg">
+                                <time dateTime={moment(browsingDate).format('YYYY-MM')}>
+                                    <strong className="text-emphasis font-bold">
+                                        {moment(browsingDate).format('MMMM')}
+                                    </strong>
+                                    <span className="text-subtle font-semibold">
+                                        {' '}{moment(browsingDate).format('YYYY')}
+                                    </span>
+                                </time>
+                            </span>
                             <button
                                 onClick={() => changeMonth(1)}
                                 className="p-1 hover:bg-gray-100 rounded-md"
@@ -112,6 +105,13 @@ const DatePicker: React.FC<DatePickerProps> = ({
                                 <ChevronRight className="w-5 h-5" />
                             </button>
                         </div>
+                        <button
+                            onClick={() => onNavigate('TODAY')}
+                            className="px-3 py-1.5 text-sm font-medium text-blue-500 bg-blue-50/50 hover:bg-blue-50 rounded-md transition-colors"
+                            title="Go to today"
+                        >
+                            Today
+                        </button>
                     </div>
 
                     {/* Weekday headers */}
