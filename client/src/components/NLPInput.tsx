@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUp, Mic, MicOff } from 'lucide-react';
-import eventService, { Event } from '../services/eventService';
+import eventService, { Event, EventInput } from '../services/eventService';
 
 // Add type definitions for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -49,7 +49,7 @@ declare global {
 }
 
 interface NLPInputProps {
-    onEventAdded: (event: Event) => void;
+    onEventAdded: (eventData: EventInput) => Promise<void>;
     className?: string;
 }
 
@@ -123,10 +123,10 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
         try {
             setIsLoading(true);
             setError(null);
-            // Parse and save the event in one step
-            const event = await eventService.createFromText(inputText);
-            // Pass the saved event to the parent component
-            onEventAdded(event);
+            // Only parse the event, don't create it
+            const parsedEvent = await eventService.parseFromText(inputText);
+            // Let the parent component handle creation
+            await onEventAdded(parsedEvent);
             setInputText('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create event');
