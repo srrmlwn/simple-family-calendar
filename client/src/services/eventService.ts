@@ -141,14 +141,12 @@ const eventService = {
 // Helper function to convert date strings to Date objects
 function parseEventDates(event: Event): Event {
     const timezone = getUserTimezone();
-    console.log('Start time:', event.startTime, 
-        new Date(event.startTime), convertFromUTC(new Date(event.startTime), timezone));
     return {
         ...event,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
+        startTime: convertFromUTC(new Date(event.startTime), timezone),
+        endTime: convertFromUTC(new Date(event.endTime), timezone),
+        createdAt: new Date(event.createdAt),
+        updatedAt: new Date(event.updatedAt),
     };
 }
 
