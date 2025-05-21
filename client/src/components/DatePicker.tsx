@@ -90,7 +90,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
                             <span className="text-default text-base sm:text-lg">
                                 <time dateTime={moment(browsingDate).format('YYYY-MM')}>
                                     <strong className="text-emphasis font-bold">
-                                        {moment(browsingDate).format('MMMM')}
+                                        {moment(browsingDate).format('MMM')}
                                     </strong>
                                     <span className="text-subtle font-semibold">
                                         {' '}{moment(browsingDate).format('YYYY')}
