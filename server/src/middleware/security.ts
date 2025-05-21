@@ -11,10 +11,16 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
         'same-origin, same-origin-allow-popups'
     );
 
+    // Set Cross-Origin-Resource-Policy header for Google profile images
+    res.setHeader(
+        'Cross-Origin-Resource-Policy',
+        'cross-origin'
+    );
+
     // Set security headers using Helmet with consolidated CSP
     helmet({
         crossOriginEmbedderPolicy: false, // Required for Google Sign-In
-        crossOriginResourcePolicy: { policy: "cross-origin" }, // Required for Google Sign-In
+        crossOriginResourcePolicy: { policy: "cross-origin" }, // Required for Google profile images
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'", "https://accounts.google.com/gsi/"],
@@ -40,7 +46,9 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
                 imgSrc: [
                     "'self'",
                     "data:",
-                    "https:"
+                    "https:",
+                    "https://*.googleusercontent.com", // Allow Google profile images
+                    "https://lh3.googleusercontent.com" // Allow Google profile images
                 ],
                 connectSrc: [
                     "'self'",
