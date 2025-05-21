@@ -3,6 +3,7 @@ import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
 import { validateEvent, EventState, EventStatus, getEventStatusMessage, getValidationMessage } from '../utils/eventValidation';
 import { getEventIcon } from '../utils/eventIcons';
+import { CalendarPlus, Clock } from 'lucide-react';
 
 interface EventFormProps {
     event?: Event;
@@ -219,57 +220,48 @@ const EventForm: React.FC<EventFormProps> = ({
         onChange(value);
     };
 
-    const renderEditableField = (field: string, value: string, placeholder: string, onChange: (value: string) => void, isDateTime: boolean = false, isStart: boolean = true) => {
+    const renderTextField = (field: string, value: string, onChange: (value: string) => void) => {
         const isActive = activeField === field;
         const validationError = validationErrors[field];
 
         return (
             <div className="inline-block relative group">
-                <span
+                <div
                     onClick={() => setActiveField(field)}
                     className={`
                         inline-block px-2 py-1 rounded-md cursor-pointer
                         transition-all duration-200
                         ${isActive 
                             ? 'bg-blue-50 border border-blue-200 ring-2 ring-blue-100' 
-                            : 'hover:bg-gray-50 border border-transparent group-hover:border-gray-200'
+                            : 'bg-gray-50/50 hover:bg-gray-100 border border-gray-100 group-hover:border-gray-200'
                         }
                         ${validationError ? 'border-red-200 bg-red-50' : ''}
                     `}
                 >
                     {isActive ? (
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={value}
-                                onChange={(e) => handleFieldChange(field, e.target.value, isDateTime, isStart, onChange)}
-                                onBlur={() => {
+                        <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => onChange(e.target.value)}
+                            className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full"
+                            onBlur={() => {
+                                if (!isActive) {
                                     setActiveField(null);
                                     setValidationErrors(prev => ({
                                         ...prev,
                                         [field]: null
                                     }));
-                                }}
-                                className={`
-                                    bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full
-                                    ${validationError ? 'text-red-600' : ''}
-                                `}
-                                placeholder={placeholder}
-                                autoFocus
-                            />
-                            {validationError && (
-                                <div className="absolute top-full left-0 mt-1 text-xs text-red-600 whitespace-nowrap">
-                                    {validationError}
-                                </div>
-                            )}
-                        </div>
+                                }
+                            }}
+                            autoFocus
+                        />
                     ) : (
-                        <div className="flex items-center gap-1">
-                            <span className={validationError ? 'text-red-600' : ''}>
-                                {value || placeholder}
+                        <div className="flex items-center gap-1.5">
+                            <span className={`${validationError ? 'text-red-600' : 'text-gray-700'}`}>
+                                {value || 'Click to edit'}
                             </span>
                             <svg 
-                                className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" 
+                                className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" 
                                 fill="none" 
                                 stroke="currentColor" 
                                 viewBox="0 0 24 24"
@@ -283,7 +275,115 @@ const EventForm: React.FC<EventFormProps> = ({
                             </svg>
                         </div>
                     )}
-                </span>
+                    {validationError && (
+                        <div className="absolute top-full left-0 mt-1 text-xs text-red-600 whitespace-nowrap">
+                            {validationError}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const renderDateTimeField = (field: string, date: string, time: string, onChange: (date: string, time: string) => void, isStart: boolean = true) => {
+        const isActive = activeField === field;
+        const validationError = validationErrors[field];
+        const dateTime = moment(`${date} ${time}`).toDate();
+
+        return (
+            <div className="inline-block relative group">
+                <div
+                    onClick={() => setActiveField(field)}
+                    className={`
+                        inline-block px-2 py-1 rounded-md cursor-pointer
+                        transition-all duration-200
+                        ${isActive 
+                            ? 'bg-blue-50 border border-blue-200 ring-2 ring-blue-100' 
+                            : 'bg-gray-50/50 hover:bg-gray-100 border border-gray-100 group-hover:border-gray-200'
+                        }
+                        ${validationError ? 'border-red-200 bg-red-50' : ''}
+                    `}
+                >
+                    {isActive ? (
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => onChange(e.target.value, time)}
+                                    className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-32 pr-8 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden [&::-webkit-clear-button]:hidden [&::-webkit-outer-spin-button]:hidden"
+                                    onBlur={() => {
+                                        if (!isActive) {
+                                            setActiveField(null);
+                                            setValidationErrors(prev => ({
+                                                ...prev,
+                                                [field]: null
+                                            }));
+                                        }
+                                    }}
+                                    autoFocus
+                                    id={`${field}-date`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => (document.getElementById(`${field}-date`) as HTMLInputElement)?.showPicker()}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                >
+                                    <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
+                                </button>
+                            </div>
+                            <div className="relative min-w-[100px]">
+                                <input
+                                    type="time"
+                                    value={time}
+                                    onChange={(e) => onChange(date, e.target.value)}
+                                    className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-28 pr-8 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden [&::-webkit-clear-button]:hidden [&::-webkit-outer-spin-button]:hidden"
+                                    onBlur={() => {
+                                        if (!isActive) {
+                                            setActiveField(null);
+                                            setValidationErrors(prev => ({
+                                                ...prev,
+                                                [field]: null
+                                            }));
+                                        }
+                                    }}
+                                    id={`${field}-time`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => (document.getElementById(`${field}-time`) as HTMLInputElement)?.showPicker()}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                >
+                                    <Clock className="w-full h-full opacity-50" strokeWidth={1.5} />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5">
+                            <span className={`${validationError ? 'text-red-600' : 'text-gray-700'} whitespace-nowrap`}>
+                                {moment(dateTime).format('MMM D, h:mm A')}
+                            </span>
+                            <svg 
+                                className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    strokeWidth={2} 
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" 
+                                />
+                            </svg>
+                        </div>
+                    )}
+                    {validationError && (
+                        <div className="absolute top-full left-0 mt-1 text-xs text-red-600 whitespace-nowrap">
+                            {validationError}
+                        </div>
+                    )}
+                </div>
             </div>
         );
     };
@@ -301,7 +401,10 @@ const EventForm: React.FC<EventFormProps> = ({
                 )}
 
                 {/* Header */}
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Event Details</h2>
+                <div className="flex items-center gap-2 mb-3">
+                    <CalendarPlus className="w-5 h-5 text-gray-600" />
+                    <h2 className="text-lg font-semibold text-gray-900">Event Details</h2>
+                </div>
 
                 {/* Event Card Layout */}
                 <div className="space-y-3">
@@ -311,7 +414,7 @@ const EventForm: React.FC<EventFormProps> = ({
                             Title:
                         </label>
                         <div className="flex-1">
-                            {renderEditableField('title', title, 'Event title', setTitle)}
+                            {renderTextField('title', title, setTitle)}
                         </div>
                     </div>
 
@@ -321,51 +424,45 @@ const EventForm: React.FC<EventFormProps> = ({
                             Location:
                         </label>
                         <div className="flex-1">
-                            {renderEditableField('location', location, 'Add location', setLocation)}
+                            {renderTextField('location', location, setLocation)}
                         </div>
                     </div>
 
                     {/* Time Range */}
                     <div className="space-y-3">
-                        {/* Start Time */}
+                        {/* Start Date/Time */}
                         <div className="flex items-center gap-2">
                             <label className="text-sm font-medium text-gray-700 w-20">
-                                Start Time:
+                                Start:
                             </label>
                             <div className="flex-1">
-                                {renderEditableField(
-                                    'startTime', 
-                                    moment(`${startDate} ${startTime}`).format('h:mm A'), 
-                                    'start time', 
-                                    (value) => {
-                                        const parsed = moment(value, ['h:mm A', 'HH:mm'], true);
-                                        if (parsed.isValid()) {
-                                            setStartTime(parsed.format('HH:mm'));
-                                        }
+                                {renderDateTimeField(
+                                    'startTime',
+                                    startDate,
+                                    startTime,
+                                    (newDate, newTime) => {
+                                        setStartDate(newDate);
+                                        setStartTime(newTime);
                                     },
-                                    true,
                                     true
                                 )}
                             </div>
                         </div>
 
-                        {/* End Time */}
+                        {/* End Date/Time */}
                         <div className="flex items-center gap-2">
                             <label className="text-sm font-medium text-gray-700 w-20">
-                                End Time:
+                                End:
                             </label>
                             <div className="flex-1">
-                                {renderEditableField(
-                                    'endTime', 
-                                    moment(`${endDate} ${endTime}`).format('h:mm A'), 
-                                    'end time', 
-                                    (value) => {
-                                        const parsed = moment(value, ['h:mm A', 'HH:mm'], true);
-                                        if (parsed.isValid()) {
-                                            setEndTime(parsed.format('HH:mm'));
-                                        }
+                                {renderDateTimeField(
+                                    'endTime',
+                                    endDate,
+                                    endTime,
+                                    (newDate, newTime) => {
+                                        setEndDate(newDate);
+                                        setEndTime(newTime);
                                     },
-                                    true,
                                     false
                                 )}
                             </div>
