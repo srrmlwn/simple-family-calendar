@@ -7,6 +7,7 @@ interface BottomSheetProps {
     children: React.ReactNode;
     title?: string;
     className?: string;
+    showHeader?: boolean;
 }
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -14,7 +15,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     onClose,
     children,
     title,
-    className = ''
+    className = '',
+    showHeader = true
 }) => {
     const overlayRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -84,27 +86,29 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
-                        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                        >
-                            <svg
-                                className="w-6 h-6 text-gray-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                    {showHeader && (
+                        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
+                            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                    </div>
+                                <svg
+                                    className="w-6 h-6 text-gray-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Content */}
                     <div className="flex flex-col">

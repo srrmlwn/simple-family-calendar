@@ -1,43 +1,30 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
-import { EventState } from '../utils/eventValidation';
 import DayView from './DayView';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import eventService from '../services/eventService';
 
 interface DatePickerProps {
     events: Event[];
     date: Date;
     onNavigate: (date: Date | 'TODAY') => void;
-    newEvent?: Event;
     onEventUpdate: (eventId: string, eventData: EventInput) => Promise<void>;
     onEventDelete: (eventId: string) => Promise<void>;
-    eventStates: Record<string, EventState>;
-    onEventSave: (eventData: EventInput) => Promise<Event>;
-    selectedEventId?: string;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
     events,
     date,
     onNavigate,
-    newEvent,
     onEventUpdate,
-    onEventDelete,
-    eventStates,
-    onEventSave,
-    selectedEventId
+    onEventDelete
 }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [browsingDate, setBrowsingDate] = useState<Date>(date);
-    const [error, setError] = useState<string | null>(null);
 
-    // Sync selectedDate with date prop
+    // Sync browsingDate with date prop
     useEffect(() => {
-        setSelectedDate(date);
         setBrowsingDate(date);
     }, [date]);
 
@@ -56,7 +43,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
     // Handle date selection
     const handleDateSelect = useCallback((newDate: Date) => {
-        setSelectedDate(newDate);
         onNavigate(newDate);
     }, [onNavigate]);
 
@@ -67,46 +53,28 @@ const DatePicker: React.FC<DatePickerProps> = ({
         onNavigate(newDate);
     }, [browsingDate, onNavigate]);
 
-    // Get days for the current month
-    const getDaysInMonth = useCallback(() => {
-        const startOfMonth = moment(browsingDate).startOf('month');
-        const endOfMonth = moment(browsingDate).endOf('month');
+    // Get days for the current month view
+    const days = React.useMemo(() => {
+        const firstDay = moment(browsingDate).startOf('month');
+        const lastDay = moment(browsingDate).endOf('month');
+        const startDate = moment(firstDay).startOf('week');
+        const endDate = moment(lastDay).endOf('week');
         const days: Date[] = [];
-        
-        // Add days from previous month to fill the first week
-        const firstDayOfWeek = startOfMonth.day();
-        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-            days.push(moment(startOfMonth).subtract(i + 1, 'days').toDate());
+        let currentDate = startDate.clone();
+
+        while (currentDate.isSameOrBefore(endDate)) {
+            days.push(currentDate.toDate());
+            currentDate.add(1, 'day');
         }
-        
-        // Add days of current month
-        for (let i = 1; i <= endOfMonth.date(); i++) {
-            days.push(moment(startOfMonth).date(i).toDate());
-        }
-        
-        // Add days from next month to complete the last week
-        const lastDayOfWeek = endOfMonth.day();
-        const daysNeeded = 6 - lastDayOfWeek; // Days needed to complete the week (0-6)
-        for (let i = 1; i <= daysNeeded; i++) {
-            days.push(moment(endOfMonth).add(i, 'days').toDate());
-        }
-        
+
         return days;
     }, [browsingDate]);
 
-    const days = getDaysInMonth();
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    // Calculate number of weeks needed
+    // Calculate number of weeks to display
     const numberOfWeeks = Math.ceil(days.length / 7);
 
     return (
         <div className={`${isMobile ? 'flex flex-col gap-4 p-2' : 'flex gap-6 p-6'} w-full h-full justify-center`}>
-            {error && (
-                <div className="fixed top-4 right-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md shadow-lg z-50">
-                    {error}
-                </div>
-            )}
             <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-2/3 max-w-2xl shrink-0'}`}>
                 <div className="bg-white rounded-lg shadow p-2 sm:p-4 h-full flex flex-col">
                     {/* Month Navigation */}
@@ -121,41 +89,46 @@ const DatePicker: React.FC<DatePickerProps> = ({
                                 </span>
                             </time>
                         </span>
-                        <div className="text-emphasis">
-                            <div className="flex">
-                                <button
-                                    className="group p-1 opacity-70 transition hover:opacity-100"
-                                    onClick={() => changeMonth(-1)}
-                                    aria-label="Previous month"
-                                >
-                                    <ChevronLeft size={18} />
-                                </button>
-                                <button
-                                    className="group p-1 opacity-70 transition hover:opacity-100"
-                                    onClick={() => changeMonth(1)}
-                                    aria-label="Next month"
-                                >
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => changeMonth(-1)}
+                                className="p-1 hover:bg-gray-100 rounded-md"
+                                title="Previous month"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => onNavigate('TODAY')}
+                                className="px-2 py-1 text-sm hover:bg-gray-100 rounded-md"
+                                title="Go to today"
+                            >
+                                Today
+                            </button>
+                            <button
+                                onClick={() => changeMonth(1)}
+                                className="p-1 hover:bg-gray-100 rounded-md"
+                                title="Next month"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
 
-                    {/* Weekday Headers */}
-                    <div className="border-subtle mb-2 grid grid-cols-7 gap-1 sm:gap-2 border-b border-t text-center">
-                        {weekDays.map((day) => (
-                            <div key={day} className="text-emphasis my-2 sm:my-3 text-xs font-medium uppercase tracking-widest">
+                    {/* Weekday headers */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs sm:text-sm font-medium text-gray-500 mb-1">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                            <div key={day} className="py-1">
                                 {day}
                             </div>
                         ))}
                     </div>
 
-                    {/* Calendar Grid */}
+                    {/* Calendar grid */}
                     <div className={`relative grid grid-cols-7 ${numberOfWeeks === 6 ? 'grid-rows-6' : 'grid-rows-5'} gap-1 text-center flex-grow`}>
                         {days.map((day, index) => {
                             const isCurrentMonth = moment(day).month() === moment(browsingDate).month();
                             const isToday = moment(day).isSame(moment(), 'day');
-                            const isSelected = moment(day).isSame(moment(selectedDate), 'day');
+                            const isSelected = moment(day).isSame(moment(date), 'day');
                             const hasEvents = eventsByDate.has(moment(day).format('YYYY-MM-DD'));
 
                             return (
@@ -189,15 +162,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
             {/* Day View */}
             <div className={`${isMobile ? 'min-h-fit shrink-0' : 'w-1/3 shrink-0'}`}>
                 <DayView
-                    date={selectedDate}
+                    date={date}
                     events={events}
                     onNavigate={onNavigate}
-                    newEvent={newEvent}
                     onUpdateEvent={onEventUpdate}
                     onDeleteEvent={onEventDelete}
-                    eventStates={eventStates}
-                    onEventSave={onEventSave}
-                    selectedEventId={selectedEventId}
                 />
             </div>
         </div>
