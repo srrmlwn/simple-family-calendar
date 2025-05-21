@@ -5,6 +5,7 @@ interface User {
     email: string;
     firstName: string;
     lastName: string;
+    profileImage?: string;
 }
 
 interface AuthResponse {
@@ -93,15 +94,23 @@ const authService = {
     // Get current user info
     getCurrentUser: async (token: string): Promise<User> => {
         try {
+            console.log('[AuthService] Getting current user info');
             const response = await api.get<User>('/api/auth/me', {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
+            console.log('[AuthService] Current user info received:', {
+                id: response.data.id,
+                email: response.data.email,
+                hasProfileImage: !!response.data.profileImage,
+                profileImageUrl: response.data.profileImage
+            });
             return response.data;
         } catch (error) {
-            log('error', 'Failed to get current user:', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+            console.error('[AuthService] Failed to get current user:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
             });
             throw new Error('Failed to get user information');
         }
@@ -110,27 +119,53 @@ const authService = {
     // Handle Google OAuth callback
     handleGoogleCallback: async (token: string): Promise<AuthResponse> => {
         try {
-            log('info', 'Handling Google OAuth callback', { token: token.substring(0, 10) + '...' });
+            console.log('[AuthService] Starting Google OAuth callback handling');
+            console.log('[AuthService] Token received:', token.substring(0, 10) + '...');
+            
+            // Log URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            console.log('[AuthService] URL Parameters:', {
+                hasToken: !!urlParams.get('token'),
+                hasProfileImage: !!urlParams.get('profileImage'),
+                profileImageUrl: urlParams.get('profileImage')
+            });
             
             // Get user info using the token
+            console.log('[AuthService] Fetching user info from /api/auth/me');
             const response = await api.get<User>('/api/auth/me', {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
+            console.log('[AuthService] User info received:', {
+                id: response.data.id,
+                email: response.data.email,
+                hasProfileImage: !!response.data.profileImage
+            });
 
-            log('info', 'Google OAuth callback successful', { 
-                userId: response.data.id,
-                email: response.data.email 
+            // Get profile image from URL parameters
+            const profileImage = urlParams.get('profileImage');
+            console.log('[AuthService] Profile image from URL:', profileImage);
+
+            const userWithProfile = {
+                ...response.data,
+                profileImage: profileImage || undefined
+            };
+            console.log('[AuthService] Final user object:', {
+                id: userWithProfile.id,
+                email: userWithProfile.email,
+                hasProfileImage: !!userWithProfile.profileImage,
+                profileImageUrl: userWithProfile.profileImage
             });
 
             return {
-                user: response.data,
+                user: userWithProfile,
                 token
             };
         } catch (error) {
-            log('error', 'Google OAuth callback failed:', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+            console.error('[AuthService] Google OAuth callback failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
             });
             throw new Error('Failed to complete Google authentication');
         }

@@ -22,7 +22,11 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
     }
 
     try {
-        const user = jwt.verify(token, config.jwt.secret) as { id: string; email: string };
+        const user = jwt.verify(token, config.jwt.secret) as { 
+            id: string; 
+            email: string;
+            profileImage?: string;
+        };
         req.user = user;
         next();
     } catch (error) {
@@ -47,7 +51,11 @@ export const optionalJWT = (req: Request, res: Response, next: NextFunction): vo
 
         if (token) {
             try {
-                const user = jwt.verify(token, config.jwt.secret) as { id: string; email: string };
+                const user = jwt.verify(token, config.jwt.secret) as { 
+                    id: string; 
+                    email: string;
+                    profileImage?: string;
+                };
                 req.user = user;
             } catch (error) {
                 // Token invalid, but we continue anyway

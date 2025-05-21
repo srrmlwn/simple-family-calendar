@@ -106,26 +106,49 @@ export class AuthController {
      */
     public getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
         try {
+            console.log('[AuthController] Getting current user');
             const userId = (req.user as any)?.id;
+            console.log('[AuthController] User ID from request:', userId);
 
             if (!userId) {
+                console.log('[AuthController] No user ID found in request');
                 return res.status(401).json({ error: 'Not authenticated' });
             }
 
             const user = await this.authService.getUserById(userId);
+            console.log('[AuthController] User from database:', {
+                id: user?.id,
+                email: user?.email
+            });
 
             if (!user) {
+                console.log('[AuthController] User not found in database');
                 return res.status(404).json({ error: 'User not found' });
             }
 
-            return res.json({
+            // Get the profile image from the JWT token
+            const profileImage = (req.user as any)?.profileImage;
+            console.log('[AuthController] Profile image from JWT:', profileImage);
+
+            const response = {
                 id: user.id,
                 email: user.email,
                 firstName: user.firstName,
-                lastName: user.lastName
+                lastName: user.lastName,
+                profileImage: profileImage || undefined
+            };
+            console.log('[AuthController] Sending response:', {
+                id: response.id,
+                email: response.email,
+                hasProfileImage: !!response.profileImage
             });
+
+            return res.json(response);
         } catch (error) {
-            console.error('Error getting current user:', error);
+            console.error('[AuthController] Error getting current user:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
             return res.status(500).json({ error: 'Failed to get user information' });
         }
     };
@@ -162,32 +185,58 @@ export class AuthController {
      */
     public handleGoogleCallback = async (req: Request, res: Response): Promise<void> => {
         try {
+            console.log('[AuthController] Starting Google callback handling');
+            console.log('[AuthController] Request user:', {
+                id: (req.user as User)?.id,
+                email: (req.user as User)?.email,
+                hasProfileImage: !!(req.user as any)?.profileImage,
+                profileImageUrl: (req.user as any)?.profileImage
+            });
+
             if (!req.user) {
                 throw new Error('No user found after Google authentication');
             }
 
+            const user = req.user as User & { profileImage?: string };
+            console.log('[AuthController] User from request:', {
+                id: user.id,
+                email: user.email,
+                hasProfileImage: !!user.profileImage,
+                profileImageUrl: user.profileImage
+            });
+
             // Generate JWT token
-            const token = this.authService.generateToken(req.user as User);
+            const token = this.authService.generateToken(user);
+            console.log('[AuthController] Generated JWT token');
             
             // Log environment variables
-            console.log('Environment variables in handleGoogleCallback:', {
+            console.log('[AuthController] Environment variables:', {
                 CLIENT_URL: process.env.CLIENT_URL,
                 NODE_ENV: process.env.NODE_ENV,
                 API_URL: process.env.API_URL
             });
             
-            // Redirect to client with token
+            // Redirect to client with token and profile image
             const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-            console.log('Using client URL:', clientUrl);
+            console.log('[AuthController] Using client URL:', clientUrl);
             
             const redirectUrl = new URL(clientUrl);
             redirectUrl.pathname = '/auth/callback';
             redirectUrl.searchParams.set('token', token);
+            if (user.profileImage) {
+                console.log('[AuthController] Adding profile image to redirect URL:', user.profileImage);
+                redirectUrl.searchParams.set('profileImage', user.profileImage);
+            } else {
+                console.log('[AuthController] No profile image available for user');
+            }
             
-            console.log('Redirecting to:', redirectUrl.toString());
+            console.log('[AuthController] Final redirect URL:', redirectUrl.toString());
             res.redirect(redirectUrl.toString());
         } catch (error) {
-            console.error('Google callback error:', error);
+            console.error('[AuthController] Google callback error:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
             const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
             res.redirect(`${clientUrl}/login?error=auth_failed`);
         }

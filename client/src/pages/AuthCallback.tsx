@@ -10,11 +10,28 @@ const AuthCallback: React.FC = () => {
     useEffect(() => {
         const token = searchParams.get('token');
         const error = searchParams.get('error');
+        const errorMessage = searchParams.get('message');
 
         if (error) {
-            console.error('Auth callback error:', error);
+            console.error('Auth callback error:', { error, message: errorMessage });
+            
+            // Handle rate limit error specifically
+            if (error === 'Too many OAuth attempts') {
+                navigate('/login', { 
+                    state: { 
+                        error: 'Too many sign-in attempts',
+                        message: 'Please wait an hour before trying again. This is a security measure to protect your account.'
+                    }
+                });
+                return;
+            }
+
+            // Handle other errors
             navigate('/login', { 
-                state: { error: 'Authentication failed. Please try again.' }
+                state: { 
+                    error: 'Authentication failed',
+                    message: errorMessage || 'Please try again.'
+                }
             });
             return;
         }
@@ -22,7 +39,10 @@ const AuthCallback: React.FC = () => {
         if (!token) {
             console.error('No token received in callback');
             navigate('/login', { 
-                state: { error: 'Authentication failed. No token received.' }
+                state: { 
+                    error: 'Authentication failed',
+                    message: 'No authentication token received. Please try again.'
+                }
             });
             return;
         }
@@ -31,7 +51,10 @@ const AuthCallback: React.FC = () => {
         handleAuthCallback(token).catch((err) => {
             console.error('Error handling auth callback:', err);
             navigate('/login', { 
-                state: { error: 'Authentication failed. Please try again.' }
+                state: { 
+                    error: 'Authentication failed',
+                    message: err instanceof Error ? err.message : 'Please try again.'
+                }
             });
         });
     }, [searchParams, handleAuthCallback, navigate]);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Add Google Fonts import
@@ -33,21 +33,25 @@ const GoogleIcon = () => (
 const Login: React.FC = () => {
   const { login, loginWithGoogle, loading, error } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
 
   // Check for auth error message on component mount
   useEffect(() => {
-    const authError = sessionStorage.getItem('authError');
-    if (authError) {
-      setSubmitError(authError);
-      // Clear the error message from sessionStorage
-      sessionStorage.removeItem('authError');
+    const state = location.state as { error?: string; message?: string } | null;
+    if (state?.error) {
+      setSubmitError({
+        title: state.error,
+        message: state.message || 'Please try again.'
+      });
+      // Clear the state to prevent showing the error again on refresh
+      window.history.replaceState({}, document.title);
     }
-  }, []);
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,12 +61,18 @@ const Login: React.FC = () => {
       console.log('Attempting login with email:', formData.email);
 
       if (!formData.email.trim()) {
-        setSubmitError('Email is required');
+        setSubmitError({
+          title: 'Email Required',
+          message: 'Please enter your email address.'
+        });
         return;
       }
 
       if (!formData.password) {
-        setSubmitError('Password is required');
+        setSubmitError({
+          title: 'Password Required',
+          message: 'Please enter your password.'
+        });
         return;
       }
 
@@ -83,12 +93,21 @@ const Login: React.FC = () => {
       // Auth context will handle setting the error message
       if (err instanceof Error) {
         if (err.message.includes('Network Error')) {
-          setSubmitError('Network error: Unable to connect to the server. Please check your internet connection.');
+          setSubmitError({
+            title: 'Connection Error',
+            message: 'Unable to connect to the server. Please check your internet connection.'
+          });
         } else {
-          setSubmitError(err.message);
+          setSubmitError({
+            title: 'Login Failed',
+            message: err.message
+          });
         }
       } else {
-        setSubmitError('An unexpected error occurred');
+        setSubmitError({
+          title: 'Login Failed',
+          message: 'An unexpected error occurred. Please try again.'
+        });
       }
     }
   };
@@ -130,6 +149,17 @@ const Login: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-xl sm:px-10 border border-gray-100">
+          {submitError && (
+            <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+              <h3 className="text-sm font-medium text-red-800">
+                {submitError.title}
+              </h3>
+              <p className="mt-1 text-sm text-red-700">
+                {submitError.message}
+              </p>
+            </div>
+          )}
+
           {/* Google Sign In Button */}
           <div className="mb-6">
             <button
@@ -180,14 +210,6 @@ const Login: React.FC = () => {
 
           {/* Existing login form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {(submitError || error) && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">
-                  {submitError || error}
-                </div>
-              </div>
-            )}
-
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
                 <label htmlFor="email-address" className="sr-only">Email address</label>
