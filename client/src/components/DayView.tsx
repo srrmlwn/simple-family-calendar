@@ -5,6 +5,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import EventForm from './EventForm';
 import BottomSheet from './BottomSheet';
 import { CalendarDays, Pencil } from 'lucide-react';
+import { getEventIcon } from '../utils/eventIcons';
 
 interface DayViewProps {
     date: Date;
@@ -84,48 +85,54 @@ const DayView: React.FC<DayViewProps> = ({
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {dayEvents.map((event) => (
-                                <div
-                                    key={event.id}
-                                    onClick={() => handleEventClick(event)}
-                                    className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 bg-white shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                                >
-                                    <div className="flex gap-4 items-center">
-                                        {/* Left Section - Time */}
-                                        <div className="flex flex-col items-center justify-center min-w-[60px]">
-                                            <span className="text-lg font-bold text-blue-600">
-                                                {moment(event.startTime).format('h:mm')}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                                {moment(event.startTime).format('A')}
-                                            </span>
-                                        </div>
-
-                                        {/* Center Section - Event Details */}
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900 text-base">
-                                                {event.title}
-                                            </h3>
-                                            <div className="mt-1 text-sm text-gray-500 flex items-center gap-1">
-                                                {event.location && (
-                                                    <>
-                                                        <span>{event.location}</span>
-                                                        <span className="text-gray-300">•</span>
-                                                    </>
-                                                )}
-                                                <span>
-                                                    {moment(event.startTime).format('h:mm A')} – {moment(event.endTime).format('h:mm A')}
+                            {dayEvents.map((event) => {
+                                const EventIcon = getEventIcon(event.title);
+                                return (
+                                    <div
+                                        key={event.id}
+                                        onClick={() => handleEventClick(event)}
+                                        className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 bg-white shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                                    >
+                                        <div className="flex gap-4 items-center">
+                                            {/* Left Section - Time */}
+                                            <div className="flex flex-col items-center justify-center min-w-[60px]">
+                                                <span className="text-lg font-bold text-blue-600">
+                                                    {moment(event.startTime).format('h:mm')}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                    {moment(event.startTime).format('A')}
                                                 </span>
                                             </div>
-                                        </div>
 
-                                        {/* Right Section - Edit Icon */}
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Pencil className="w-4 h-4 text-gray-400" />
+                                            {/* Center Section - Event Details */}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <EventIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                    <h3 className="font-semibold text-gray-900 text-base">
+                                                        {event.title}
+                                                    </h3>
+                                                </div>
+                                                <div className="mt-1 text-sm text-gray-500 flex items-center gap-1">
+                                                    {event.location && (
+                                                        <>
+                                                            <span>{event.location}</span>
+                                                            <span className="text-gray-300">•</span>
+                                                        </>
+                                                    )}
+                                                    <span>
+                                                        {moment(event.startTime).format('h:mm A')} – {moment(event.endTime).format('h:mm A')}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Right Section - Edit Icon */}
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Pencil className="w-4 h-4 text-gray-400" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
