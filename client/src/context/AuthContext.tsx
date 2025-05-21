@@ -7,6 +7,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  profileImage?: string;  // Optional profile image URL from Google
 }
 
 interface AuthContextType { 

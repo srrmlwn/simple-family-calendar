@@ -22,6 +22,14 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
+                console.log('Google OAuth profile:', {
+                    id: profile.id,
+                    email: profile.emails?.[0]?.value,
+                    name: profile.name,
+                    photos: profile.photos,
+                    hasProfileImage: !!profile.photos?.[0]?.value
+                });
+
                 const userRepository = AppDataSource.getRepository(User);
                 
                 // Check if user already exists
@@ -41,8 +49,22 @@ passport.use(
                     user = await userRepository.save(user);
                 }
 
-                return done(null, user);
+                // Add profile picture to the user object (for session only)
+                const userWithProfile = {
+                    ...user,
+                    profileImage: profile.photos?.[0]?.value
+                };
+
+                console.log('User with profile:', {
+                    id: userWithProfile.id,
+                    email: userWithProfile.email,
+                    hasProfileImage: !!userWithProfile.profileImage,
+                    profileImageUrl: userWithProfile.profileImage
+                });
+
+                return done(null, userWithProfile);
             } catch (error) {
+                console.error('Google OAuth error:', error);
                 return done(error as Error);
             }
         }
@@ -51,15 +73,29 @@ passport.use(
 
 // Serialize user for the session
 passport.serializeUser((user: any, done) => {
-    done(null, user.id);
+    // Store both id and profileImage in the session
+    done(null, {
+        id: user.id,
+        profileImage: user.profileImage
+    });
 });
 
 // Deserialize user from the session
-passport.deserializeUser(async (id: string, done) => {
+passport.deserializeUser(async (sessionData: { id: string; profileImage?: string }, done) => {
     try {
         const userRepository = AppDataSource.getRepository(User);
-        const user = await userRepository.findOne({ where: { id } });
-        done(null, user);
+        const user = await userRepository.findOne({ where: { id: sessionData.id } });
+        
+        if (user) {
+            // Add the profile image back to the user object
+            const userWithProfile = {
+                ...user,
+                profileImage: sessionData.profileImage
+            };
+            done(null, userWithProfile);
+        } else {
+            done(null, null);
+        }
     } catch (error) {
         done(error);
     }

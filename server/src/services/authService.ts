@@ -105,21 +105,18 @@ export class AuthService {
     }
 
     /**
-     * Generate JWT token for a user
+     * Generate JWT token for user
      */
-    public generateToken(user: User): string {
+    public generateToken(user: User & { profileImage?: string }): string {
         const payload = {
             id: user.id,
-            email: user.email
+            email: user.email,
+            profileImage: user.profileImage
         };
 
-        // Convert config values to the specific types expected by jwt.sign
-        const secret: jwt.Secret = String(config.jwt.secret);
-        const options: jwt.SignOptions = {
-            expiresIn: "1 day"
-        };
-
-        return jwt.sign(payload, secret, options);
+        return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
+            expiresIn: '24h'
+        });
     }
 
     /**
