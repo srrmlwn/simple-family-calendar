@@ -112,6 +112,31 @@ const EventForm: React.FC<EventFormProps> = ({
                 location: location || undefined,
             };
 
+            // If this is an existing event, check if anything has changed
+            if (event) {
+                const originalEvent = {
+                    title: event.title,
+                    startTime: moment(event.startTime).toDate(),
+                    endTime: moment(event.endTime).toDate(),
+                    isAllDay: event.isAllDay,
+                    location: event.location || undefined,
+                };
+
+                // Compare all fields
+                const hasChanges = 
+                    originalEvent.title !== eventData.title ||
+                    !moment(originalEvent.startTime).isSame(eventData.startTime) ||
+                    !moment(originalEvent.endTime).isSame(eventData.endTime) ||
+                    originalEvent.isAllDay !== eventData.isAllDay ||
+                    originalEvent.location !== eventData.location;
+
+                if (!hasChanges) {
+                    // No changes, just close the form
+                    onCancel();
+                    return;
+                }
+            }
+
             await onSubmit(eventData);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save event');
