@@ -17,10 +17,16 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
         'cross-origin'
     );
 
+    // Set Cross-Origin-Embedder-Policy header
+    res.setHeader(
+        'Cross-Origin-Embedder-Policy',
+        'credentialless'
+    );
+
     // Set security headers using Helmet with consolidated CSP
     helmet({
-        crossOriginEmbedderPolicy: false, // Required for Google Sign-In
-        crossOriginResourcePolicy: { policy: "cross-origin" }, // Required for Google profile images
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: { policy: "cross-origin" },
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'", "https://accounts.google.com/gsi/"],
@@ -47,8 +53,9 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
                     "'self'",
                     "data:",
                     "https:",
-                    "https://*.googleusercontent.com", // Allow Google profile images
-                    "https://lh3.googleusercontent.com" // Allow Google profile images
+                    "https://*.googleusercontent.com",
+                    "https://lh3.googleusercontent.com",
+                    "https://*.google.com"
                 ],
                 connectSrc: [
                     "'self'",
@@ -57,7 +64,8 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
                     "https://simple-family-calendar-8282627220c3.herokuapp.com",
                     "https://www.googleapis.com",
                     "https://oauth2.googleapis.com",
-                    "https://*.google.com"
+                    "https://*.google.com",
+                    "https://*.googleusercontent.com"
                 ],
                 frameSrc: [
                     "'self'",
