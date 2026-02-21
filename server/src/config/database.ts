@@ -8,6 +8,11 @@ config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Heroku Postgres uses a self-signed certificate so rejectUnauthorized must be false
+// when connecting via DATABASE_URL. Set PG_REJECT_UNAUTHORIZED=true in environments
+// that provide a trusted cert (e.g. when PGSSLROOTCERT is configured).
+const rejectUnauthorized = process.env.PG_REJECT_UNAUTHORIZED === 'true';
+
 // Base configuration with properties common to both connection methods
 const baseConfig: Partial<DataSourceOptions> = {
   type: 'postgres',
@@ -25,9 +30,7 @@ const baseConfig: Partial<DataSourceOptions> = {
   subscribers: [
     isProduction ? 'dist/subscribers/**/*.js' : 'src/subscribers/**/*.ts'
   ],
-  ssl: isProduction ? {
-    rejectUnauthorized: false
-  } : false
+  ssl: isProduction ? { rejectUnauthorized } : false
 };
 
 // Create connection options based on environment variables
@@ -39,9 +42,8 @@ if (process.env.DATABASE_URL) {
     ...baseConfig,
     type: 'postgres',
     url: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
+    // Heroku Postgres requires rejectUnauthorized:false unless PGSSLROOTCERT is set
+    ssl: { rejectUnauthorized }
   } as DataSourceOptions;
 } else {
   // Use individual parameters (local development)

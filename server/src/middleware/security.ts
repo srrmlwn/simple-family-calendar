@@ -32,7 +32,8 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
                 defaultSrc: ["'self'", "https://accounts.google.com/gsi/"],
                 scriptSrc: [
                     "'self'",
-                    "'unsafe-inline'",
+                    // 'unsafe-inline' intentionally omitted — React production bundle has no inline scripts.
+                    // Google Identity Services loads via the explicit domain below; no inline script needed.
                     "https://accounts.google.com/gsi/client",
                     "https://apis.google.com",
                     "https://www.gstatic.com",
@@ -40,6 +41,8 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
                 ],
                 styleSrc: [
                     "'self'",
+                    // 'unsafe-inline' required: Tailwind utility classes and React inline-style props
+                    // generate runtime style attributes that cannot be pre-hashed.
                     "'unsafe-inline'",
                     "https://fonts.googleapis.com",
                     "https://accounts.google.com/gsi/style"

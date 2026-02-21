@@ -28,7 +28,7 @@ function getClient(): Client {
   }
   return new Client({
     connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: process.env.PG_REJECT_UNAUTHORIZED === 'true' } : false,
   });
 }
 

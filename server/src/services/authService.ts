@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import config from '../config';
 import fetch from 'node-fetch';
 import { Request } from 'express';
+import { randomBytes } from 'crypto';
 
 export class AuthService {
     /**
@@ -166,8 +167,9 @@ export class AuthService {
                 user.email = userInfo.email;
                 user.firstName = userInfo.given_name || '';
                 user.lastName = userInfo.family_name || '';
-                // For Google users, we'll set a random password since they'll use Google to login
-                user.passwordHash = 'google-oauth-' + Math.random().toString(36).slice(-8);
+                // Google OAuth users never log in with a password; store a bcrypt-hashed
+                // random token so the field is always a valid hash and cannot be brute-forced.
+                user.passwordHash = await bcrypt.hash(randomBytes(32).toString('hex'), 10);
                 
                 user = await userRepository.save(user);
             }
