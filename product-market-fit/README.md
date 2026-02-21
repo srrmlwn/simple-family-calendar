@@ -38,8 +38,3 @@ Family calendar is a large, underserved category:
 4. **Family-wide views** — see who has what, when conflicts exist, who needs a ride
 5. **Smart notifications** — daily digest, weekly briefing, conflict alerts
 
----
-
-## Session Log
-
-- **2026-02-21** — Initial competitive analysis and feature brainstorm. See `competitive-analysis.md`.

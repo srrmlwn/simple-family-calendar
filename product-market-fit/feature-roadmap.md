@@ -4,6 +4,19 @@ _Last updated: 2026-02-21_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
+> **Current focus:** Tier 0 design & polish items must be resolved before new feature work begins. See below.
+
+---
+
+## How to Track Work
+
+This file is the single source of truth for what to build and what's in flight.
+
+- **Change a status symbol** when you start or finish something (e.g. 🎯 → 🚧 when you begin, 🚧 → ✅ when shipped).
+- **Tier 0** is the active sprint. Work through it top-to-bottom before touching Tier 1+.
+- **New ideas** go at the bottom of the appropriate tier with 💡.
+- **No separate task tracker** — keep it all here.
+
 ---
 
 ## Status Key
@@ -15,6 +28,55 @@ Prioritized by expected impact on adoption, retention, and differentiation. Feat
 | 🎯 | Next to build (high priority) |
 | 💡 | Good idea, not yet prioritized |
 | ❓ | Needs validation before committing |
+
+---
+
+## Tier 0 — Design & Polish (Fix Before New Features)
+
+_Identified via Puppeteer design audit on 2026-02-21. These are blocking: no new feature work starts until all are resolved._
+
+### 🎯 Fix: Duplicate "Sign in with Google" Button on Login Page
+Two Google OAuth buttons render inside the login card — one standalone, one overlapping the email/password form. Likely a component or conditional rendering bug.
+- Audit source: login page screenshot shows two `Sign in with Google` buttons in the same card
+- Fix: audit `Login.tsx` (or equivalent) for duplicated `<GoogleLogin />` render
+
+### 🎯 Fix: TypeScript Compilation Errors in AuthContext (Visible on Mobile)
+The React dev error overlay ("Compiled with problems") is visible on mobile viewport, covering the UI.
+- `TS2554` at `AuthContext.tsx:99` — `getCurrentUser(token)` called with 1 argument, expects 0
+- `TS2345` at `AuthContext.tsx:123` and `:142` — `AuthResponse` type not assignable to `{ user: User; token: string; }`
+- Fix: resolve type mismatches in `AuthContext.tsx`; run `npm run type-check` to confirm clean
+
+### 🎯 Fix: Event Creation Not Triggered by Clicking Empty Date Cells
+Single-clicking an empty date cell on the mini-calendar does not open the event creation form. There is no visible `+` button on the calendar either. Users have no obvious path to create events except via NLP input.
+- Add a `+` button to the mini-calendar header or on hover over each date cell
+- Or handle single/double click on a date cell to open `EventForm` with that date pre-filled
+
+### 🎯 Fix: "Save Preferences" Button in Settings is Not `type="submit"`
+The button in Daily Digest Settings is a plain `<button>` without `type="submit"`, so pressing Enter in a form field does not trigger it. Change to `type="submit"` or ensure the surrounding `<form>` has an `onSubmit` handler wired up.
+
+### 🎯 Fix: 1 Button Missing Accessible Label
+One button on the main page has no `textContent`, `title`, or `aria-label`. Likely the NLP send (arrow-up) button — confirm and add `aria-label="Send"` (or `title="Send"`).
+
+### 🎯 Fix: 1 Input Missing Label or aria-label
+One visible input is not associated with a `<label>` element and has no `aria-label`/`aria-labelledby`. Identify via dev tools and add the appropriate label.
+
+### 🎯 Fix: No "Forgot Password" Link on Login Page
+Users who forget their password have no self-service recovery path. Add a "Forgot password?" link below the Sign in button that triggers a password reset email flow.
+
+### 🎯 Improvement: Add Event Indicator Dots to Mini Calendar
+Dates with events show no visual indicator in the mini-calendar grid — users cannot tell which days are busy without clicking each one. Add a small dot or count badge below dates that have events, similar to Apple Calendar's mini-calendar.
+
+### 🎯 Improvement: Profile Dropdown — Add More Options
+The profile dropdown currently only shows "Sign Out". At minimum add a link to Settings and a "Help / Feedback" option so users don't have to hunt for the gear icon.
+
+### 🎯 Improvement: Improve Accessible Labels on Icon-Only Buttons
+The mic, send (arrow-up), and settings buttons rely on `title=` for screen-reader labeling. `title` is not reliably announced by all assistive technologies — replace or supplement with `aria-label` on each.
+- Mic button: `aria-label="Start voice input"`
+- Send button: `aria-label="Send"`
+- Settings button: `aria-label="Settings"`
+
+### 🎯 Improvement: Increase Secondary Text Color Contrast
+Secondary text throughout the app uses `text-gray-500` on a white background (~4.6:1 contrast ratio). This meets WCAG AA minimum but fails AAA. Replace with `text-gray-600` for body/secondary text to improve readability for users with low vision.
 
 ---
 

@@ -65,10 +65,11 @@ npm run dev
 | Path | Contents |
 |---|---|
 | `CLAUDE.md` | Architecture, conventions, development guide |
-| `famcal-ai.md` | System architecture diagrams |
 | `schema.sql` | Full database schema |
 | `features/` | Feature specs (NLP, notifications, event form) |
-| `product-market-fit/` | Competitive analysis, feature roadmap, product strategy |
+| `product-market-fit/feature-roadmap.md` | Prioritized backlog and active work tracking |
+| `product-market-fit/competitive-analysis.md` | Market landscape and positioning |
+| `security/` | Security review notes |
 
 ---
 
