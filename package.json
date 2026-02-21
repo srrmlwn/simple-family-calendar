@@ -14,7 +14,16 @@
     "install:server": "cd server && npm install",
     "postinstall": "npm run install:server && npm run install:client && npm run build",
     "test": "cd server && npm test",
-    "heroku-postbuild": "npm run build"
+    "heroku-postbuild": "npm run build",
+    "type-check": "npm run type-check:server && npm run type-check:client",
+    "type-check:server": "cd server && npx tsc --noEmit",
+    "type-check:client": "cd client && npx tsc --noEmit",
+    "lint": "npm run lint:server",
+    "lint:server": "cd server && npm run lint",
+    "test:unit": "cd server && npm test",
+    "test:e2e": "jest --config tests/e2e/jest.config.js --forceExit --runInBand",
+    "security:scan": "bash scripts/security-scan.sh",
+    "verify": "bash scripts/verify.sh"
   },
   "keywords": [],
   "author": "",
@@ -65,9 +74,11 @@
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
+    "puppeteer": "^24.37.5",
     "supertest": "^7.1.0",
     "ts-jest": "^29.3.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "wait-on": "^9.0.4"
   }
 }

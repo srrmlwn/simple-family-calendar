@@ -25,6 +25,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(logRequest);
 app.use(securityHeaders); // This includes our custom CSP configuration
 
+// Health check — used by verify.sh and wait-on to confirm server is ready
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
 // Apply rate limiting to all routes
 app.use('/api', apiLimiter);
 
