@@ -207,30 +207,16 @@ export class AuthController {
 
             // Generate JWT token
             const token = this.authService.generateToken(user);
-            console.log('[AuthController] Generated JWT token');
-            
-            // Log environment variables
-            console.log('[AuthController] Environment variables:', {
-                CLIENT_URL: process.env.CLIENT_URL,
-                NODE_ENV: process.env.NODE_ENV,
-                API_URL: process.env.API_URL
-            });
-            
+
             // Redirect to client with token and profile image
             const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-            console.log('[AuthController] Using client URL:', clientUrl);
-            
             const redirectUrl = new URL(clientUrl);
             redirectUrl.pathname = '/auth/callback';
             redirectUrl.searchParams.set('token', token);
             if (user.profileImage) {
-                console.log('[AuthController] Adding profile image to redirect URL:', user.profileImage);
                 redirectUrl.searchParams.set('profileImage', user.profileImage);
-            } else {
-                console.log('[AuthController] No profile image available for user');
             }
-            
-            console.log('[AuthController] Final redirect URL:', redirectUrl.toString());
+
             res.redirect(redirectUrl.toString());
         } catch (error) {
             console.error('[AuthController] Google callback error:', {

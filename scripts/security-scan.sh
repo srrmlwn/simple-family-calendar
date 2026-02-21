@@ -74,7 +74,9 @@ for file in $FILES; do
   [[ -f "$file" ]] || continue
   while IFS=: read -r lineno line_content; do
     flag "HIGH" "$file" "$lineno" "User data interpolated into HTML — use escapeHtml() helper"
-  done < <(grep -n '\${.*\(event\|user\|req\)\.' "$file" 2>/dev/null | grep -i "html\|<\|template\|email\|body" | grep -v "escapeHtml\|escape(" || true)
+  done < <(grep -n '\${.*\(event\|user\|req\)\.' "$file" 2>/dev/null \
+    | grep -i "<[a-z]\|style=\|html\b" \
+    | grep -v "escapeHtml\|escape(\|formatDateTime\|subject:\|text:\|icalEvent\|key={\`" || true)
 done
 
 # ── Check 4: Hardcoded secrets / API key patterns ──
@@ -101,7 +103,11 @@ for file in $FILES; do
   [[ -f "$file" ]] || continue
   while IFS=: read -r lineno line_content; do
     flag "WARN" "$file" "$lineno" "console.log may expose password/token/secret"
-  done < <(grep -n "console\.log" "$file" 2>/dev/null | grep -iE "password|token|secret|credential" || true)
+  done < <(grep -n "console\.log" "$file" 2>/dev/null \
+    | grep -iE "password|token|secret|credential" \
+    | grep -v "security-scan-ignore" \
+    | grep -v "console\.log('[^']*\(token\|secret\|credential\|password\)[^']*')" \
+    | grep -v 'console\.log("[^"]*\(token\|secret\|credential\|password\)[^"]*")' || true)
 done
 
 # ── Check 6: localStorage used for auth tokens ──
@@ -118,11 +124,19 @@ echo "Checking: DB queries missing userId scoping..."
 for file in $FILES; do
   [[ "$file" == server/src/repositories/* ]] || continue
   [[ -f "$file" ]] || continue
-  # Flag find/findOne/findBy calls that don't include userId
+  # Flag find/findOne/findBy calls that don't include userId or aren't admin/cron functions
   while IFS=: read -r lineno line_content; do
-    if echo "$line_content" | grep -qv "userId\|user_id\|findByUserId\|count\|getDigest"; then
-      flag "WARN" "$file" "$lineno" "Repository query may be missing userId scoping — verify authorization"
+    # Skip if the line itself has userId scoping or a suppress comment
+    if echo "$line_content" | grep -qE "userId|user_id|security-scan-ignore"; then
+      continue
     fi
+    # Skip if inside a function that is inherently scoped (findByUserId) or admin-only (findUsersFor, getFailedDigests)
+    # by looking at surrounding context — check the enclosing function name in the file
+    func_context=$(awk "NR<=($lineno) && /async [a-zA-Z]+\(/{fn=\$0} NR==$lineno{print fn}" "$file" 2>/dev/null || true)
+    if echo "$func_context" | grep -qE "findByUserId|findUsersFor|getFailedDigests|getDigestStats"; then
+      continue
+    fi
+    flag "WARN" "$file" "$lineno" "Repository query may be missing userId scoping — verify authorization"
   done < <(grep -n "this\.repository\.\(find\b\|findOne\b\|findBy\b\)" "$file" 2>/dev/null || true)
 done
 

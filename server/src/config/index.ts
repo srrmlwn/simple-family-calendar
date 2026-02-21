@@ -21,8 +21,13 @@ export default {
         database: process.env.DB_DATABASE || 'simple_family_calendar'
     },
     jwt: {
-        // Ensure these are strings
-        secret: String(process.env.JWT_SECRET || 'your_jwt_secret_key_change_me_in_production'),
+        secret: (() => {
+            const secret = process.env.JWT_SECRET;
+            if (!secret && process.env.NODE_ENV === 'production') {
+                throw new Error('JWT_SECRET environment variable must be set in production');
+            }
+            return String(secret || 'dev_jwt_secret_not_for_production');
+        })(),
         expiresInDays: process.env.JWT_EXPIRATION_DAYS || "1 day"
     },
     email: {

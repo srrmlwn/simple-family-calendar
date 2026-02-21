@@ -104,8 +104,6 @@ const LoginPage: React.FC = () => {
 
   const handleLoginSuccess = async (idToken: string) => {
     try {
-      console.log('Login attempt with token:', idToken.substring(0, 10) + '...');
-      
       // For testing, we'll just show a success message and redirect
       setError(null);
       toast.success('Login successful! Redirecting...', {

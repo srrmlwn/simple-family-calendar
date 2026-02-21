@@ -106,7 +106,7 @@ export class NotificationController {
                 return res.status(400).json({ error: 'Invalid date format' });
             }
 
-            const stats = await digestLogRepository.getDigestStats(start, end);
+            const stats = await digestLogRepository.getDigestStats(userId, start, end);
             return res.json(stats);
         } catch (error) {
             console.error('Error getting digest statistics:', error);

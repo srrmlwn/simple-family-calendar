@@ -3,8 +3,7 @@ import axios, { AxiosResponse, AxiosError } from 'axios';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const ENV = process.env.REACT_APP_ENV || 'development';
 
-console.log('API URL configured as:', API_URL);
-console.log('Environment:', ENV);
+const isDev = process.env.NODE_ENV !== 'production';
 
 // Create axios instance
 const api = axios.create({
@@ -20,15 +19,9 @@ const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
-        console.log("API Request:", {
-            url: config.url,
-            method: config.method,
-            baseURL: config.baseURL,
-            headers: config.headers,
-            data: config.data,
-            environment: ENV
-        });
-        
+        if (isDev) {
+            console.log("API Request:", { url: config.url, method: config.method });
+        }
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -43,17 +36,13 @@ api.interceptors.request.use(
 // Add response interceptor to handle errors
 api.interceptors.response.use(
     (response: AxiosResponse) => {
-        console.log("API Response:", {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-            data: response.data,
-            environment: ENV
-        });
+        if (isDev) {
+            console.log("API Response:", { status: response.status, url: response.config.url });
+        }
         return response;
     },
     (error: AxiosError) => {
-        if (ENV === 'development') {
+        if (isDev) {
             console.error('API Response Error:', error.response?.data || error);
         }
 
@@ -69,14 +58,7 @@ api.interceptors.response.use(
             // Store the error message in sessionStorage (will be cleared on page refresh)
             sessionStorage.setItem('authError', errorMessage);
             // Log the unauthorized error
-            console.log('Unauthorized error:', {
-                message: errorMessage,
-                status: error.response?.status,
-                url: error.config?.url
-            });
-            // Redirect to login page
             window.location.href = '/login';
-            console.log('Redirecting to login page');
         }
 
         return Promise.reject(error);

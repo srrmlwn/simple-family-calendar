@@ -32,11 +32,13 @@ export class EventController {
                 return res.status(400).json({ error: 'Text input is required' });
             }
 
+            if (typeof text !== 'string' || text.length > 500) {
+                return res.status(400).json({ error: 'Text input must be a string under 500 characters' });
+            }
+
             if (!timezone) {
                 return res.status(400).json({ error: 'Timezone is required' });
             }
-
-            console.log("Parsing event from text - " + JSON.stringify(text));
             // Parse the natural language text with timezone using hybrid parser
             const parsedEvent = await this.parser.parseEvent(text, timezone);
 
@@ -77,6 +79,10 @@ export class EventController {
 
             if (!text) {
                 return res.status(400).json({ error: 'Text input is required' });
+            }
+
+            if (typeof text !== 'string' || text.length > 500) {
+                return res.status(400).json({ error: 'Text input must be a string under 500 characters' });
             }
 
             if (!timezone) {
@@ -244,7 +250,11 @@ export class EventController {
             // If specific recipients were provided, add them as well
             if (eventData.recipientIds && eventData.recipientIds.length > 0) {
                 // Get recipient details for email
-                const specificRecipients = await recipientRepository.findByIds(eventData.recipientIds);
+                // Scope lookup to current user's recipients to prevent accessing other users' contacts
+                const { In } = await import('typeorm');
+                const specificRecipients = await recipientRepository.find({
+                    where: { id: In(eventData.recipientIds), userId }
+                });
 
                 const additionalEventRecipients = specificRecipients
                     .filter(recipient => !defaultRecipients.some(dr => dr.id === recipient.id))
@@ -289,7 +299,10 @@ export class EventController {
         try {
             const { id } = req.params;
             const userId = (req.user as any)?.id;
-            const updates = req.body;
+
+            // Allowlist updatable fields — never allow userId or id to be overwritten
+            const { title, description, startTime, endTime, duration, isAllDay, location, color, status } = req.body;
+            const updates = { title, description, startTime, endTime, duration, isAllDay, location, color, status };
 
             // Get the existing event
             const existingEvent = await this.eventService.findById(id);

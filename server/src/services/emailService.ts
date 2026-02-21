@@ -5,6 +5,7 @@ import { Event } from '../entities/Event';
 import { EmailRecipient } from '../entities/EmailRecipient';
 import { EventRecipient } from '../entities/EventRecipient';
 import config from '../config';
+import { escapeHtml } from '../utils/html';
 
 interface EmailSender {
     email: string;
@@ -239,20 +240,20 @@ export class EmailService {
           <h2 style="margin: 0;">${actionText}</h2>
         </div>
         <div style="padding: 20px; border: 1px solid #e5e7eb;">
-          <h1 style="font-size: 24px; color: #111827;">${event.title}</h1>
-          
+          <h1 style="font-size: 24px; color: #111827;">${escapeHtml(event.title)}</h1>
+
           <div style="margin: 20px 0;">
             <p style="font-size: 16px; color: #374151; margin: 8px 0;">
               <strong>When:</strong> ${this.formatDateTime(event.startTime)} - ${this.formatDateTime(event.endTime)}
             </p>
             ${event.location ? `
               <p style="font-size: 16px; color: #374151; margin: 8px 0;">
-                <strong>Where:</strong> ${event.location}
+                <strong>Where:</strong> ${escapeHtml(event.location)}
               </p>
             ` : ''}
             ${event.description ? `
               <p style="font-size: 16px; color: #374151; margin: 8px 0;">
-                <strong>Details:</strong> ${event.description}
+                <strong>Details:</strong> ${escapeHtml(event.description)}
               </p>
             ` : ''}
           </div>

@@ -1,5 +1,6 @@
 import { AppDataSource } from '../data-source';
 import { Event } from '../entities/Event';
+import { escapeHtml } from '../utils/html';
 import { notificationPreferencesRepository } from '../repositories/NotificationPreferencesRepository';
 import { digestLogRepository } from '../repositories/DigestLogRepository';
 import { EmailService } from './emailService';
@@ -64,18 +65,18 @@ export class DigestService {
                 const endTime = moment(event.endTime).tz(timezone).format('h:mm A');
                 html += `
                     <li style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px;">
-                        <h3 style="margin: 0 0 10px 0; color: #2c5282;">${event.title}</h3>
+                        <h3 style="margin: 0 0 10px 0; color: #2c5282;">${escapeHtml(event.title)}</h3>
                         <p style="margin: 5px 0; color: #4a5568;">
                             <strong>Time:</strong> ${startTime} - ${endTime}
                         </p>
                         ${event.location ? `
                             <p style="margin: 5px 0; color: #4a5568;">
-                                <strong>Location:</strong> ${event.location}
+                                <strong>Location:</strong> ${escapeHtml(event.location)}
                             </p>
                         ` : ''}
                         ${event.description ? `
                             <p style="margin: 5px 0; color: #4a5568;">
-                                <strong>Description:</strong> ${event.description}
+                                <strong>Description:</strong> ${escapeHtml(event.description)}
                             </p>
                         ` : ''}
                         <a href="${process.env.CLIENT_URL}/calendar?date=${date.format('YYYY-MM-DD')}" 

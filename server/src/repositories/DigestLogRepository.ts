@@ -51,15 +51,15 @@ export class DigestLogRepository {
     /**
      * Get digest logs for monitoring
      */
-    async getDigestStats(startDate: Date, endDate: Date): Promise<{
+    async getDigestStats(userId: string, startDate: Date, endDate: Date): Promise<{
         total: number;
         successful: number;
         failed: number;
     }> {
         const [total, successful, failed] = await Promise.all([
-            this.repository.count({ where: { sentAt: Between(startDate, endDate) } }),
-            this.repository.count({ where: { status: 'sent', sentAt: Between(startDate, endDate) } }),
-            this.repository.count({ where: { status: 'failed', sentAt: Between(startDate, endDate) } })
+            this.repository.count({ where: { userId, sentAt: Between(startDate, endDate) } }),
+            this.repository.count({ where: { userId, status: 'sent', sentAt: Between(startDate, endDate) } }),
+            this.repository.count({ where: { userId, status: 'failed', sentAt: Between(startDate, endDate) } })
         ]);
 
         return { total, successful, failed };

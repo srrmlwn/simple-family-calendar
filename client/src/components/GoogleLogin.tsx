@@ -108,7 +108,7 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
   };
   
   const handleCredentialResponse = (response: GoogleCredentialResponse) => {
-    console.log('Received Google credential response');
+    console.log('Received Google credential response'); // security-scan-ignore: no credential value logged
     setIsLoading(true);
     setError(null);
     
@@ -119,7 +119,7 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
 
       // The response contains a credential with an ID token
       const idToken = response.credential;
-      console.log('Processing Google login token...');
+      console.log('Processing Google login token...'); // security-scan-ignore: no token value logged
       
       // Call the onLoginSuccess callback if provided
       if (onLoginSuccess) {

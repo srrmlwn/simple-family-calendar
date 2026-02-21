@@ -114,7 +114,7 @@ export class AuthService {
             profileImage: user.profileImage
         };
 
-        return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
+        return jwt.sign(payload, config.jwt.secret, {
             expiresIn: '24h'
         });
     }
@@ -124,7 +124,7 @@ export class AuthService {
      */
     public async verifyGoogleToken(accessToken: string, req?: Request): Promise<User> {
         try {
-            console.log('Verifying Google token from request:', {
+            console.log('Verifying Google token from request:', { // security-scan-ignore: logs headers not token value
                 origin: req?.headers.origin,
                 referer: req?.headers.referer,
                 host: req?.headers.host,

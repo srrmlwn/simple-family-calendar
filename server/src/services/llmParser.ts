@@ -35,13 +35,11 @@ export class LLMParser {
         const currentDate = new Date();
         const userCurrentTime = moment(currentDate).tz(timezone);
         
-        // Create the prompt for Claude
-        const prompt = `Parse the following event description into a structured format. Consider the user's timezone: ${timezone}
-Current time in user's timezone: ${userCurrentTime.format('YYYY-MM-DD HH:mm:ss')}
+        // User input is passed separately from instructions to prevent prompt injection
+        const systemPrompt = `You are a precise calendar event parser. Convert the user's event description into structured JSON.
+Current time in user's timezone (${timezone}): ${userCurrentTime.format('YYYY-MM-DD HH:mm:ss')}
 
-Event description: "${input}"
-
-Return a JSON object with the following structure:
+Return ONLY a valid JSON object with this structure:
 {
     "title": "Event title",
     "description": "Event description (if any)",
@@ -52,22 +50,21 @@ Return a JSON object with the following structure:
 }
 
 Rules:
-1. If no specific date is mentioned, assume it's for today or the next occurrence of the day if mentioned
-2. If no time is specified and it's not an all-day event, don't set any time
-3. Convert all times to UTC considering the user's timezone
-4. For all-day events, set the start time to 00:00:00 UTC and end time to 23:59:59 UTC
-5. If no duration is specified, use 1 hour as default
-6. Extract location if mentioned
-7. Separate title from other details like time, location, etc.
+1. If no specific date is mentioned, assume today or the next occurrence of the named day
+2. Convert all times to UTC using the user's timezone
+3. For all-day events, set start to 00:00:00 UTC and end to 23:59:59 UTC
+4. If no duration is specified, use 1 hour as default
+5. Extract location if mentioned
+6. Output JSON only — no explanation, no markdown.`;
 
-Response must be valid JSON.`;
+        const prompt = `Parse this event description into the JSON format specified:\n\n${input}`;
 
         try {
             const message = await this.anthropic.messages.create({
                 model: "claude-3-7-sonnet-20250219",
                 max_tokens: 1000,
                 temperature: 0.1,
-                system: "You are a precise event parser that converts natural language event descriptions into structured data. Always return valid JSON.",
+                system: systemPrompt,
                 messages: [
                     {
                         role: "user",

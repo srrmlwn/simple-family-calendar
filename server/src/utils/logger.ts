@@ -21,20 +21,25 @@ if (process.env.NODE_ENV !== 'production') {
   }));
 }
 
+const REDACTED_FIELDS = new Set(['password', 'passwordHash', 'token', 'accessToken', 'secret', 'credential']);
+
+function redactBody(body: any): any {
+  if (!body || typeof body !== 'object') return body;
+  return Object.fromEntries(
+    Object.entries(body).map(([k, v]) =>
+      REDACTED_FIELDS.has(k) ? [k, '[REDACTED]'] : [k, v]
+    )
+  );
+}
+
 export const logRequest = (req: any, res: any, next: any) => {
   const start = Date.now();
-  
-  // Log request
+
   logger.info('Incoming Request', {
     method: req.method,
     path: req.path,
     query: req.query,
-    body: req.body
-    // ,
-    // headers: {
-    //   ...req.headers,
-    //   authorization: req.headers.authorization ? '[REDACTED]' : undefined
-    // }
+    body: redactBody(req.body),
   });
 
   // Capture response

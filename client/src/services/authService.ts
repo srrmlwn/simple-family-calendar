@@ -120,15 +120,6 @@ const authService = {
     handleGoogleCallback: async (token: string): Promise<AuthResponse> => {
         try {
             console.log('[AuthService] Starting Google OAuth callback handling');
-            console.log('[AuthService] Token received:', token.substring(0, 10) + '...');
-            
-            // Log URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            console.log('[AuthService] URL Parameters:', {
-                hasToken: !!urlParams.get('token'),
-                hasProfileImage: !!urlParams.get('profileImage'),
-                profileImageUrl: urlParams.get('profileImage')
-            });
             
             // Get user info using the token
             console.log('[AuthService] Fetching user info from /api/auth/me');
@@ -144,19 +135,13 @@ const authService = {
             });
 
             // Get profile image from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
             const profileImage = urlParams.get('profileImage');
-            console.log('[AuthService] Profile image from URL:', profileImage);
 
             const userWithProfile = {
                 ...response.data,
                 profileImage: profileImage || undefined
             };
-            console.log('[AuthService] Final user object:', {
-                id: userWithProfile.id,
-                email: userWithProfile.email,
-                hasProfileImage: !!userWithProfile.profileImage,
-                profileImageUrl: userWithProfile.profileImage
-            });
 
             return {
                 user: userWithProfile,

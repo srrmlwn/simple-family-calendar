@@ -18,12 +18,29 @@ const app = express();
 const PORT = config.server.port;
 
 // Middleware
-app.use(cors());
-app.use(helmet()); // Use default helmet configuration except CSP
+const allowedOrigins = [
+    'https://famcal.ai',
+    'https://simple-family-calendar-8282627220c3.herokuapp.com',
+    ...(config.server.nodeEnv !== 'production' ? ['http://localhost:3000'] : [])
+];
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, same-origin)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS: origin ${origin} not allowed`));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+// All helmet config lives in securityHeaders middleware — do not add app.use(helmet()) here
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logRequest);
-app.use(securityHeaders); // This includes our custom CSP configuration
+app.use(securityHeaders); // Single source of truth for all security headers
 
 // Health check — used by verify.sh and wait-on to confirm server is ready
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));

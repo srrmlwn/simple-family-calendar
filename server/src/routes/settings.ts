@@ -34,10 +34,47 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     return res.json(settings);
 }));
 
+const VALID_THEMES = ['light', 'dark'];
+const VALID_TIME_FORMATS = ['12h', '24h'];
+// Intl.supportedValuesOf available in Node 18+; fall back to accepting any string if unavailable
+const VALID_TIMEZONES: Set<string> | null = typeof (Intl as any).supportedValuesOf === 'function'
+    ? new Set((Intl as any).supportedValuesOf('timeZone'))
+    : null;
+
+const VALID_NOTIFICATION_PREFS_KEYS = new Set(['emailNotifications', 'reminderTime']);
+
 // Update user settings
 router.put('/', asyncHandler(async (req: Request, res: Response) => {
     const userId = (req.user as any)?.id;
     const { theme, timeFormat, timezone, notificationPreferences } = req.body;
+
+    // Validate each field against an allowlist
+    if (theme !== undefined && !VALID_THEMES.includes(theme)) {
+        return res.status(400).json({ error: `Invalid theme. Must be one of: ${VALID_THEMES.join(', ')}` });
+    }
+    if (timeFormat !== undefined && !VALID_TIME_FORMATS.includes(timeFormat)) {
+        return res.status(400).json({ error: `Invalid timeFormat. Must be one of: ${VALID_TIME_FORMATS.join(', ')}` });
+    }
+    if (timezone !== undefined && VALID_TIMEZONES !== null && !VALID_TIMEZONES.has(timezone)) {
+        return res.status(400).json({ error: 'Invalid timezone identifier' });
+    }
+    if (notificationPreferences !== undefined) {
+        if (typeof notificationPreferences !== 'object' || Array.isArray(notificationPreferences)) {
+            return res.status(400).json({ error: 'notificationPreferences must be an object' });
+        }
+        const unknownKeys = Object.keys(notificationPreferences).filter(k => !VALID_NOTIFICATION_PREFS_KEYS.has(k));
+        if (unknownKeys.length > 0) {
+            return res.status(400).json({ error: `Unknown notificationPreferences keys: ${unknownKeys.join(', ')}` });
+        }
+        if (typeof notificationPreferences.emailNotifications !== 'undefined' &&
+            typeof notificationPreferences.emailNotifications !== 'boolean') {
+            return res.status(400).json({ error: 'emailNotifications must be a boolean' });
+        }
+        if (typeof notificationPreferences.reminderTime !== 'undefined' &&
+            (typeof notificationPreferences.reminderTime !== 'number' || notificationPreferences.reminderTime < 0)) {
+            return res.status(400).json({ error: 'reminderTime must be a non-negative number' });
+        }
+    }
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);
     let settings = await settingsRepository.findOne({
@@ -45,16 +82,14 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
     });
 
     if (!settings) {
-        // Create settings if none exist
         settings = new UserSettings();
         settings.userId = userId!;
     }
 
-    // Update fields if provided
-    if (theme) settings.theme = theme;
-    if (timeFormat) settings.timeFormat = timeFormat;
-    if (timezone) settings.timezone = timezone;
-    if (notificationPreferences) settings.notificationPreferences = notificationPreferences;
+    if (theme !== undefined) settings.theme = theme;
+    if (timeFormat !== undefined) settings.timeFormat = timeFormat;
+    if (timezone !== undefined) settings.timezone = timezone;
+    if (notificationPreferences !== undefined) settings.notificationPreferences = notificationPreferences;
 
     const updatedSettings = await settingsRepository.save(settings);
 
