@@ -3,7 +3,7 @@ import moment from 'moment';
 import { Event, EventInput } from '../services/eventService';
 import DayView from './DayView';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface DatePickerProps {
     events: Event[];
@@ -11,6 +11,7 @@ interface DatePickerProps {
     onNavigate: (date: Date | 'TODAY') => void;
     onEventUpdate: (eventId: string, eventData: EventInput) => Promise<void>;
     onEventDelete: (eventId: string) => Promise<void>;
+    onCreateEvent?: (date: Date) => void;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -18,7 +19,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
     date,
     onNavigate,
     onEventUpdate,
-    onEventDelete
+    onEventDelete,
+    onCreateEvent,
 }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [browsingDate, setBrowsingDate] = useState<Date>(date);
@@ -41,10 +43,15 @@ const DatePicker: React.FC<DatePickerProps> = ({
         return dateMap;
     }, [events]);
 
-    // Handle date selection
+    // Handle date selection — first click selects; second click (already-selected day) opens event creation
     const handleDateSelect = useCallback((newDate: Date) => {
-        onNavigate(newDate);
-    }, [onNavigate]);
+        const alreadySelected = moment(newDate).isSame(moment(date), 'day');
+        if (alreadySelected && onCreateEvent) {
+            onCreateEvent(newDate);
+        } else {
+            onNavigate(newDate);
+        }
+    }, [date, onNavigate, onCreateEvent]);
 
     // Handle month navigation
     const changeMonth = useCallback((delta: number) => {
@@ -105,17 +112,29 @@ const DatePicker: React.FC<DatePickerProps> = ({
                                 <ChevronRight className="w-5 h-5" />
                             </button>
                         </div>
-                        <button
-                            onClick={() => onNavigate('TODAY')}
-                            className="px-3 py-1.5 text-sm font-medium text-blue-500 bg-blue-50/50 hover:bg-blue-50 rounded-md transition-colors"
-                            title="Go to today"
-                        >
-                            Today
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => onNavigate('TODAY')}
+                                className="px-3 py-1.5 text-sm font-medium text-blue-500 bg-blue-50/50 hover:bg-blue-50 rounded-md transition-colors"
+                                title="Go to today"
+                            >
+                                Today
+                            </button>
+                            {onCreateEvent && (
+                                <button
+                                    onClick={() => onCreateEvent(date)}
+                                    className="p-1.5 text-blue-500 bg-blue-50/50 hover:bg-blue-50 rounded-md transition-colors"
+                                    title="New event"
+                                    aria-label="New event"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Weekday headers */}
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs sm:text-sm font-medium text-gray-500 mb-1">
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs sm:text-sm font-medium text-gray-600 mb-1">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                             <div key={day} className="py-1">
                                 {day}
@@ -139,16 +158,21 @@ const DatePicker: React.FC<DatePickerProps> = ({
                                             absolute inset-0 mx-auto w-full rounded-md border-2 text-center text-xs sm:text-sm font-medium transition
                                             ${isSelected ? 'border-blue-500 text-blue-600' : 'border-transparent'}
                                             ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
-                                            ${hasEvents ? 'bg-blue-50' : ''}
                                             hover:border-blue-200
                                         `}
                                         onClick={() => handleDateSelect(day)}
                                         disabled={!isCurrentMonth}
+                                        aria-label={`${moment(day).format('MMMM D, YYYY')}${hasEvents ? ', has events' : ''}`}
                                     >
                                         {moment(day).date()}
                                         {isToday && (
-                                            <span className="absolute left-1/2 top-1/2 flex h-[4px] w-[4px] sm:h-[5px] sm:w-[5px] -translate-x-1/2 translate-y-[6px] sm:translate-y-[8px] items-center justify-center rounded-full bg-blue-500 align-middle">
+                                            <span className="absolute left-1/2 top-1/2 flex h-[4px] w-[4px] sm:h-[5px] sm:w-[5px] -translate-x-1/2 translate-y-[6px] sm:translate-y-[8px] rounded-full bg-blue-500">
                                                 <span className="sr-only">Today</span>
+                                            </span>
+                                        )}
+                                        {hasEvents && !isToday && (
+                                            <span className="absolute left-1/2 top-1/2 flex h-[3px] w-[3px] sm:h-[4px] sm:w-[4px] -translate-x-1/2 translate-y-[6px] sm:translate-y-[8px] rounded-full bg-blue-400">
+                                                <span className="sr-only">Has events</span>
                                             </span>
                                         )}
                                     </button>

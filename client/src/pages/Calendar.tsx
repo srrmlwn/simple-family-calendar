@@ -1,23 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from '../components/Header';
 import DatePicker from '../components/DatePicker';
+import EventForm from '../components/EventForm';
 import NLPInput from '../components/NLPInput';
 import eventService, { Event, EventInput } from '../services/eventService';
-
-interface DatePickerProps {
-    events: Event[];
-    date: Date;
-    onNavigate: (date: Date | 'TODAY') => void;
-    onEventUpdate: (eventId: string, eventData: EventInput) => Promise<void>;
-    onEventDelete: (eventId: string) => Promise<void>;
-    onEventSave: (eventData: EventInput) => Promise<Event>;
-}
 
 const CalendarPage: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [date, setDate] = useState<Date>(new Date());
+    const [newEventDate, setNewEventDate] = useState<Date | null>(null);
 
     // Fetch events from API with date range filtering
     const fetchEvents = useCallback(async () => {
@@ -110,15 +103,37 @@ const CalendarPage: React.FC = () => {
                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                 ) : (
-                    <div className="min-h-full bg-white rounded-lg shadow flex">
-                        <DatePicker
-                            events={events}
-                            date={date}
-                            onNavigate={handleNavigate}
-                            onEventUpdate={handleEventUpdate}
-                            onEventDelete={handleEventDelete}
-                        />
-                    </div>
+                    <>
+                        <div className="min-h-full bg-white rounded-lg shadow flex">
+                            <DatePicker
+                                events={events}
+                                date={date}
+                                onNavigate={handleNavigate}
+                                onEventUpdate={handleEventUpdate}
+                                onEventDelete={handleEventDelete}
+                                onCreateEvent={setNewEventDate}
+                            />
+                        </div>
+
+                        {/* New event modal */}
+                        {newEventDate && (
+                            <div
+                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                                onClick={(e) => { if (e.target === e.currentTarget) setNewEventDate(null); }}
+                            >
+                                <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                                    <EventForm
+                                        initialDate={newEventDate}
+                                        onSubmit={async (eventData) => {
+                                            await handleEventSave(eventData);
+                                            setNewEventDate(null);
+                                        }}
+                                        onCancel={() => setNewEventDate(null)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

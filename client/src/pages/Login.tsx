@@ -172,43 +172,16 @@ const Login: React.FC = () => {
             </button>
           </div>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Or continue with
-                </span>
-              </div>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
             </div>
-
-            <div className="mt-6">
-              <div 
-                id="g_id_onload"
-                data-client_id={process.env.REACT_APP_GOOGLE_CLIENT_ID}
-                data-context="signin"
-                data-ux_mode="popup"
-                data-callback="handleGoogleSignIn"
-                data-auto_prompt="false"
-              />
-
-              <div 
-                className="g_id_signin"
-                data-type="standard"
-                data-shape="rectangular"
-                data-theme="outline"
-                data-text="signin_with"
-                data-size="large"
-                data-logo_alignment="left"
-                data-width="400"
-                data-domain="famcal.ai"
-              />
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-600">Or sign in with email</span>
             </div>
           </div>
 
-          {/* Existing login form */}
+          {/* Email / password login form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
@@ -254,8 +227,13 @@ const Login: React.FC = () => {
             </div>
           </form>
 
-          <div className="text-sm text-center">
+          <div className="space-y-2 text-sm text-center">
             <p>
+              <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                Forgot your password?
+              </Link>
+            </p>
+            <p className="text-gray-600">
               Don't have an account?{' '}
               <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
                 Register here

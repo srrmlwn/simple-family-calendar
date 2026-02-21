@@ -13,6 +13,7 @@ const authController = new AuthController();
 router.post('/register', registerLimiter, asyncHandler(authController.register));
 router.post('/login', authLimiter, asyncHandler(authController.login));
 router.post('/logout', authController.logout);
+router.post('/forgot-password', authLimiter, asyncHandler(authController.forgotPassword));
 router.post('/google/verify', authLimiter, asyncHandler(authController.verifyGoogleToken));
 
 // Google OAuth routes with rate limiting

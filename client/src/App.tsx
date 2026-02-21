@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
+import ForgotPassword from './pages/ForgotPassword';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -17,6 +18,7 @@ const App: React.FC = () => {
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/login-test" element={<LoginPage />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/" element={

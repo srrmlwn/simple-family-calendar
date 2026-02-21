@@ -80,6 +80,7 @@ const Header: React.FC = () => {
                             onClick={handleSettingsClick}
                             className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors"
                             title="Settings"
+                            aria-label="Settings"
                         >
                             <Settings size={20} />
                         </button>
@@ -90,6 +91,9 @@ const Header: React.FC = () => {
                                 onClick={toggleLogoutMenu}
                                 className="flex items-center focus:outline-none"
                                 title="Profile menu"
+                                aria-label="Profile menu"
+                                aria-expanded={showLogoutMenu}
+                                aria-haspopup="true"
                             >
                                 {user?.profileImage && !profileImageError ? (
                                     <img 
@@ -107,10 +111,21 @@ const Header: React.FC = () => {
                                 )}
                             </button>
 
-                            {/* Logout Menu Dropdown */}
+                            {/* Profile Dropdown */}
                             {showLogoutMenu && (
                                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                                     <div className="py-1">
+                                        <div className="px-4 py-2 border-b border-gray-100">
+                                            <p className="text-xs font-medium text-gray-600 truncate">{user?.firstName} {user?.lastName}</p>
+                                            <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => { setShowLogoutMenu(false); navigate('/settings'); }}
+                                            className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <Settings size={16} className="mr-2" />
+                                            Settings
+                                        </button>
                                         <button
                                             onClick={handleLogout}
                                             className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"

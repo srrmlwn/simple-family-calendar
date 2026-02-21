@@ -161,7 +161,9 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
         <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 ${className}`}>
             <div className="max-w-3xl mx-auto">
                 <div className="flex items-center space-x-2">
+                    <label htmlFor="nlp-event-input" className="sr-only">Describe an event</label>
                     <input
+                        id="nlp-event-input"
                         type="text"
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
@@ -172,18 +174,21 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventAdded, className }) => {
                     />
                     <button
                         onClick={toggleListening}
+                        aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                        title={isListening ? 'Stop listening' : 'Start voice input'}
                         className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            isListening 
-                                ? 'bg-red-500 hover:bg-red-600 text-white' 
+                            isListening
+                                ? 'bg-red-500 hover:bg-red-600 text-white'
                                 : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                         }`}
-                        title={isListening ? 'Stop listening' : 'Start voice input'}
                     >
                         {isListening ? <MicOff size={20} /> : <Mic size={20} />}
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={isLoading || !inputText.trim()}
+                        aria-label="Send"
+                        title="Send"
                         className="p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ArrowUp size={20} />

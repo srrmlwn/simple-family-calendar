@@ -115,7 +115,7 @@ const NotificationPreferences: React.FC = () => {
         <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium">Daily Digest Settings</h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-600">
                     Configure when you want to receive your daily calendar digest.
                 </p>
             </div>
@@ -135,15 +135,19 @@ const NotificationPreferences: React.FC = () => {
                 </div>
             )}
 
-            <div className="px-6 py-4 space-y-4">
+            <form
+                onSubmit={(e) => { e.preventDefault(); handleUpdatePreferences(); }}
+                className="px-6 py-4 space-y-4"
+            >
                 {/* Digest Time Setting */}
                 <div className="flex items-center space-x-4">
-                    <Clock className="h-5 w-5 text-gray-400" />
+                    <Clock className="h-5 w-5 text-gray-400" aria-hidden="true" />
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="digest-time" className="block text-sm font-medium text-gray-700 mb-1">
                             Digest Time
                         </label>
                         <input
+                            id="digest-time"
                             type="time"
                             value={preferences.digestTime}
                             onChange={(e) => setPreferences({ ...preferences, digestTime: e.target.value })}
@@ -155,7 +159,7 @@ const NotificationPreferences: React.FC = () => {
 
                 {/* Enable/Disable Setting */}
                 <div className="flex items-center space-x-4">
-                    <Bell className="h-5 w-5 text-gray-400" />
+                    <Bell className="h-5 w-5 text-gray-400" aria-hidden="true" />
                     <div className="flex items-center">
                         <input
                             type="checkbox"
@@ -174,14 +178,14 @@ const NotificationPreferences: React.FC = () => {
                 {/* Save Button */}
                 <div className="flex justify-end">
                     <button
-                        onClick={handleUpdatePreferences}
+                        type="submit"
                         disabled={loading}
                         className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300"
                     >
                         {loading ? 'Saving...' : 'Save Preferences'}
                     </button>
                 </div>
-            </div>
+            </form>
 
             {/* Digest Statistics */}
             {stats && (

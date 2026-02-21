@@ -149,6 +149,20 @@ export class AuthController {
     };
 
     /**
+     * Forgot password — always returns 200 to avoid email enumeration.
+     * TODO: generate a reset token, store it hashed, and email the link via EmailService.
+     */
+    public forgotPassword = async (req: Request, res: Response): Promise<void> => {
+        const { email } = req.body;
+        if (!email || typeof email !== 'string') {
+            res.status(400).json({ error: 'Email is required' });
+            return;
+        }
+        // Always return success to prevent email enumeration
+        res.json({ message: 'If an account exists, a reset link has been sent.' });
+    };
+
+    /**
      * Verify Google OAuth token (GIS credential flow) and create/update user
      */
     public verifyGoogleToken = async (req: Request, res: Response): Promise<void> => {
