@@ -1,52 +1,77 @@
 # famcal.ai
 
-### Deployed Version
-https://famcal.ai/
+**Live:** https://famcal.ai
+
+A family calendar that understands plain English. Create events by describing them, get daily digests, and keep the whole family on the same page.
 
 ---
 
-A simple calendar app that makes it easy to manage your family's schedule using natural language.
+## What Makes It Different
 
-## Features
+- **Natural language first** — "Schedule dentist for Maya next Tuesday at 2pm" creates the event
+- **Family-aware** — tag events to family members, not just calendars
+- **Email invites** — send iCal invites to family members directly from the app
+- **Daily digest** — 6 PM email summarizing tomorrow's events
+- **Multi-channel** (roadmap) — WhatsApp/SMS, photo import, voice input
 
-- Create events using natural language input
-- Send calendar invites to family members
-- Update and cancel events
-- Responsive design for web and mobile
+---
+
+## Tech Stack
+
+| | |
+|---|---|
+| Frontend | React + TypeScript, Tailwind CSS, react-big-calendar |
+| Backend | Node.js + Express + TypeScript |
+| Database | PostgreSQL (Heroku) with TypeORM |
+| Auth | Google OAuth + JWT |
+| NLP | OpenAI API |
+| Email | Nodemailer + iCalendar |
+| Mobile | Capacitor |
+
+See `CLAUDE.md` for full architecture and development notes.
+
+---
 
 ## Getting Started
 
 ### Prerequisites
+- Node.js v16+
+- PostgreSQL v13+
 
-- Node.js (v14 or higher)
-- PostgreSQL
+### Setup
 
-### Installation
-
-1. Clone the repository
 ```bash
 git clone https://github.com/yourusername/famcal-ai.git
 cd famcal-ai
-```
-
-2. Install dependencies
-```bash
 npm install
 ```
 
-3. Set up your PostgreSQL database
-   - Create a new database named `famcal_ai`
-   - Update the `.env` file with your database credentials
+Create `.env` files in `/server` and `/client` (see `CLAUDE.md` for required variables).
 
-4. Start the development server
 ```bash
+# Run DB migrations
+cd server && npm run typeorm migration:run
+
+# Start development servers
 npm run dev
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:4000/api
 ```
 
-5. Access the application
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:4000/api
+---
+
+## Project Docs
+
+| Path | Contents |
+|---|---|
+| `CLAUDE.md` | Architecture, conventions, development guide |
+| `famcal-ai.md` | System architecture diagrams |
+| `schema.sql` | Full database schema |
+| `features/` | Feature specs (NLP, notifications, event form) |
+| `product-market-fit/` | Competitive analysis, feature roadmap, product strategy |
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT — see `LICENSE`.

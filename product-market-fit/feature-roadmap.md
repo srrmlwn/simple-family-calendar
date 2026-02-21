@@ -1,0 +1,148 @@
+# Feature Roadmap
+
+_Last updated: 2026-02-21_
+
+Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
+
+---
+
+## Status Key
+
+| Symbol | Meaning |
+|---|---|
+| ✅ | Shipped |
+| 🚧 | In progress / has a spec |
+| 🎯 | Next to build (high priority) |
+| 💡 | Good idea, not yet prioritized |
+| ❓ | Needs validation before committing |
+
+---
+
+## Tier 1 — Core Differentiators
+
+These are the features that answer "why use famcal.ai instead of Google Calendar?"
+
+### ✅ Natural Language Event Creation
+Type or speak plain English → event is created. Powered by OpenAI. Core feature, already implemented. See `/features/natural-language-interaction.md`.
+
+### ✅ Email Invites with iCal Attachments
+Send calendar invites to family members via email. Already shipped.
+
+### ✅ Daily Email Digest
+6 PM email summarizing tomorrow's events. Configurable time. Already shipped. See `/features/notifications.md`.
+
+### 🚧 Natural Language Event Modification and Queries
+"Move my dentist appointment to Thursday" / "What does Maya have this week?" — creation works; modification and querying are in-spec. See `/features/natural-language-interaction.md`.
+
+### 🎯 WhatsApp / SMS Bot Integration
+**Why it's #1 priority:** Parents already forward event info via WhatsApp. Forward any message to a famcal.ai phone number → AI parses it → event added to calendar. Zero friction. No other calendar does this.
+
+- Implementation: Twilio (SMS/WhatsApp) webhook → same NLP parser used for the chat interface
+- Confirmation reply back to the user with parsed details before creating
+- Deep link to view/edit the created event
+
+### 🎯 Family Members as First-Class Entities
+**Why:** Right now recipients are just email contacts. Family members should be named, persistent, and taggable on any event.
+
+- Named family member profiles (e.g., "Maya - age 10", "Dad")
+- Tag any event to one or more family members
+- Filter calendar by family member
+- Foundation for the family-wide view and per-member iCal feeds
+
+### 🎯 Family-Wide Weekly View
+**Why:** The visual answer to "who has what this week?" — a grid with a column per family member. Instantly surface conflicts. This is the view that makes famcal.ai feel family-native.
+
+- Week grid, one column per family member
+- Color-coded by member
+- Conflict highlighting (two members with overlapping events)
+- "Who needs a ride?" surface (events with location that overlap in time)
+
+---
+
+## Tier 2 — Strong Retention Features
+
+These keep users coming back and building habits.
+
+### 🎯 Weekly Family Briefing
+A Sunday evening email (or WhatsApp message) summarizing the whole family's upcoming week. More valuable than the daily digest because it helps parents plan logistics.
+
+- Grouped by day, then by family member
+- Highlights conflicts
+- One-click to view in app
+
+### 💡 Per-Member iCal Feed URLs
+Each family member gets a unique iCal subscription URL. Subscribe from Google Calendar, Apple Calendar, or any other app. Removes the "but I already use Google" objection — famcal.ai becomes the source of truth.
+
+### 💡 Conflict Detection and Alerts
+When two family members have overlapping events (especially with location), proactively flag it.
+
+- "Both kids have practice at the same time on Tuesday"
+- "Dad's flight arrives at 3pm but school pickup is also at 3pm"
+- Integrates naturally with the family-wide view
+
+### 🚧 Recurring Events
+Already has basic implementation. Needs polish for complex patterns (bi-weekly, first Monday of month, school year schedule with exceptions).
+
+### 💡 Smart Reminders with Travel Buffer
+"Leave by 3:45 to get to soccer by 4:00" — use event location to compute departure time. Surface as a pre-event notification rather than just an alarm.
+
+---
+
+## Tier 3 — Acquisition and Viral Features
+
+These drive new user sign-ups and word-of-mouth.
+
+### 🎯 Photo / Flyer → Events (Bulk Import)
+**Why it's a viral demo moment:** Snap a photo of a soccer season schedule, school holiday list, or sports flyer → AI extracts all dates and creates events in bulk. This is a 10-minute manual task turned into 10 seconds.
+
+- Use OpenAI vision API to extract structured event data from images
+- Show a confirmation screen with all parsed events before creating
+- "Share image" entrypoint from mobile share sheet (iOS/Android)
+
+### 💡 Voice Input (Mobile-First)
+On mobile, voice is the most natural input. "Hey FamCal, add piano lesson every Monday at 4pm" while driving. Already in the NLP spec; Whisper API is the implementation path.
+
+### 💡 Event Templates
+Pre-built templates for common recurring structures:
+- Soccer season (practices + game days)
+- School year (with holiday auto-population by district)
+- Weekly routine (homework time, bedtime, recurring errands)
+
+### 💡 "Add to FamCal" Browser Extension
+Right-click any date/event on a webpage or forward an email → parse and add to calendar. Useful for school websites, sports league pages, etc.
+
+---
+
+## Tier 4 — Ecosystem and Platform
+
+These expand the addressable market and create lock-in.
+
+### 🚧 2-Way Google Calendar Sync
+Already in README as a planned feature. Import from and sync back to Google Calendar. Critical for users who don't want to abandon their existing setup.
+
+### ❓ School/Sports League Integrations
+Direct import from platforms like TeamSnap, SportsEngine, or school portals. Reduces setup friction significantly but requires per-integration engineering.
+
+### ❓ Location-Aware Commute Planning
+Integration with Google Maps / Apple Maps to compute travel time and surface "leave by X" reminders. Depends on family members' locations being stored (privacy consideration).
+
+### ❓ Shared Grocery / Task Lists (Cozi-style)
+Cozi's success is partly due to combining calendar + lists. Adds complexity but expands the "family OS" positioning. Validate first whether users want this in famcal.ai vs. a dedicated list app.
+
+---
+
+## What NOT to Build (Yet)
+
+- **Full chat/AI assistant UI** — The NLP input embedded in the calendar is enough for now. A dedicated chat view adds navigation complexity. Revisit after multi-channel is working.
+- **Native mobile app (React Native)** — Capacitor wrapper is sufficient until retention metrics justify the investment.
+- **Team/work calendars** — Stay family-focused. Generic work scheduling is Google Calendar's territory.
+- **Payments / premium tier** — Validate the core value proposition first before monetization complexity.
+
+---
+
+## Open Questions to Resolve
+
+1. Should family members have their own login accounts, or is the family calendar always owned by one "admin" parent?
+2. What's the right confirmation UX for WhatsApp-parsed events — reply in WhatsApp, or require opening the app?
+3. For the weekly briefing, should it go to one parent, all adults, or be configurable?
+4. Privacy model for children's events — should kids be able to see their own events on the family calendar?
