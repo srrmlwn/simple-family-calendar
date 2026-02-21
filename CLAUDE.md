@@ -151,6 +151,190 @@ Product strategy notes live in `/product-market-fit/`:
 
 ---
 
+## Development Workflow
+
+Every feature follows this pipeline. Two nested loops — a fast inner loop for iteration, and a slower outer loop as the exit gate before committing.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  INNER LOOP (seconds — repeat freely while building)        │
+│  Spec → Edit code → Type-check → Lint → Unit tests → Fix   │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ happy with the logic?
+┌──────────────────────────▼──────────────────────────────────┐
+│  OUTER LOOP (minutes — run once before committing)          │
+│  Start servers → Puppeteer E2E → Security scan → Commit     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Step 0 — Spec first
+Before writing any code, write or read the feature spec in `/features/<feature-name>.md`. Define:
+- What the feature does (user-facing behavior)
+- Which files will be touched (server routes, services, components)
+- Acceptance criteria — these become the Puppeteer test cases
+- Any security considerations (new inputs? new DB queries? new auth paths?)
+
+No spec → no clear "done" → the loop never exits cleanly.
+
+---
+
+### Step 1 — Inner loop: edit → type-check → lint → unit test
+
+Run these constantly while editing. They are fast (seconds) and catch most bugs before a browser is involved.
+
+```bash
+# Type-check only (no emit) — run after every meaningful edit
+cd server && npx tsc --noEmit
+cd client && npx tsc --noEmit
+
+# Lint
+cd server && npm run lint
+cd client && npm run lint
+
+# Unit tests (Jest) — run tests relevant to files you changed
+cd server && npm test -- --testPathPattern=<service-name>
+cd client && npm test -- --watchAll=false
+```
+
+Fix everything here before moving to the outer loop. If TypeScript or lint is red, don't start the servers.
+
+---
+
+### Step 2 — Outer loop: start servers
+
+```bash
+# Terminal 1 — backend (port 4000)
+cd server && npm run dev
+
+# Terminal 2 — frontend (port 3000)
+cd client && npm start
+
+# Or both at once from project root
+npm run dev
+```
+
+Wait for both to be ready (the E2E test runner handles this automatically via `wait-on`).
+
+---
+
+### Step 3 — Outer loop: Puppeteer E2E tests
+
+E2E tests live in `tests/e2e/`. Each feature has its own test file. Tests run against local servers (port 3000/4000) using a test user account seeded in the local DB.
+
+```bash
+# Run all E2E tests
+npm run test:e2e
+
+# Run tests for a specific feature
+npm run test:e2e -- --grep "event creation"
+```
+
+**What Puppeteer tests cover:**
+- Happy path for every user-facing feature
+- Auth flow (login, logout, session persistence)
+- NLP event creation → confirm → event appears on calendar
+- Edge cases defined in the feature spec acceptance criteria
+
+**Test data:** Each test suite resets to a known state using a seed script (`tests/e2e/seed.ts`) before running. Tests must not depend on order or shared mutable state.
+
+If a Puppeteer test fails, go back to the inner loop to fix the issue.
+
+---
+
+### Step 4 — Outer loop: scoped security scan
+
+Run a fast automated security scan on **changed files only** before every commit. This catches new issues introduced in this session — not a full audit, just a regression guard.
+
+```bash
+# Scan only files changed in this working session
+npm run security:scan
+```
+
+This script (`scripts/security-scan.sh`) checks changed files for:
+- New Express routes missing `authenticateToken` middleware
+- Raw `req.body` passed directly to a DB query or ORM `.save()` / `.update()`
+- String interpolation into HTML templates (XSS in emails)
+- Hardcoded secrets / API key patterns (`sk-`, `GOCSPX-`, passwords in strings)
+- New environment variable names not covered by `.gitignore`
+- `console.log` calls that include `password`, `token`, or `secret`
+
+The scan is intentionally fast — grep-based pattern matching, not AI-powered. Reserve the full Claude security reviewer (the `feature-dev:code-reviewer` agent) for after a batch of features or before a production release.
+
+If the scan flags something, fix it before committing.
+
+---
+
+### Step 5 — Commit and push
+
+Once inner loop, E2E tests, and security scan all pass:
+
+```bash
+git add <specific files>
+git commit -m "type: description"
+git push origin main
+```
+
+Always add files by name — never `git add .` or `git add -A` (risks accidentally staging `.env` files or large build artifacts).
+
+---
+
+### Full pipeline as a single command
+
+```bash
+npm run verify
+```
+
+This runs: `type-check → lint → unit tests → start servers → E2E tests → security scan`. If everything passes, it prints a commit-ready confirmation. Does **not** auto-commit — that remains a manual step.
+
+---
+
+### When to run the full Claude security reviewer
+
+Not every session — it's slow and expensive. Run it:
+- After completing a full feature (especially anything touching auth, email, or DB queries)
+- Before a production deployment
+- After any dependency upgrade
+- Any time you're unsure about a new pattern you've introduced
+
+```
+# In Claude Code, invoke the reviewer agent:
+# "Do a security review of the changes in this session"
+```
+
+---
+
+### Puppeteer test structure
+
+```
+tests/
+  e2e/
+    seed.ts              # DB seed/reset utility
+    auth.test.ts         # Login, logout, session
+    events.test.ts       # Create, edit, delete events
+    nlp.test.ts          # Natural language input flows
+    notifications.test.ts # Digest preferences
+    <feature>.test.ts    # One file per feature
+  unit/                  # Jest unit tests (currently in server/tests/)
+```
+
+---
+
+### Scripts reference
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start client (3000) + server (4000) concurrently |
+| `npm run type-check` | TypeScript check, no emit, both client and server |
+| `npm run lint` | ESLint on client and server |
+| `npm run test:unit` | Jest unit tests (server + client) |
+| `npm run test:e2e` | Puppeteer E2E tests (requires servers running) |
+| `npm run security:scan` | Fast grep-based security scan on changed files |
+| `npm run verify` | Full pipeline: type-check → lint → unit → E2E → security scan |
+
+_Note: Some of these scripts need to be wired up in `package.json` — see setup tasks in `security/security-review-2026-02-21.md`._
+
+---
+
 ## Things to Be Careful About
 
 1. **NLP accuracy is trust-critical** — calendar mistakes (wrong dates/times) erode user trust fast. Always show a confirmation step before creating/modifying events from NLP input.
