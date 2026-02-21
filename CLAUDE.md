@@ -76,6 +76,14 @@ Schema file: `schema.sql` (run with `heroku pg:psql DATABASE_URL < schema.sql`)
 
 ---
 
+## Git Workflow
+
+- **Single developer** — push directly to `main`, no PRs or feature branches needed
+- Commit after any meaningful session (new features, fixes, doc updates)
+- Commit message format: `type: short description` (e.g. `feat:`, `fix:`, `docs:`, `refactor:`)
+
+---
+
 ## Development
 
 ```bash
