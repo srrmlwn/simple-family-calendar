@@ -125,14 +125,27 @@ export class AuthService {
      */
     public async verifyGoogleToken(accessToken: string, req?: Request): Promise<User> {
         try {
-            console.log('Verifying Google token from request:', { // security-scan-ignore: logs headers not token value
-                origin: req?.headers.origin,
-                referer: req?.headers.referer,
-                host: req?.headers.host,
-                userAgent: req?.headers['user-agent']
-            });
+            // Verify the token was issued to OUR Google client, not any other app.
+            // tokeninfo returns azp (authorized party) and aud which must match GOOGLE_CLIENT_ID.
+            const tokenInfoRes = await fetch(
+                `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+            );
 
-            // Use the access token to get user info from Google
+            if (!tokenInfoRes.ok) {
+                throw new Error('Google token validation failed');
+            }
+
+            const tokenInfo = await tokenInfoRes.json();
+            const googleClientId = process.env.GOOGLE_CLIENT_ID;
+
+            if (googleClientId) {
+                const issuedTo = tokenInfo.azp || tokenInfo.aud;
+                if (issuedTo !== googleClientId) {
+                    throw new Error('Google token audience mismatch — token not issued for this app');
+                }
+            }
+
+            // Token is valid and belongs to this app — fetch user info
             const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: {
                     Authorization: `Bearer ${accessToken}`
@@ -140,16 +153,11 @@ export class AuthService {
             });
 
             if (!response.ok) {
-                console.error('Google API response not OK:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    origin: req?.headers.origin
-                });
                 throw new Error('Failed to fetch user info from Google');
             }
 
             const userInfo = await response.json();
-            
+
             if (!userInfo.email) {
                 throw new Error('Invalid Google user info');
             }
