@@ -27,6 +27,21 @@ export interface EventInput {
     recipientIds?: string[];
 }
 
+export interface NLPCommandResponse {
+    intent: 'create' | 'update' | 'delete' | 'query';
+    message: string;
+    /** Created or updated event (for create/update) */
+    event?: Event;
+    /** Matching events for query results */
+    events?: Event[];
+    /** True when multiple events match and user must pick one */
+    requiresDisambiguation?: boolean;
+    /** Candidate events to choose from when disambiguating */
+    candidates?: Event[];
+    /** Changes to apply once the user selects a candidate (update only) */
+    pendingChanges?: Partial<EventInput>;
+}
+
 const eventService = {
     // Parse event from natural language text without saving
     parseFromText: async (text: string): Promise<Event> => {
@@ -135,7 +150,23 @@ const eventService = {
         } catch (error) {
             throw new Error('Failed to delete event');
         }
-    }
+    },
+
+    // Execute a natural language command (create / update / delete / query)
+    nlpCommand: async (text: string): Promise<NLPCommandResponse> => {
+        try {
+            const timezone = getUserTimezone();
+            const response = await api.post<NLPCommandResponse>('/api/events/nlp', { text, timezone });
+            const data = response.data;
+            if (data.event) data.event = parseEventDates(data.event);
+            if (data.events) data.events = data.events.map(parseEventDates);
+            if (data.candidates) data.candidates = data.candidates.map(parseEventDates);
+            return data;
+        } catch (error) {
+            if (error instanceof Error) throw error;
+            throw new Error('Failed to process command');
+        }
+    },
 };
 
 // Helper function to convert date strings to Date objects

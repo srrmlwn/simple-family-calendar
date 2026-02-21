@@ -7,18 +7,22 @@ import { EmailRecipient } from '../entities/EmailRecipient';
 import { EventService } from '../services/eventService';
 import { EmailService } from '../services/emailService';
 import { hybridParser } from '../services/hybridParser';
+import { intentParser, IntentParser } from '../services/intentParser';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
+import moment from 'moment-timezone';
 
 export class EventController {
     private eventService: EventService;
     private emailService: EmailService;
     private parser: ReturnType<typeof hybridParser>;
+    private intentParser: IntentParser;
 
     constructor() {
         this.eventService = new EventService();
         this.emailService = new EmailService();
         this.parser = hybridParser(process.env.OPENAI_API_KEY || '');
+        this.intentParser = new IntentParser(process.env.OPENAI_API_KEY || '');
     }
 
     /**
@@ -341,6 +345,140 @@ export class EventController {
             return res.status(500).json({
                 error: 'Failed to update event',
                 details: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    };
+
+    /**
+     * Handle a natural language command (create / update / delete / query).
+     * Requires authentication — events are scoped to the requesting user.
+     */
+    public handleNLPCommand = async (req: Request, res: Response): Promise<Response> => {
+        try {
+            const { text, timezone } = req.body;
+            const userId = (req.user as any)?.id;
+
+            if (!text || typeof text !== 'string' || text.length > 500) {
+                return res.status(400).json({ error: 'Text must be a non-empty string under 500 characters' });
+            }
+            if (!timezone) {
+                return res.status(400).json({ error: 'Timezone is required' });
+            }
+
+            // Fetch user events from 7 days ago through 90 days ahead as LLM context
+            const contextStart = moment().subtract(7, 'days').toDate();
+            const contextEnd = moment().add(90, 'days').toDate();
+            const userEvents = await this.eventService.findByUserIdAndDateRange(
+                userId!, contextStart, contextEnd, timezone
+            );
+
+            // Determine intent and extract structured data
+            const result = await this.intentParser.parseIntent(text, timezone, userEvents);
+
+            // ── CREATE ──────────────────────────────────────────────────────────
+            if (result.intent === 'create') {
+                const event = new Event();
+                event.title = result.event.title;
+                event.startTime = result.event.startTime;
+                event.endTime = result.event.endTime;
+                event.duration = result.event.duration;
+                event.isAllDay = result.event.isAllDay;
+                event.location = result.event.location;
+                event.userId = userId!;
+
+                await validateOrReject(event);
+                const saved = await this.eventService.create(event);
+
+                return res.json({
+                    intent: 'create',
+                    message: `Created "${saved.title}"`,
+                    event: saved,
+                });
+            }
+
+            // ── UPDATE ──────────────────────────────────────────────────────────
+            if (result.intent === 'update') {
+                // Disambiguation: multiple events match
+                if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
+                    const candidates = userEvents.filter(e => result.candidateIds!.includes(e.id));
+                    return res.json({
+                        intent: 'update',
+                        requiresDisambiguation: true,
+                        candidates,
+                        pendingChanges: result.changes,
+                        message: `Found ${candidates.length} matching events — which one did you mean?`,
+                    });
+                }
+
+                const eventId = result.eventId ?? result.candidateIds?.[0];
+                if (!eventId) {
+                    return res.status(400).json({ error: 'Could not find a matching event to update' });
+                }
+
+                const existing = await this.eventService.findById(eventId);
+                if (!existing || existing.userId !== userId) {
+                    return res.status(404).json({ error: 'Event not found' });
+                }
+
+                const updates: Partial<Event> = {};
+                if (result.changes.title) updates.title = result.changes.title;
+                if (result.changes.location !== undefined) updates.location = result.changes.location;
+                if (result.changes.startTime) updates.startTime = result.changes.startTime;
+                if (result.changes.endTime) updates.endTime = result.changes.endTime;
+                if (result.changes.duration) updates.duration = result.changes.duration;
+
+                const updated = await this.eventService.update(eventId, updates);
+                return res.json({
+                    intent: 'update',
+                    message: `Updated "${updated.title}"`,
+                    event: updated,
+                });
+            }
+
+            // ── DELETE ──────────────────────────────────────────────────────────
+            if (result.intent === 'delete') {
+                if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
+                    const candidates = userEvents.filter(e => result.candidateIds!.includes(e.id));
+                    return res.json({
+                        intent: 'delete',
+                        requiresDisambiguation: true,
+                        candidates,
+                        message: `Found ${candidates.length} matching events — which one did you mean?`,
+                    });
+                }
+
+                const eventId = result.eventId ?? result.candidateIds?.[0];
+                if (!eventId) {
+                    return res.status(400).json({ error: 'Could not find a matching event to delete' });
+                }
+
+                const existing = await this.eventService.findById(eventId);
+                if (!existing || existing.userId !== userId) {
+                    return res.status(404).json({ error: 'Event not found' });
+                }
+
+                await this.eventService.delete(eventId);
+                return res.json({
+                    intent: 'delete',
+                    message: `Deleted "${existing.title}"`,
+                });
+            }
+
+            // ── QUERY ───────────────────────────────────────────────────────────
+            if (result.intent === 'query') {
+                const events = userEvents.filter(e => result.eventIds.includes(e.id));
+                return res.json({
+                    intent: 'query',
+                    message: result.answer,
+                    events,
+                });
+            }
+
+            return res.status(400).json({ error: 'Unrecognised intent' });
+        } catch (error) {
+            console.error('Error handling NLP command:', error);
+            return res.status(500).json({
+                error: error instanceof Error ? error.message : 'Failed to process command',
             });
         }
     };

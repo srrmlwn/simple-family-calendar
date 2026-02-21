@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import eventController from '../controllers/eventController';
 import asyncHandler from '../utils/asyncHandler';
+import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 
@@ -10,6 +11,9 @@ router.get('/', asyncHandler(eventController.getAllEvents));
 
 // Get a single event by ID
 router.get('/:id', asyncHandler(eventController.getEventById));
+
+// NLP command endpoint — full CRUD via natural language (requires auth)
+router.post('/nlp', authenticateJWT, asyncHandler(eventController.handleNLPCommand));
 
 // Create event from natural language text
 router.post('/text', asyncHandler(eventController.createEventFromText));

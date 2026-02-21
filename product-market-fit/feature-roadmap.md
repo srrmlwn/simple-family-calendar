@@ -93,8 +93,8 @@ Send calendar invites to family members via email. Already shipped.
 ### ✅ Daily Email Digest
 6 PM email summarizing tomorrow's events. Configurable time. Already shipped. See `/features/notifications.md`.
 
-### 🚧 Natural Language Event Modification and Queries
-"Move my dentist appointment to Thursday" / "What does Maya have this week?" — creation works; modification and querying are in-spec. See `/features/natural-language-interaction.md`.
+### ✅ Natural Language Event Modification and Queries
+Full NLP CRUD via the bottom bar — create, update, delete, and query events in plain English. "Move my dentist to Thursday", "Cancel soccer practice", "What's on next week?" all work. Disambiguation shown when multiple events match. See `/features/natural-language-interaction.md`.
 
 ### 🎯 WhatsApp / SMS Bot Integration
 **Why it's #1 priority:** Parents already forward event info via WhatsApp. Forward any message to a famcal.ai phone number → AI parses it → event added to calendar. Zero friction. No other calendar does this.

@@ -73,19 +73,25 @@ const CalendarPage: React.FC = () => {
         }
     }, []);
 
-    // Handle event save
+    // Handle event save (used by EventForm modal)
     const handleEventSave = useCallback(async (eventData: EventInput) => {
         try {
             const savedEvent = await eventService.create(eventData);
-            // Update events state directly with the new event
             setEvents(prevEvents => [...prevEvents, savedEvent]);
-            // Update the date to show the day of the new event
             setDate(new Date(eventData.startTime));
         } catch (error) {
             console.error('Error saving event:', error);
             throw error;
         }
     }, []);
+
+    // Called by NLPInput after any mutation so we can refresh + navigate
+    const handleNLPEventsChanged = useCallback((event?: Event) => {
+        fetchEvents();
+        if (event) {
+            setDate(new Date(event.startTime as Date));
+        }
+    }, [fetchEvents]);
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">
@@ -138,7 +144,7 @@ const CalendarPage: React.FC = () => {
             </div>
 
             <NLPInput
-                onEventAdded={handleEventSave}
+                onEventsChanged={handleNLPEventsChanged}
                 className="z-10"
             />
         </div>
