@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppDataSource } from './data-source';
 import path from 'path';
 import { logRequest } from './utils/logger';
@@ -39,6 +40,7 @@ app.use(cors({
 // All helmet config lives in securityHeaders middleware — do not add app.use(helmet()) here
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(logRequest);
 app.use(securityHeaders); // Single source of truth for all security headers
 

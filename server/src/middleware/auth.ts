@@ -4,26 +4,19 @@ import jwt from 'jsonwebtoken';
 import config from '../config';
 
 /**
- * Middleware to authenticate JWT tokens
+ * Middleware to authenticate JWT tokens from httpOnly cookie.
  */
 export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
-    const authHeader = req.headers.authorization;
+    const token = req.cookies?.token;
 
-    if (!authHeader) {
+    if (!token) {
         res.status(401).json({ error: 'Authentication required' });
         return;
     }
 
-    const token = authHeader.split(' ')[1];
-
-    if (!token) {
-        res.status(401).json({ error: 'Authentication token required' });
-        return;
-    }
-
     try {
-        const user = jwt.verify(token, config.jwt.secret) as { 
-            id: string; 
+        const user = jwt.verify(token, config.jwt.secret) as {
+            id: string;
             email: string;
             profileImage?: string;
         };
@@ -40,27 +33,22 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 };
 
 /**
- * Optional JWT authentication middleware
- * Verifies token if present but doesn't reject the request if missing
+ * Optional JWT authentication middleware.
+ * Verifies token if present in cookie but doesn't reject the request if missing.
  */
 export const optionalJWT = (req: Request, res: Response, next: NextFunction): void => {
-    const authHeader = req.headers.authorization;
+    const token = req.cookies?.token;
 
-    if (authHeader) {
-        const token = authHeader.split(' ')[1];
-
-        if (token) {
-            try {
-                const user = jwt.verify(token, config.jwt.secret) as { 
-                    id: string; 
-                    email: string;
-                    profileImage?: string;
-                };
-                req.user = user;
-            } catch (error) {
-                // Token invalid, but we continue anyway
-                console.warn('Invalid token provided for optional authentication');
-            }
+    if (token) {
+        try {
+            const user = jwt.verify(token, config.jwt.secret) as {
+                id: string;
+                email: string;
+                profileImage?: string;
+            };
+            req.user = user;
+        } catch {
+            // Token invalid, but we continue anyway
         }
     }
 

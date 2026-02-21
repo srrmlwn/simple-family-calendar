@@ -8,9 +8,9 @@ interface User {
     profileImage?: string;
 }
 
+// Server no longer returns a token — auth is managed via httpOnly cookie.
 interface AuthResponse {
     user: User;
-    token: string;
 }
 
 // Logging utility
@@ -25,25 +25,24 @@ const authService = {
     login: async (email: string, password: string): Promise<AuthResponse> => {
         try {
             log('info', 'Attempting login for user:', { email });
-            
+
             const response = await api.post<AuthResponse>('/api/auth/login', {
                 email,
                 password,
             });
-            
-            log('info', 'Login successful for user:', { 
+
+            log('info', 'Login successful for user:', {
                 email,
-                userId: response.data.user.id 
+                userId: response.data.user.id,
             });
-            
+
             return response.data;
         } catch (error) {
-            log('error', 'Login failed:', { 
+            log('error', 'Login failed:', {
                 email,
                 error: error instanceof Error ? error.message : 'Unknown error',
-                errorDetails: JSON.stringify(error)
             });
-            
+
             if (error instanceof Error) {
                 throw error;
             }
@@ -59,31 +58,27 @@ const authService = {
         password: string
     ): Promise<AuthResponse> => {
         try {
-            log('info', 'Attempting user registration:', { 
-                email,
-                firstName,
-                lastName 
-            });
-            
+            log('info', 'Attempting user registration:', { email, firstName, lastName });
+
             const response = await api.post<AuthResponse>('/api/auth/register', {
                 firstName,
                 lastName,
                 email,
                 password,
             });
-            
-            log('info', 'Registration successful:', { 
+
+            log('info', 'Registration successful:', {
                 email,
-                userId: response.data.user.id 
+                userId: response.data.user.id,
             });
-            
+
             return response.data;
         } catch (error) {
-            log('error', 'Registration failed:', { 
+            log('error', 'Registration failed:', {
                 email,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
             });
-            
+
             if (error instanceof Error) {
                 throw error;
             }
@@ -91,91 +86,72 @@ const authService = {
         }
     },
 
-    // Get current user info
-    getCurrentUser: async (token: string): Promise<User> => {
+    // Get current user info — auth cookie is automatically included by axios (withCredentials)
+    getCurrentUser: async (): Promise<User> => {
         try {
-            console.log('[AuthService] Getting current user info');
-            const response = await api.get<User>('/api/auth/me', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            console.log('[AuthService] Current user info received:', {
-                id: response.data.id,
-                email: response.data.email,
-                hasProfileImage: !!response.data.profileImage,
-                profileImageUrl: response.data.profileImage
-            });
+            const response = await api.get<User>('/api/auth/me');
             return response.data;
         } catch (error) {
-            console.error('[AuthService] Failed to get current user:', {
-                error: error instanceof Error ? error.message : 'Unknown error',
-                stack: error instanceof Error ? error.stack : undefined
-            });
             throw new Error('Failed to get user information');
         }
     },
 
-    // Handle Google OAuth callback
-    handleGoogleCallback: async (token: string): Promise<AuthResponse> => {
+    // Handle Google OAuth redirect callback.
+    // The JWT is already in the httpOnly cookie set by the server redirect.
+    // Fetch /me to get the user object; pick up profileImage from URL params if present.
+    handleGoogleCallback: async (): Promise<AuthResponse> => {
         try {
-            console.log('[AuthService] Starting Google OAuth callback handling');
-            
-            // Get user info using the token
-            console.log('[AuthService] Fetching user info from /api/auth/me');
-            const response = await api.get<User>('/api/auth/me', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            console.log('[AuthService] User info received:', {
-                id: response.data.id,
-                email: response.data.email,
-                hasProfileImage: !!response.data.profileImage
-            });
+            log('info', 'Completing Google OAuth callback');
 
-            // Get profile image from URL parameters
+            const response = await api.get<User>('/api/auth/me');
+
+            // The server passes profileImage as a URL param (not sensitive — it's a public URL)
             const urlParams = new URLSearchParams(window.location.search);
             const profileImage = urlParams.get('profileImage');
 
-            const userWithProfile = {
-                ...response.data,
-                profileImage: profileImage || undefined
-            };
-
             return {
-                user: userWithProfile,
-                token
+                user: {
+                    ...response.data,
+                    profileImage: profileImage || response.data.profileImage || undefined,
+                },
             };
         } catch (error) {
-            console.error('[AuthService] Google OAuth callback failed:', {
+            log('error', 'Google OAuth callback failed:', {
                 error: error instanceof Error ? error.message : 'Unknown error',
-                stack: error instanceof Error ? error.stack : undefined
             });
             throw new Error('Failed to complete Google authentication');
         }
     },
 
-    // Verify Google OAuth token
+    // Verify Google GIS credential token (alternative login flow)
     verifyGoogleToken: async (accessToken: string): Promise<AuthResponse> => {
         try {
             log('info', 'Verifying Google OAuth token');
-            
+
             const response = await api.post<AuthResponse>('/api/auth/google/verify', {
-                accessToken
+                accessToken,
             });
-            
-            log('info', 'Google token verification successful', { 
+
+            log('info', 'Google token verification successful', {
                 userId: response.data.user.id,
-                email: response.data.user.email 
+                email: response.data.user.email,
             });
-            
+
             return response.data;
         } catch (error) {
             log('error', 'Google token verification failed:', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
             });
             throw new Error('Failed to verify Google token');
+        }
+    },
+
+    // Logout — clears the httpOnly cookie server-side
+    logout: async (): Promise<void> => {
+        try {
+            await api.post('/api/auth/logout');
+        } catch {
+            // Best-effort — even if this fails, client state will be cleared
         }
     },
 };
