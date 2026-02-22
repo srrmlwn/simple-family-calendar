@@ -122,7 +122,7 @@ QUERY — user is asking about events:
         const userPrompt = `User command: ${text}`;
 
         const message = await this.anthropic.messages.create({
-            model: 'claude-3-7-sonnet-20250219',
+            model: 'claude-sonnet-4-6',
             max_tokens: 1024,
             temperature: 0.1,
             system: systemPrompt,
