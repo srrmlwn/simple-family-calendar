@@ -78,7 +78,7 @@ const Header: React.FC = () => {
                     <div className="flex items-center space-x-4">
                         <button
                             onClick={handleSettingsClick}
-                            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors"
+                            className="p-2 text-gray-600 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors"
                             title="Settings"
                             aria-label="Settings"
                         >

@@ -94,7 +94,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                             >
                                 <svg
-                                    className="w-6 h-6 text-gray-500"
+                                    className="w-6 h-6 text-gray-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"

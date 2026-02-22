@@ -80,7 +80,7 @@ const DayView: React.FC<DayViewProps> = ({
 
                 <div className="flex-1 overflow-y-auto">
                     {dayEvents.length === 0 ? (
-                        <div className="text-center text-gray-500 mt-8">
+                        <div className="text-center text-gray-600 mt-8">
                             No events scheduled for this day
                         </div>
                     ) : (
@@ -99,7 +99,7 @@ const DayView: React.FC<DayViewProps> = ({
                                                 <span className="text-base font-bold text-blue-600">
                                                     {moment(event.startTime).format('h:mm')}
                                                 </span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-gray-600">
                                                     {moment(event.startTime).format('A')}
                                                 </span>
                                             </div>
@@ -115,16 +115,16 @@ const DayView: React.FC<DayViewProps> = ({
                                                 {isMobile ? (
                                                     <>
                                                         {event.location && (
-                                                            <div className="mt-1 text-sm text-gray-500">
+                                                            <div className="mt-1 text-sm text-gray-600">
                                                                 {event.location}
                                                             </div>
                                                         )}
-                                                        <div className="mt-1 text-sm text-gray-500">
+                                                        <div className="mt-1 text-sm text-gray-600">
                                                             {moment(event.startTime).format('h:mm A')} – {moment(event.endTime).format('h:mm A')}
                                                         </div>
                                                     </>
                                                 ) : (
-                                                    <div className="mt-1 text-sm text-gray-500 flex items-center gap-1">
+                                                    <div className="mt-1 text-sm text-gray-600 flex items-center gap-1">
                                                         {event.location && (
                                                             <>
                                                                 <span>{event.location}</span>

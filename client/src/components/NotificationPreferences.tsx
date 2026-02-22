@@ -193,7 +193,7 @@ const NotificationPreferences: React.FC = () => {
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Digest Statistics (Last 30 Days)</h3>
                     <div className="grid grid-cols-3 gap-4">
                         <div className="bg-gray-50 p-3 rounded">
-                            <div className="text-sm text-gray-500">Total</div>
+                            <div className="text-sm text-gray-600">Total</div>
                             <div className="text-lg font-semibold">{stats.total}</div>
                         </div>
                         <div className="bg-green-50 p-3 rounded">
@@ -227,7 +227,7 @@ const NotificationPreferences: React.FC = () => {
                                         }`}>
                                             {log.status === 'sent' ? 'Sent' : 'Failed'}
                                         </span>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-sm text-gray-600">
                                             {formatDate(log.sentAt)}
                                         </div>
                                     </div>

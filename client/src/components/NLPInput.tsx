@@ -79,7 +79,7 @@ const TrayEventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event,
                     <EventIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     <span className="font-medium text-gray-900 text-sm truncate">{event.title}</span>
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5 truncate">
+                <div className="text-xs text-gray-600 mt-0.5 truncate">
                     {moment(event.startTime).format('MMM D')}
                     {event.location ? ` · ${event.location}` : ''}
                 </div>

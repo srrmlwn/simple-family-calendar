@@ -236,7 +236,7 @@ const Settings: React.FC = () => {
                 <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
                     <div className="px-6 py-4 border-b border-gray-200">
                         <h2 className="text-lg font-medium">Timezone</h2>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-600">
                             Your current timezone is used to display dates and times correctly.
                         </p>
                     </div>
@@ -263,7 +263,7 @@ const Settings: React.FC = () => {
                 <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
                     <div className="px-6 py-4 border-b border-gray-200">
                         <h2 className="text-lg font-medium">Email Recipients</h2>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-600">
                             Manage the people who will receive calendar invites by default when you create events.
                         </p>
                     </div>
@@ -324,11 +324,11 @@ const Settings: React.FC = () => {
                     {/* Recipients list */}
                     <div className="divide-y divide-gray-200">
                         {loading && recipients.length === 0 ? (
-                            <div className="p-6 text-center text-gray-500">
+                            <div className="p-6 text-center text-gray-600">
                                 Loading recipients...
                             </div>
                         ) : recipients.length === 0 ? (
-                            <div className="p-6 text-center text-gray-500">
+                            <div className="p-6 text-center text-gray-600">
                                 No recipients added yet. Add someone above.
                             </div>
                         ) : (
@@ -385,7 +385,7 @@ const Settings: React.FC = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1">
                                                 <h3 className="text-sm font-medium">{recipient.name}</h3>
-                                                <p className="text-sm text-gray-500">{recipient.email}</p>
+                                                <p className="text-sm text-gray-600">{recipient.email}</p>
                                             </div>
                                             <div className="flex items-center space-x-4">
                                                 <div className="flex items-center">
