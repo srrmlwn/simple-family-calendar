@@ -22,6 +22,7 @@
     "lint:server": "cd server && npm run lint",
     "test:unit": "cd server && npm test",
     "test:e2e": "jest --config tests/e2e/jest.config.js --forceExit --runInBand",
+    "test:smoke": "jest --config tests/e2e/jest.smoke.config.js --forceExit --runInBand",
     "security:scan": "bash scripts/security-scan.sh",
     "verify": "bash scripts/verify.sh"
   },

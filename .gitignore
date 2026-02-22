@@ -30,6 +30,9 @@ yarn-error.log*
 # Design audit output
 design-audit-screenshots/
 
+# Claude Code local settings
+.claude/
+
 # Editor directories and files
 .idea
 .vscode
