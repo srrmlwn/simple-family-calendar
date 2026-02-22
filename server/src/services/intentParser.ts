@@ -12,6 +12,11 @@ interface EventContext {
     location?: string;
 }
 
+// Family member context passed to the LLM
+interface FamilyMemberContext {
+    name: string;
+}
+
 // Shape of each intent result
 export interface CreateIntentResult {
     intent: 'create';
@@ -22,6 +27,7 @@ export interface CreateIntentResult {
         isAllDay: boolean;
         location?: string;
         duration: number; // minutes
+        familyMemberNames?: string[];
     };
 }
 
@@ -35,6 +41,7 @@ export interface UpdateIntentResult {
         endTime?: Date;
         location?: string;
         duration?: number;
+        familyMemberNames?: string[];
     };
 }
 
@@ -70,7 +77,8 @@ export class IntentParser {
     public async parseIntent(
         text: string,
         timezone: string,
-        userEvents: Event[]
+        userEvents: Event[],
+        familyMembers: FamilyMemberContext[] = []
     ): Promise<IntentResult> {
         const now = moment().tz(timezone);
 
@@ -83,20 +91,28 @@ export class IntentParser {
             location: e.location,
         }));
 
+        const familyMemberSection = familyMembers.length > 0
+            ? `\nThe user's family members: ${familyMembers.map(m => m.name).join(', ')}\n`
+            : '';
+
+        const familyMemberCreateFormat = familyMembers.length > 0
+            ? `,"familyMemberNames":["name1"] (only names from the family members list above; omit if none mentioned)`
+            : '';
+
         const systemPrompt = `You are a calendar assistant. Today is ${now.format('dddd, MMMM D, YYYY [at] h:mm A')} (${timezone}).
 
 The user's upcoming events (all times in UTC):
 ${JSON.stringify(eventContext, null, 2)}
-
+${familyMemberSection}
 Based on the user's message, determine what they want to do and return ONLY a JSON response — no markdown, no explanation.
 
 --- RESPONSE FORMATS ---
 
 CREATE a new event:
-{"intent":"create","event":{"title":"string","startTime":"ISO UTC","endTime":"ISO UTC","isAllDay":false,"location":"string or omit"}}
+{"intent":"create","event":{"title":"string","startTime":"ISO UTC","endTime":"ISO UTC","isAllDay":false,"location":"string or omit"${familyMemberCreateFormat}}}
 
 UPDATE an existing event (single match):
-{"intent":"update","eventId":"uuid","changes":{"title":"string (only if changing)","startTime":"ISO UTC (only if changing)","endTime":"ISO UTC (only if changing)","location":"string (only if changing)"}}
+{"intent":"update","eventId":"uuid","changes":{"title":"string (only if changing)","startTime":"ISO UTC (only if changing)","endTime":"ISO UTC (only if changing)","location":"string (only if changing)"${familyMemberCreateFormat}}}
 
 UPDATE — multiple events match:
 {"intent":"update","candidateIds":["id1","id2"],"changes":{"startTime":"ISO UTC","endTime":"ISO UTC"}}
@@ -117,7 +133,8 @@ QUERY — user is asking about events:
 4. Match events by title keywords and approximate date context; prefer the nearest upcoming match.
 5. If the intent is ambiguous (could be create or update/delete), prefer CREATE.
 6. For queries about what is on the calendar, answer concisely and list event titles + times.
-7. Return ONLY valid JSON.`;
+7. Return ONLY valid JSON.
+8. If family members are listed above and a person's name appears in the command, include their name in familyMemberNames. Only include names that exactly or closely match names in the family members list.`;
 
         const userPrompt = `User command: ${text}`;
 
@@ -154,6 +171,9 @@ QUERY — user is asking about events:
                         isAllDay: raw.event.isAllDay ?? false,
                         location: raw.event.location,
                         duration,
+                        familyMemberNames: Array.isArray(raw.event.familyMemberNames)
+                            ? raw.event.familyMemberNames
+                            : undefined,
                     },
                 };
             }
@@ -172,6 +192,9 @@ QUERY — user is asking about events:
                     changes.duration = Math.round(
                         (changes.endTime.getTime() - changes.startTime.getTime()) / 60_000
                     );
+                }
+                if (Array.isArray(raw.changes?.familyMemberNames)) {
+                    changes.familyMemberNames = raw.changes.familyMemberNames;
                 }
                 return {
                     intent: 'update',

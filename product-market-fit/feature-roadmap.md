@@ -4,7 +4,7 @@ _Last updated: 2026-02-21_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 0 complete. Active development: WhatsApp/SMS bot integration (Tier 1). Next up: Family Members as First-Class Entities → Family-Wide Weekly View.
+> **Current focus:** Tier 0 complete. WhatsApp/SMS integration in progress (separate agent). Family Members shipped. Active: NLP family member tagging → Onboarding flow → Family-Wide Weekly View.
 
 ---
 
@@ -65,20 +65,35 @@ Send calendar invites to family members via email. Already shipped.
 ### ✅ Natural Language Event Modification and Queries
 Full NLP CRUD via the bottom bar — create, update, delete, and query events in plain English. "Move my dentist to Thursday", "Cancel soccer practice", "What's on next week?" all work. Disambiguation shown when multiple events match. See `/features/natural-language-interaction.md`.
 
-### 🎯 WhatsApp / SMS Bot Integration
+### ✅ Family Members as First-Class Entities
+Named, color-coded family member profiles. Tag events to members in EventForm. Filter calendar by member via pill filter. Colored dots on event cards. Managed in Settings. See `/features/family-members.md`.
+
+### 🚧 WhatsApp / SMS Bot Integration
 **Why it's #1 priority:** Parents already forward event info via WhatsApp. Forward any message to a famcal.ai phone number → AI parses it → event added to calendar. Zero friction. No other calendar does this.
 
 - Implementation: Twilio (SMS/WhatsApp) webhook → same NLP parser used for the chat interface
 - Confirmation reply back to the user with parsed details before creating
 - Deep link to view/edit the created event
 
-### 🎯 Family Members as First-Class Entities
-**Why:** Right now recipients are just email contacts. Family members should be named, persistent, and taggable on any event.
+### 🎯 NLP Family Member Tagging
+**Why:** "Add soccer practice for Maya at 3pm" is the most natural way parents speak. The NLP system currently ignores names entirely — it creates the event but never tags the family member. Closing this gap makes the NLP feel genuinely intelligent rather than just a date parser.
 
-- Named family member profiles (e.g., "Maya - age 10", "Dad")
-- Tag any event to one or more family members
-- Filter calendar by family member
-- Foundation for the family-wide view and per-member iCal feeds
+- Extend `intentParser` prompt to extract a `familyMemberNames` array from input
+- On the server, resolve names fuzzy-matched against the user's actual family members
+- Populate `familyMemberIds` on create and update intents
+- Disambiguation: if "Maya" matches nothing, ignore silently; if ambiguous, pick closest match
+- See implementation spec in `/features/nlp-family-member-tagging.md`
+
+### 🎯 Onboarding Flow for New Users
+**Why:** New users land directly on a blank calendar with zero guidance. Family members (the core differentiator) are buried in Settings. NLP capabilities are completely undiscoverable. First-time retention depends on users immediately seeing value.
+
+- Post-signup screen (single page, skippable): "Add your family members to get started"
+- Inline prompts showing NLP examples: "Try: Add soccer for Maya on Friday at 4pm"
+- Empty-state on Calendar: show NLP tip when no events exist for the selected day
+- No forced tutorial — just smart defaults and prompts that disappear once used
+
+### 💡 Calendar Empty-State Nudge
+When no family members exist, show a subtle prompt in the filter area: "Add family members in Settings to filter your calendar." Low effort, helps discovery.
 
 ### 🎯 Family-Wide Weekly View
 **Why:** The visual answer to "who has what this week?" — a grid with a column per family member. Instantly surface conflicts. This is the view that makes famcal.ai feel family-native.

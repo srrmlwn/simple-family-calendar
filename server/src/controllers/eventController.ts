@@ -408,6 +408,21 @@ export class EventController {
      * Handle a natural language command (create / update / delete / query).
      * Requires authentication — events are scoped to the requesting user.
      */
+    /** Resolve family member names (from NLP) to IDs using case-insensitive matching. */
+    private resolveMemberIds(names: string[], members: FamilyMember[]): string[] {
+        const resolved = new Set<string>();
+        for (const name of names) {
+            const lower = name.toLowerCase().trim();
+            const match = members.find(m =>
+                m.name.toLowerCase() === lower ||
+                m.name.toLowerCase().startsWith(lower) ||
+                lower.startsWith(m.name.toLowerCase())
+            );
+            if (match) resolved.add(match.id);
+        }
+        return Array.from(resolved);
+    }
+
     public handleNLPCommand = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { text, timezone } = req.body;
@@ -427,8 +442,12 @@ export class EventController {
                 userId!, contextStart, contextEnd, timezone
             );
 
+            // Fetch family members to provide as NLP context
+            const fmRepo = AppDataSource.getRepository(FamilyMember);
+            const userFamilyMembers = await fmRepo.find({ where: { userId } });
+
             // Determine intent and extract structured data
-            const result = await this.intentParser.parseIntent(text, timezone, userEvents);
+            const result = await this.intentParser.parseIntent(text, timezone, userEvents, userFamilyMembers);
 
             // ── CREATE ──────────────────────────────────────────────────────────
             if (result.intent === 'create') {
@@ -444,10 +463,19 @@ export class EventController {
                 await validateOrReject(event);
                 const saved = await this.eventService.create(event);
 
+                // Tag family members extracted by NLP
+                const memberIds = this.resolveMemberIds(
+                    result.event.familyMemberNames ?? [], userFamilyMembers
+                );
+                if (memberIds.length > 0) {
+                    await this.saveFamilyMemberTags(saved.id, memberIds, userId!);
+                }
+
+                const [enriched] = await this.attachFamilyMembers([saved]);
                 return res.json({
                     intent: 'create',
-                    message: `Created "${saved.title}"`,
-                    event: saved,
+                    message: `Created "${saved.title}"${memberIds.length > 0 ? ` for ${enriched.familyMembers.map(m => m.name).join(', ')}` : ''}`,
+                    event: enriched,
                 });
             }
 
@@ -483,10 +511,20 @@ export class EventController {
                 if (result.changes.duration) updates.duration = result.changes.duration;
 
                 const updated = await this.eventService.update(eventId, updates);
+
+                // Update family member tags if NLP extracted names
+                if (result.changes.familyMemberNames !== undefined) {
+                    const memberIds = this.resolveMemberIds(
+                        result.changes.familyMemberNames, userFamilyMembers
+                    );
+                    await this.saveFamilyMemberTags(eventId, memberIds, userId!);
+                }
+
+                const [enriched] = await this.attachFamilyMembers([updated]);
                 return res.json({
                     intent: 'update',
                     message: `Updated "${updated.title}"`,
-                    event: updated,
+                    event: enriched,
                 });
             }
 
