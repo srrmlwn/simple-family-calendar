@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import NotificationPreferences from '../components/NotificationPreferences';
+import FamilyMemberManager from '../components/FamilyMemberManager';
 import { Plus, Trash2, Check, X } from 'lucide-react';
 import api from '../services/api';
 import { getUserTimezone } from '../utils/timezone';
@@ -253,6 +254,11 @@ const Settings: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Family Members */}
+                <div className="mb-6">
+                    <FamilyMemberManager />
                 </div>
 
                 {/* Notification Preferences */}

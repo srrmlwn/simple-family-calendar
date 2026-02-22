@@ -3,7 +3,9 @@ import Header from '../components/Header';
 import DatePicker from '../components/DatePicker';
 import EventForm from '../components/EventForm';
 import NLPInput from '../components/NLPInput';
+import FamilyMemberFilter from '../components/FamilyMemberFilter';
 import eventService, { Event, EventInput } from '../services/eventService';
+import familyMemberService, { FamilyMember } from '../services/familyMemberService';
 
 const CalendarPage: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
@@ -13,6 +15,9 @@ const CalendarPage: React.FC = () => {
     const [newEventDate, setNewEventDate] = useState<Date | null>(null);
     // Event selected from the NLP results tray — navigate + open EventForm
     const [nlpSelectedEvent, setNlpSelectedEvent] = useState<Event | null>(null);
+    // Family member filter
+    const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+    const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
     // Fetch events from API with date range filtering
     const fetchEvents = useCallback(async () => {
@@ -37,6 +42,23 @@ const CalendarPage: React.FC = () => {
     useEffect(() => {
         fetchEvents();
     }, [fetchEvents]);
+
+    // Load family members once on mount
+    useEffect(() => {
+        familyMemberService.getAll().then(setFamilyMembers).catch(() => {});
+    }, []);
+
+    const handleMemberToggle = useCallback((id: string) => {
+        setSelectedMemberIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    }, []);
+
+    const filteredEvents = selectedMemberIds.length === 0
+        ? events
+        : events.filter(e =>
+            (e.familyMembers ?? []).some(m => selectedMemberIds.includes(m.id))
+          );
 
     // Handle date navigation
     const handleNavigate = useCallback((newDate: Date | 'TODAY') => {
@@ -118,9 +140,19 @@ const CalendarPage: React.FC = () => {
                     </div>
                 ) : (
                     <>
+                        {familyMembers.length > 0 && (
+                            <div className="mb-3">
+                                <FamilyMemberFilter
+                                    members={familyMembers}
+                                    selectedIds={selectedMemberIds}
+                                    onToggle={handleMemberToggle}
+                                    onSelectAll={() => setSelectedMemberIds([])}
+                                />
+                            </div>
+                        )}
                         <div className="h-full bg-white rounded-lg shadow flex">
                             <DatePicker
-                                events={events}
+                                events={filteredEvents}
                                 date={date}
                                 onNavigate={handleNavigate}
                                 onEventUpdate={handleEventUpdate}

@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from './User';
 import { EventRecipient } from './EventRecipient';
+import { EventFamilyMember } from './EventFamilyMember';
 
 @Entity('events')
 export class Event {
@@ -56,6 +57,9 @@ export class Event {
 
   @OneToMany(() => EventRecipient, eventRecipient => eventRecipient.event)
   eventRecipients?: EventRecipient[];
+
+  @OneToMany(() => EventFamilyMember, efm => efm.event)
+  eventFamilyMembers?: EventFamilyMember[];
 
   @CreateDateColumn()
   createdAt!: Date;

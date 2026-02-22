@@ -4,6 +4,7 @@ import { Event, EventInput } from '../services/eventService';
 import { validateEvent, EventState, EventStatus, getEventStatusMessage, getValidationMessage } from '../utils/eventValidation';
 import { getEventIcon } from '../utils/eventIcons';
 import { CalendarPlus, Clock } from 'lucide-react';
+import familyMemberService, { FamilyMember } from '../services/familyMemberService';
 
 interface EventFormProps {
     event?: Event;
@@ -35,6 +36,26 @@ const EventForm: React.FC<EventFormProps> = ({
     const [validation, setValidation] = useState(() => validateEvent({}));
     const [activeField, setActiveField] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
+    const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+    const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
+    // Load family members
+    useEffect(() => {
+        familyMemberService.getAll().then(setFamilyMembers).catch(() => {});
+    }, []);
+
+    // Initialize selected members from existing event
+    useEffect(() => {
+        if (event?.familyMembers) {
+            setSelectedMemberIds(event.familyMembers.map(m => m.id));
+        }
+    }, [event]);
+
+    const toggleMember = (id: string) => {
+        setSelectedMemberIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
 
     // Initialize form with existing event data or defaults
     useEffect(() => {
@@ -100,6 +121,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 endTime: endDateTime,
                 isAllDay: false, // Always false now
                 location: location || undefined,
+                familyMemberIds: selectedMemberIds,
             };
 
             // If this is an existing event, check if anything has changed
@@ -468,6 +490,35 @@ const EventForm: React.FC<EventFormProps> = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Family Members */}
+                    {familyMembers.length > 0 && (
+                        <div className="flex items-start gap-2 pt-1">
+                            <label className="text-sm font-medium text-gray-700 w-20 pt-1">
+                                Who:
+                            </label>
+                            <div className="flex flex-wrap gap-1.5 flex-1">
+                                {familyMembers.map(m => {
+                                    const selected = selectedMemberIds.includes(m.id);
+                                    return (
+                                        <button
+                                            key={m.id}
+                                            type="button"
+                                            onClick={() => toggleMember(m.id)}
+                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${
+                                                selected
+                                                    ? 'text-white border-transparent'
+                                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                                            }`}
+                                            style={selected ? { backgroundColor: m.color, borderColor: m.color } : {}}
+                                        >
+                                            {m.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

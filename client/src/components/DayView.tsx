@@ -138,9 +138,23 @@ const DayView: React.FC<DayViewProps> = ({
                                                 )}
                                             </div>
 
-                                            {/* Right Section - Edit Icon */}
-                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Pencil className="w-4 h-4 text-gray-400" />
+                                            {/* Right Section - Member dots + Edit Icon */}
+                                            <div className="flex items-center gap-2">
+                                                {event.familyMembers && event.familyMembers.length > 0 && (
+                                                    <div className="flex gap-1">
+                                                        {event.familyMembers.map(m => (
+                                                            <span
+                                                                key={m.id}
+                                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                                                style={{ backgroundColor: m.color }}
+                                                                title={m.name}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Pencil className="w-4 h-4 text-gray-400" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

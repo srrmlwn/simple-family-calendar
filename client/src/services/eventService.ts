@@ -1,5 +1,6 @@
 import api from './api';
 import { getUserTimezone, convertFromUTC } from '../utils/timezone';
+import { FamilyMember } from './familyMemberService';
 
 export interface Event {
     id: string;
@@ -12,6 +13,7 @@ export interface Event {
     location?: string;
     color?: string;
     status: string;
+    familyMembers?: FamilyMember[];
     createdAt: Date | string;
     updatedAt: Date | string;
 }
@@ -25,6 +27,7 @@ export interface EventInput {
     location?: string;
     color?: string;
     recipientIds?: string[];
+    familyMemberIds?: string[];
 }
 
 export interface NLPCommandResponse {

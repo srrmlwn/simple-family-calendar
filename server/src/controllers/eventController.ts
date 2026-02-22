@@ -4,6 +4,8 @@ import { AppDataSource } from '../data-source';
 import { Event } from '../entities/Event';
 import { EventRecipient } from '../entities/EventRecipient';
 import { EmailRecipient } from '../entities/EmailRecipient';
+import { FamilyMember } from '../entities/FamilyMember';
+import { EventFamilyMember } from '../entities/EventFamilyMember';
 import { EventService } from '../services/eventService';
 import { EmailService } from '../services/emailService';
 import { hybridParser } from '../services/hybridParser';
@@ -133,6 +135,46 @@ export class EventController {
     };
 
     /**
+     * Attach family members to an array of events (batch, avoids N+1).
+     */
+    private async attachFamilyMembers(events: Event[]): Promise<(Event & { familyMembers: FamilyMember[] })[]> {
+        if (events.length === 0) return events.map(e => ({ ...e, familyMembers: [] }));
+        const { In } = await import('typeorm');
+        const efmRepo = AppDataSource.getRepository(EventFamilyMember);
+        const tags = await efmRepo.find({
+            where: { eventId: In(events.map(e => e.id)) },
+            relations: ['familyMember'],
+        });
+        const byEventId = new Map<string, FamilyMember[]>();
+        for (const tag of tags) {
+            const list = byEventId.get(tag.eventId) ?? [];
+            list.push(tag.familyMember);
+            byEventId.set(tag.eventId, list);
+        }
+        return events.map(e => ({ ...e, familyMembers: byEventId.get(e.id) ?? [] }));
+    }
+
+    /**
+     * Save family member tags for an event, validating ownership.
+     */
+    private async saveFamilyMemberTags(eventId: string, familyMemberIds: string[], userId: string): Promise<void> {
+        const { In } = await import('typeorm');
+        const efmRepo = AppDataSource.getRepository(EventFamilyMember);
+        await efmRepo.delete({ eventId });
+        if (familyMemberIds.length === 0) return;
+        const fmRepo = AppDataSource.getRepository(FamilyMember);
+        const members = await fmRepo.find({ where: { id: In(familyMemberIds), userId } });
+        if (members.length === 0) return;
+        const tags = members.map(m => {
+            const tag = new EventFamilyMember();
+            tag.eventId = eventId;
+            tag.familyMemberId = m.id;
+            return tag;
+        });
+        await efmRepo.save(tags);
+    }
+
+    /**
      * Get all events for the current user
      */
     public getAllEvents = async (req: Request, res: Response): Promise<Response> => {
@@ -149,12 +191,13 @@ export class EventController {
             const endDate = end ? new Date(end as string) : undefined;
 
             const events = await this.eventService.findByUserIdAndDateRange(
-                userId!, 
-                startDate, 
-                endDate, 
+                userId!,
+                startDate,
+                endDate,
                 timezone as string
             );
-            return res.json(events);
+            const enriched = await this.attachFamilyMembers(events);
+            return res.json(enriched);
         } catch (error) {
             console.error('Error fetching events:', error);
             return res.status(500).json({ error: 'Failed to fetch events' });
@@ -197,7 +240,7 @@ export class EventController {
      */
     public createEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const { timezone, ...eventData } = req.body;
+            const { timezone, familyMemberIds, ...eventData } = req.body;
             const userId = (req.user as any)?.id;
 
             if (!timezone) {
@@ -286,7 +329,13 @@ export class EventController {
                 }
             }
 
-            return res.status(201).json(savedEvent);
+            // Save family member tags
+            if (Array.isArray(familyMemberIds) && familyMemberIds.length > 0) {
+                await this.saveFamilyMemberTags(savedEvent.id, familyMemberIds, userId!);
+            }
+
+            const [enriched] = await this.attachFamilyMembers([savedEvent]);
+            return res.status(201).json(enriched);
         } catch (error) {
             console.error('Error creating event:', error);
             return res.status(500).json({
@@ -305,7 +354,7 @@ export class EventController {
             const userId = (req.user as any)?.id;
 
             // Allowlist updatable fields — never allow userId or id to be overwritten
-            const { title, description, startTime, endTime, duration, isAllDay, location, color, status } = req.body;
+            const { title, description, startTime, endTime, duration, isAllDay, location, color, status, familyMemberIds } = req.body;
             const updates = { title, description, startTime, endTime, duration, isAllDay, location, color, status };
 
             // Get the existing event
@@ -339,7 +388,13 @@ export class EventController {
                 });
             }
 
-            return res.json(updatedEvent);
+            // Update family member tags if provided
+            if (Array.isArray(familyMemberIds)) {
+                await this.saveFamilyMemberTags(id, familyMemberIds, userId!);
+            }
+
+            const [enriched] = await this.attachFamilyMembers([updatedEvent]);
+            return res.json(enriched);
         } catch (error) {
             console.error('Error updating event:', error);
             return res.status(500).json({
