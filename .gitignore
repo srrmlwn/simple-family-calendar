@@ -30,8 +30,9 @@ yarn-error.log*
 # Design audit output
 design-audit-screenshots/
 
-# Claude Code local settings
-.claude/
+# Claude Code — ignore local settings and worktrees, but keep skills/
+.claude/settings.local.json
+.claude/worktrees/
 
 # Editor directories and files
 .idea
