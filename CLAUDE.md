@@ -23,7 +23,7 @@ Target user: parents managing a household with kids — sports, school, appointm
 | NLP | OpenAI API (event parsing from natural language) |
 | Email | Nodemailer + iCalendar attachments |
 | Mobile | Capacitor (cross-platform wrapper) |
-| Deployment | Heroku (frontend + backend via Procfile) |
+| Deployment | Heroku (frontend + backend via Procfile) — app name: `simple-family-calendar` |
 
 ---
 
@@ -72,7 +72,7 @@ server/src/
 - `event_recipients` — junction table (event ↔ recipient, notified flag)
 - `user_settings` — theme, timezone, time_format, notification_preferences (JSONB)
 
-Schema file: `schema.sql` (run with `heroku pg:psql DATABASE_URL < schema.sql`)
+Schema file: `schema.sql` (run with `heroku pg:psql --app simple-family-calendar < schema.sql`)
 
 ---
 
