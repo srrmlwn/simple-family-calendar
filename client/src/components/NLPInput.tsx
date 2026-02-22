@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowUp, Mic, MicOff, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowUp, Mic, MicOff, X, ChevronRight } from 'lucide-react';
 import moment from 'moment';
-import eventService, { Event, EventInput, NLPCommandResponse } from '../services/eventService';
+import eventService, { Event, NLPCommandResponse } from '../services/eventService';
+import { getEventIcon } from '../utils/eventIcons';
 
 // ── Web Speech API type shims ────────────────────────────────────────────────
 
@@ -47,34 +48,67 @@ declare global {
 // ── Props ────────────────────────────────────────────────────────────────────
 
 interface NLPInputProps {
-    /** Called after any mutation (create/update/delete) so the calendar can refresh. */
+    /** Called after create/update/delete so the calendar can refresh. */
     onEventsChanged: (event?: Event) => void;
+    /** Called when user taps an event card — calendar navigates + EventForm opens. */
+    onEventSelect: (event: Event) => void;
     className?: string;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── EventCard used inside the results tray ───────────────────────────────────
 
-function formatEventTime(event: Event): string {
-    return moment(event.startTime).format('ddd MMM D [at] h:mm A');
-}
+const TrayEventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event, onClick }) => {
+    const EventIcon = getEventIcon(event.title);
+    return (
+        <div
+            onClick={onClick}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 group transition-colors"
+        >
+            {/* Time */}
+            <div className="flex flex-col items-center w-10 shrink-0">
+                <span className="text-sm font-bold text-blue-600 leading-tight">
+                    {moment(event.startTime).format('h:mm')}
+                </span>
+                <span className="text-xs text-gray-400">
+                    {moment(event.startTime).format('A')}
+                </span>
+            </div>
+            {/* Details */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                    <EventIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="font-medium text-gray-900 text-sm truncate">{event.title}</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5 truncate">
+                    {moment(event.startTime).format('MMM D')}
+                    {event.location ? ` · ${event.location}` : ''}
+                </div>
+            </div>
+            {/* Arrow affordance */}
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 shrink-0 transition-colors" />
+        </div>
+    );
+};
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, className }) => {
+const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, className }) => {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
-    // Response state
-    const [response, setResponse] = useState<NLPCommandResponse | null>(null);
-    const [responseError, setResponseError] = useState<string | null>(null);
+    // Tray: shown for query results and disambiguation
+    const [tray, setTray] = useState<NLPCommandResponse | null>(null);
+
+    // Toast: 2.5s auto-dismiss for mutation confirmations
+    const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ── Speech recognition setup ─────────────────────────────────────────────
 
     useEffect(() => {
         if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) return;
-
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         const rec = new SR();
         rec.continuous = false;
@@ -85,29 +119,36 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, className }) => {
             setIsListening(false);
         };
         rec.onerror = () => {
-            setResponseError('Voice recognition failed. Please try again.');
+            fireToast('Voice recognition failed. Please try again.', true);
             setIsListening(false);
         };
         rec.onend = () => setIsListening(false);
         setRecognition(rec);
-
         return () => { rec.abort(); };
     }, []);
 
     const toggleListening = useCallback(() => {
         if (!recognition) {
-            setResponseError('Voice recognition is not supported in your browser.');
+            fireToast('Voice recognition is not supported in your browser.', true);
             return;
         }
         if (isListening) {
             recognition.stop();
         } else {
-            setResponseError(null);
-            setResponse(null);
+            setTray(null);
+            setToast(null);
             recognition.start();
             setIsListening(true);
         }
     }, [recognition, isListening]);
+
+    // ── Toast ────────────────────────────────────────────────────────────────
+
+    const fireToast = useCallback((message: string, isError = false) => {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast({ message, isError });
+        toastTimer.current = setTimeout(() => setToast(null), 2500);
+    }, []);
 
     // ── Submit ───────────────────────────────────────────────────────────────
 
@@ -116,29 +157,32 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, className }) => {
         if (!text) return;
 
         setIsLoading(true);
-        setResponse(null);
-        setResponseError(null);
+        setTray(null);
+        setToast(null);
 
         try {
             const result = await eventService.nlpCommand(text);
-            setResponse(result);
             setInputText('');
 
-            // Notify parent to refresh on mutations
-            if (!result.requiresDisambiguation) {
+            if (result.intent === 'query') {
+                setTray(result);
+            } else if (result.requiresDisambiguation) {
+                setTray(result);
+            } else {
+                // Mutation: toast + refresh calendar
+                fireToast(result.message);
                 if (result.intent === 'create' || result.intent === 'update') {
                     onEventsChanged(result.event);
-                } else if (result.intent === 'delete') {
+                } else {
                     onEventsChanged();
                 }
-                // query: no calendar change needed
             }
         } catch (err) {
-            setResponseError(err instanceof Error ? err.message : 'Failed to process command');
+            fireToast(err instanceof Error ? err.message : 'Failed to process command', true);
         } finally {
             setIsLoading(false);
         }
-    }, [inputText, onEventsChanged]);
+    }, [inputText, onEventsChanged, fireToast]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -147,161 +191,164 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, className }) => {
         }
     };
 
-    // ── Disambiguation: user picks one candidate ─────────────────────────────
+    // ── Disambiguation: user picks a candidate ───────────────────────────────
 
     const handleCandidateSelect = useCallback(async (candidateId: string) => {
-        if (!response) return;
+        if (!tray) return;
         setIsLoading(true);
-
         try {
-            if (response.intent === 'update' && response.pendingChanges) {
-                const updated = await eventService.update(candidateId, response.pendingChanges);
-                setResponse({ intent: 'update', message: `Updated "${updated.title}"`, event: updated });
+            if (tray.intent === 'update' && tray.pendingChanges) {
+                const updated = await eventService.update(candidateId, tray.pendingChanges);
+                setTray(null);
+                fireToast(`Updated "${updated.title}"`);
                 onEventsChanged(updated);
-            } else if (response.intent === 'delete') {
-                const candidate = response.candidates?.find(c => c.id === candidateId);
+            } else if (tray.intent === 'delete') {
+                const candidate = tray.candidates?.find(c => c.id === candidateId);
                 await eventService.delete(candidateId);
-                setResponse({ intent: 'delete', message: `Deleted "${candidate?.title ?? 'event'}"` });
+                setTray(null);
+                fireToast(`Deleted "${candidate?.title ?? 'event'}"`);
                 onEventsChanged();
             }
         } catch (err) {
-            setResponseError(err instanceof Error ? err.message : 'Action failed');
-            setResponse(null);
+            fireToast(err instanceof Error ? err.message : 'Action failed', true);
+            setTray(null);
         } finally {
             setIsLoading(false);
         }
-    }, [response, onEventsChanged]);
+    }, [tray, onEventsChanged, fireToast]);
 
-    const dismissResponse = () => {
-        setResponse(null);
-        setResponseError(null);
-    };
+    // ── Query tray: clicking an event navigates + opens EventForm ────────────
 
-    // ── Render response area ─────────────────────────────────────────────────
+    const handleEventCardClick = useCallback((event: Event) => {
+        setTray(null);
+        onEventSelect(event);
+    }, [onEventSelect]);
 
-    const renderResponse = () => {
-        if (responseError) {
+    // ── Tray render ──────────────────────────────────────────────────────────
+
+    const renderTray = () => {
+        if (!tray) return null;
+
+        // Disambiguation
+        if (tray.requiresDisambiguation && tray.candidates) {
             return (
-                <div className="mt-2 flex items-start gap-2 text-sm text-red-600">
-                    <span className="flex-1">{responseError}</span>
-                    <button onClick={dismissResponse} aria-label="Dismiss" className="shrink-0 text-red-400 hover:text-red-600">
-                        <X size={14} />
-                    </button>
+                <div className="border-t border-gray-200 bg-white max-h-[50vh] overflow-y-auto shadow-lg">
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-100 bg-amber-50">
+                        <span className="text-sm font-medium text-amber-800">
+                            Which event did you mean?
+                        </span>
+                        <button
+                            onClick={() => setTray(null)}
+                            aria-label="Dismiss"
+                            className="ml-3 shrink-0 text-amber-400 hover:text-amber-600"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                    {tray.candidates.map(c => (
+                        <TrayEventCard
+                            key={c.id}
+                            event={c}
+                            onClick={() => handleCandidateSelect(c.id)}
+                        />
+                    ))}
                 </div>
             );
         }
 
-        if (!response) return null;
-
-        // Disambiguation: show candidate list
-        if (response.requiresDisambiguation && response.candidates) {
+        // Query results
+        if (tray.intent === 'query') {
+            const events = tray.events ?? [];
             return (
-                <div className="mt-2 text-sm">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="text-amber-700 font-medium">{response.message}</span>
-                        <button onClick={dismissResponse} aria-label="Dismiss" className="text-gray-400 hover:text-gray-600">
+                <div className="border-t border-gray-200 bg-white max-h-[50vh] overflow-y-auto shadow-lg">
+                    <div className="flex items-start justify-between px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+                        <p className="text-sm text-gray-600 flex-1 pr-4 leading-snug">{tray.message}</p>
+                        <button
+                            onClick={() => setTray(null)}
+                            aria-label="Dismiss results"
+                            className="shrink-0 mt-0.5 text-gray-400 hover:text-gray-600"
+                        >
                             <X size={14} />
                         </button>
                     </div>
-                    <div className="flex flex-col gap-1">
-                        {response.candidates.map(c => (
-                            <button
-                                key={c.id}
-                                onClick={() => handleCandidateSelect(c.id)}
-                                disabled={isLoading}
-                                className="text-left px-3 py-1.5 rounded-md bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-800 text-xs disabled:opacity-50"
-                            >
-                                <span className="font-medium">{c.title}</span>
-                                <span className="text-amber-600 ml-2">{formatEventTime(c)}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            );
-        }
-
-        // Query result: show answer + optional event list
-        if (response.intent === 'query') {
-            return (
-                <div className="mt-2 text-sm">
-                    <div className="flex items-start gap-2">
-                        <span className="flex-1 text-gray-700">{response.message}</span>
-                        <button onClick={dismissResponse} aria-label="Dismiss" className="shrink-0 text-gray-400 hover:text-gray-600">
-                            <X size={14} />
-                        </button>
-                    </div>
-                    {response.events && response.events.length > 0 && (
-                        <ul className="mt-1 ml-1 space-y-0.5">
-                            {response.events.map(e => (
-                                <li key={e.id} className="text-xs text-gray-500">
-                                    • <span className="font-medium text-gray-700">{e.title}</span> — {formatEventTime(e)}
-                                </li>
-                            ))}
-                        </ul>
+                    {events.length === 0 ? (
+                        <div className="px-4 py-6 text-sm text-center text-gray-400">
+                            No events found
+                        </div>
+                    ) : (
+                        events.map(e => (
+                            <TrayEventCard
+                                key={e.id}
+                                event={e}
+                                onClick={() => handleEventCardClick(e)}
+                            />
+                        ))
                     )}
                 </div>
             );
         }
 
-        // Create / update / delete success
-        const colorClass =
-            response.intent === 'delete'
-                ? 'text-red-600'
-                : 'text-green-600';
-
-        return (
-            <div className="mt-2 flex items-center gap-2 text-sm">
-                <span className={`flex-1 ${colorClass}`}>✓ {response.message}</span>
-                <button onClick={dismissResponse} aria-label="Dismiss" className="shrink-0 text-gray-400 hover:text-gray-600">
-                    <X size={14} />
-                </button>
-            </div>
-        );
+        return null;
     };
 
     // ── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 ${className ?? ''}`}>
-            <div className="max-w-3xl mx-auto">
-                <div className="flex items-center space-x-2">
-                    <label htmlFor="nlp-event-input" className="sr-only">
-                        Describe what you want to do
-                    </label>
-                    <input
-                        id="nlp-event-input"
-                        type="text"
-                        value={inputText}
-                        onChange={e => setInputText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Add, update, delete, or ask about events…"
-                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={isLoading}
-                    />
-                    <button
-                        onClick={toggleListening}
-                        aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
-                        title={isListening ? 'Stop listening' : 'Start voice input'}
-                        className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            isListening
-                                ? 'bg-red-500 hover:bg-red-600 text-white'
-                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                        }`}
-                    >
-                        {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isLoading || !inputText.trim()}
-                        aria-label="Send"
-                        title="Send"
-                        className="p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ArrowUp size={20} />
-                    </button>
+        <div className={`relative ${className ?? ''}`}>
+            {/* Results tray — absolutely positioned above the input bar, overlays calendar */}
+            {tray && (
+                <div className="absolute bottom-full left-0 right-0 z-50">
+                    {renderTray()}
                 </div>
+            )}
 
-                {renderResponse()}
+            {/* Input bar */}
+            <div className="bg-indigo-50 border-t border-indigo-200 px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
+                <div className="max-w-3xl mx-auto">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="nlp-event-input" className="sr-only">
+                            Describe what you want to do
+                        </label>
+                        <input
+                            id="nlp-event-input"
+                            type="text"
+                            value={inputText}
+                            onChange={e => setInputText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Add, update, delete, or ask about events…"
+                            className="flex-1 px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            disabled={isLoading}
+                        />
+                        <button
+                            onClick={toggleListening}
+                            aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                            title={isListening ? 'Stop listening' : 'Start voice input'}
+                            className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors ${
+                                isListening
+                                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                                    : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
+                            }`}
+                        >
+                            {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isLoading || !inputText.trim()}
+                            aria-label="Send"
+                            title="Send"
+                            className="p-2 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ArrowUp size={18} />
+                        </button>
+                    </div>
+
+                    {/* Auto-dismiss toast */}
+                    {toast && (
+                        <p className={`mt-1.5 text-xs ${toast.isError ? 'text-red-600' : 'text-green-600'}`}>
+                            {toast.isError ? toast.message : `✓ ${toast.message}`}
+                        </p>
+                    )}
+                </div>
             </div>
         </div>
     );

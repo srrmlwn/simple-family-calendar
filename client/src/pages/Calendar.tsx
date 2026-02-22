@@ -11,6 +11,8 @@ const CalendarPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [date, setDate] = useState<Date>(new Date());
     const [newEventDate, setNewEventDate] = useState<Date | null>(null);
+    // Event selected from the NLP results tray — navigate + open EventForm
+    const [nlpSelectedEvent, setNlpSelectedEvent] = useState<Event | null>(null);
 
     // Fetch events from API with date range filtering
     const fetchEvents = useCallback(async () => {
@@ -93,6 +95,12 @@ const CalendarPage: React.FC = () => {
         }
     }, [fetchEvents]);
 
+    // Called when user clicks an event in the NLP results tray
+    const handleNLPEventSelect = useCallback((event: Event) => {
+        setDate(new Date(event.startTime as Date));
+        setNlpSelectedEvent(event);
+    }, []);
+
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             <Header />
@@ -103,14 +111,14 @@ const CalendarPage: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex-grow p-6 overflow-auto pb-24">
+            <div className="flex-1 overflow-auto p-6">
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
                     </div>
                 ) : (
                     <>
-                        <div className="min-h-full bg-white rounded-lg shadow flex">
+                        <div className="h-full bg-white rounded-lg shadow flex">
                             <DatePicker
                                 events={events}
                                 date={date}
@@ -121,7 +129,7 @@ const CalendarPage: React.FC = () => {
                             />
                         </div>
 
-                        {/* New event modal */}
+                        {/* New event modal (date cell click) */}
                         {newEventDate && (
                             <div
                                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -139,13 +147,36 @@ const CalendarPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Edit event modal (NLP tray event click) */}
+                        {nlpSelectedEvent && (
+                            <div
+                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                                onClick={(e) => { if (e.target === e.currentTarget) setNlpSelectedEvent(null); }}
+                            >
+                                <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                                    <EventForm
+                                        event={nlpSelectedEvent}
+                                        onSubmit={async (eventData) => {
+                                            await handleEventUpdate(nlpSelectedEvent.id, eventData);
+                                            setNlpSelectedEvent(null);
+                                        }}
+                                        onDelete={async () => {
+                                            await handleEventDelete(nlpSelectedEvent.id);
+                                            setNlpSelectedEvent(null);
+                                        }}
+                                        onCancel={() => setNlpSelectedEvent(null)}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </div>
 
             <NLPInput
                 onEventsChanged={handleNLPEventsChanged}
-                className="z-10"
+                onEventSelect={handleNLPEventSelect}
             />
         </div>
     );
