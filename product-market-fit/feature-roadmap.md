@@ -4,7 +4,7 @@ _Last updated: 2026-02-22_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 0 complete. Family Members shipped. Active: NLP family member tagging → Onboarding flow → Family-Wide Weekly View.
+> **Current focus:** Tier 0 complete. Family Members + NLP tagging shipped. Active: Onboarding → Recurring Events → Google Calendar Sync.
 
 ---
 
@@ -13,7 +13,7 @@ Prioritized by expected impact on adoption, retention, and differentiation. Feat
 This file is the single source of truth for what to build and what's in flight.
 
 - **Change a status symbol** when you start or finish something (e.g. 🎯 → 🚧 when you begin, 🚧 → ✅ when shipped).
-- **Tier 0** is the active sprint. Work through it top-to-bottom before touching Tier 1+.
+- **Tier 1** is the active sprint. Work through it top-to-bottom before touching Tier 2+.
 - **New ideas** go at the bottom of the appropriate tier with 💡.
 - **No separate task tracker** — keep it all here.
 
@@ -49,9 +49,9 @@ _Identified via Puppeteer design audit on 2026-02-21. All items resolved._
 
 ---
 
-## Tier 1 — Core Differentiators
+## Tier 1 — Foundations
 
-These are the features that answer "why use famcal.ai instead of Google Calendar?"
+These are the features that make famcal.ai complete and trustworthy enough to become a household's primary calendar. All must ship before viral/growth features.
 
 ### ✅ Natural Language Event Creation
 Type or speak plain English → event is created. Powered by OpenAI. Core feature, already implemented. See `/features/natural-language-interaction.md`.
@@ -68,74 +68,41 @@ Full NLP CRUD via the bottom bar — create, update, delete, and query events in
 ### ✅ Family Members as First-Class Entities
 Named, color-coded family member profiles. Tag events to members in EventForm. Filter calendar by member via pill filter. Colored dots on event cards. Managed in Settings. See `/features/family-members.md`.
 
-### 💡 WhatsApp / SMS Bot Integration
-**Why it's high value:** Parents already forward event info via WhatsApp. Forward any message to a famcal.ai phone number → AI parses it → event added to calendar. Zero friction. No other calendar does this.
+### ✅ NLP Family Member Tagging
+"Add soccer practice for Maya at 3pm" correctly tags Maya on the event. Names extracted from NLP input, fuzzy-matched against actual family members. See `/features/nlp-family-member-tagging.md`.
 
-- Full spec + Twilio setup instructions + ngrok local testing guide: `/features/whatsapp-sms-bot.md`
-- Implementation is complete in the spec — ready to ship when Twilio account is set up
+### 🎯 Full Onboarding Flow
+**Why:** New users land on a blank calendar with no guidance. The core differentiators (family members, NLP, notifications) are invisible. First-time retention depends on users immediately seeing value — and completing setup correctly.
 
-### 🎯 NLP Family Member Tagging
-**Why:** "Add soccer practice for Maya at 3pm" is the most natural way parents speak. The NLP system currently ignores names entirely — it creates the event but never tags the family member. Closing this gap makes the NLP feel genuinely intelligent rather than just a date parser.
+- Welcome screen post-signup: guided setup covering family members, notification preferences, timezone, and a first NLP example
+- Step-by-step flow (skippable at any point): Add family members → Set notification time → Try NLP input
+- Empty-state prompts on calendar: "Try: Add soccer for Maya on Friday at 4pm"
+- Settings completeness indicator (nudge to fill in missing config)
+- Smart defaults that disappear once used
 
-- Extend `intentParser` prompt to extract a `familyMemberNames` array from input
-- On the server, resolve names fuzzy-matched against the user's actual family members
-- Populate `familyMemberIds` on create and update intents
-- Disambiguation: if "Maya" matches nothing, ignore silently; if ambiguous, pick closest match
-- See implementation spec in `/features/nlp-family-member-tagging.md`
+### 🎯 Recurring Events
+**Why:** A calendar without solid recurring events feels like a prototype. Weekly practices, school pickups, and standing appointments are the majority of a family's schedule. This is table-stakes functionality.
 
-### 🎯 Onboarding Flow for New Users
-**Why:** New users land directly on a blank calendar with zero guidance. Family members (the core differentiator) are buried in Settings. NLP capabilities are completely undiscoverable. First-time retention depends on users immediately seeing value.
+- Basic implementation already exists; needs polish for complex patterns
+- Patterns: daily, weekly, bi-weekly, monthly, first Monday of month
+- School-year-aware: recur with exceptions (e.g. no practice on holidays)
+- Edit one / edit all / edit this and future — standard recurrence UX
+- NLP support: "Add piano every Monday at 4pm"
 
-- Post-signup screen (single page, skippable): "Add your family members to get started"
-- Inline prompts showing NLP examples: "Try: Add soccer for Maya on Friday at 4pm"
-- Empty-state on Calendar: show NLP tip when no events exist for the selected day
-- No forced tutorial — just smart defaults and prompts that disappear once used
+### 🎯 2-Way Google Calendar Sync
+**Why:** The single biggest adoption barrier. "I already use Google Calendar" is a hard objection if there's no bridge. Sync removes the switching cost and lets famcal.ai coexist with existing family workflows.
 
-### 💡 Calendar Empty-State Nudge
-When no family members exist, show a subtle prompt in the filter area: "Add family members in Settings to filter your calendar." Low effort, helps discovery.
-
-### 🎯 Family-Wide Weekly View
-**Why:** The visual answer to "who has what this week?" — a grid with a column per family member. Instantly surface conflicts. This is the view that makes famcal.ai feel family-native.
-
-- Week grid, one column per family member
-- Color-coded by member
-- Conflict highlighting (two members with overlapping events)
-- "Who needs a ride?" surface (events with location that overlap in time)
+- Import events from Google Calendar into famcal.ai
+- Push famcal.ai events back to Google Calendar
+- Incremental sync (not full re-import on every request)
+- Handle conflicts gracefully (last-write-wins or explicit merge UI)
+- OAuth scope: `https://www.googleapis.com/auth/calendar` (already have Google OAuth, scope extension needed)
 
 ---
 
-## Tier 2 — Strong Retention Features
+## Tier 2 — Growth & Delight
 
-These keep users coming back and building habits.
-
-### 🎯 Weekly Family Briefing
-A Sunday evening email (or WhatsApp message) summarizing the whole family's upcoming week. More valuable than the daily digest because it helps parents plan logistics.
-
-- Grouped by day, then by family member
-- Highlights conflicts
-- One-click to view in app
-
-### 💡 Per-Member iCal Feed URLs
-Each family member gets a unique iCal subscription URL. Subscribe from Google Calendar, Apple Calendar, or any other app. Removes the "but I already use Google" objection — famcal.ai becomes the source of truth.
-
-### 💡 Conflict Detection and Alerts
-When two family members have overlapping events (especially with location), proactively flag it.
-
-- "Both kids have practice at the same time on Tuesday"
-- "Dad's flight arrives at 3pm but school pickup is also at 3pm"
-- Integrates naturally with the family-wide view
-
-### 🚧 Recurring Events
-Already has basic implementation. Needs polish for complex patterns (bi-weekly, first Monday of month, school year schedule with exceptions).
-
-### 💡 Smart Reminders with Travel Buffer
-"Leave by 3:45 to get to soccer by 4:00" — use event location to compute departure time. Surface as a pre-event notification rather than just an alarm.
-
----
-
-## Tier 3 — Acquisition and Viral Features
-
-These drive new user sign-ups and word-of-mouth.
+Features that create memorable moments and drive word-of-mouth once the foundation is solid.
 
 ### 🎯 Photo / Flyer → Events (Bulk Import)
 **Why it's a viral demo moment:** Snap a photo of a soccer season schedule, school holiday list, or sports flyer → AI extracts all dates and creates events in bulk. This is a 10-minute manual task turned into 10 seconds.
@@ -144,35 +111,27 @@ These drive new user sign-ups and word-of-mouth.
 - Show a confirmation screen with all parsed events before creating
 - "Share image" entrypoint from mobile share sheet (iOS/Android)
 
-### 💡 Voice Input (Mobile-First)
-On mobile, voice is the most natural input. "Hey FamCal, add piano lesson every Monday at 4pm" while driving. Already in the NLP spec; Whisper API is the implementation path.
-
-### 💡 Event Templates
-Pre-built templates for common recurring structures:
-- Soccer season (practices + game days)
-- School year (with holiday auto-population by district)
-- Weekly routine (homework time, bedtime, recurring errands)
-
-### 💡 "Add to FamCal" Browser Extension
-Right-click any date/event on a webpage or forward an email → parse and add to calendar. Useful for school websites, sports league pages, etc.
-
 ---
 
-## Tier 4 — Ecosystem and Platform
+## Pending Queue — Not Yet Prioritized
 
-These expand the addressable market and create lock-in.
+These are good ideas. They will be ordered and tiered when the Tier 1 foundation is complete.
 
-### 🚧 2-Way Google Calendar Sync
-Already in README as a planned feature. Import from and sync back to Google Calendar. Critical for users who don't want to abandon their existing setup.
-
-### ❓ School/Sports League Integrations
-Direct import from platforms like TeamSnap, SportsEngine, or school portals. Reduces setup friction significantly but requires per-integration engineering.
-
-### ❓ Location-Aware Commute Planning
-Integration with Google Maps / Apple Maps to compute travel time and surface "leave by X" reminders. Depends on family members' locations being stored (privacy consideration).
-
-### ❓ Shared Grocery / Task Lists (Cozi-style)
-Cozi's success is partly due to combining calendar + lists. Adds complexity but expands the "family OS" positioning. Validate first whether users want this in famcal.ai vs. a dedicated list app.
+| Feature | Notes |
+|---|---|
+| Family-Wide Weekly View | Week grid, one column per family member, conflict highlighting |
+| Weekly Family Briefing | Sunday evening email summarizing the whole week |
+| Per-Member iCal Feed URLs | Subscribe from Google/Apple Calendar; removes "I use Google" objection |
+| Conflict Detection & Alerts | Proactive flag when two members overlap |
+| Smart Reminders with Travel Buffer | "Leave by 3:45 to make 4pm soccer" |
+| Voice Input (Mobile) | Whisper API; most natural on mobile |
+| Event Templates | Soccer season, school year, weekly routine |
+| "Add to FamCal" Browser Extension | Right-click any webpage date/event |
+| WhatsApp / SMS Bot | Forward messages → AI parses → event created. Spec ready in `/features/whatsapp-sms-bot.md`. Revisit after foundations complete. |
+| School/Sports League Integrations | TeamSnap, SportsEngine direct import |
+| Location-Aware Commute Planning | Google Maps integration for travel-time reminders |
+| Shared Grocery / Task Lists | Cozi-style; validate demand before building |
+| Calendar Empty-State Nudge | Low-effort discoverability for family member filter |
 
 ---
 
