@@ -59,7 +59,6 @@ import eventRoutes from './routes/event';
 import recipientRoutes from './routes/recipient';
 import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notificationRoutes';
-import webhookRoutes from './routes/webhook';
 import familyMemberRoutes from './routes/familyMember';
 import { authenticateJWT } from './middleware/auth';
 
@@ -69,8 +68,6 @@ app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
 app.use('/api/family-members', authenticateJWT, familyMemberRoutes);
 app.use('/api/notifications', notificationRoutes);
-// Webhook routes — no JWT auth; Twilio signature validation is used instead
-app.use('/api/webhooks', webhookRoutes);
 
 // Serve static files in production
 if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production') {

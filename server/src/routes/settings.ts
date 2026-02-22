@@ -3,7 +3,6 @@ import { Router } from 'express';
 import { Request, Response } from 'express';
 import {AppDataSource} from "../data-source";
 import { UserSettings } from '../entities/UserSettings';
-import { User } from '../entities/User';
 import asyncHandler from '../utils/asyncHandler';
 
 const router = Router();
@@ -95,40 +94,6 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
     const updatedSettings = await settingsRepository.save(settings);
 
     return res.json(updatedSettings);
-}));
-
-// Link a phone number for WhatsApp / SMS bot access
-router.post('/phone', asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id;
-    const { phoneNumber } = req.body as { phoneNumber?: string };
-
-    // Validate E.164 format: +<country code><subscriber number>
-    if (!phoneNumber || !/^\+[1-9]\d{6,14}$/.test(phoneNumber)) {
-        return res.status(400).json({
-            error: 'Phone number must be in E.164 format (e.g. +12125551234)'
-        });
-    }
-
-    const userRepo = AppDataSource.getRepository(User);
-
-    // Ensure the number isn't already linked to a different account
-    const existing = await userRepo.findOne({ where: { phoneNumber } });
-    if (existing && existing.id !== userId) {
-        return res.status(409).json({
-            error: 'This phone number is already linked to another account'
-        });
-    }
-
-    await userRepo.update(userId, { phoneNumber });
-    return res.json({ message: 'Phone number linked successfully', phoneNumber });
-}));
-
-// Remove linked phone number
-router.delete('/phone', asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id;
-    const userRepo = AppDataSource.getRepository(User);
-    await userRepo.update(userId, { phoneNumber: undefined });
-    return res.json({ message: 'Phone number removed' });
 }));
 
 export default router;

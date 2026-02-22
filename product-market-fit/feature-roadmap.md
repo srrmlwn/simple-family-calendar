@@ -1,10 +1,10 @@
 # Feature Roadmap
 
-_Last updated: 2026-02-21_
+_Last updated: 2026-02-22_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 0 complete. WhatsApp/SMS integration in progress (separate agent). Family Members shipped. Active: NLP family member tagging → Onboarding flow → Family-Wide Weekly View.
+> **Current focus:** Tier 0 complete. Family Members shipped. Active: NLP family member tagging → Onboarding flow → Family-Wide Weekly View.
 
 ---
 
@@ -68,12 +68,11 @@ Full NLP CRUD via the bottom bar — create, update, delete, and query events in
 ### ✅ Family Members as First-Class Entities
 Named, color-coded family member profiles. Tag events to members in EventForm. Filter calendar by member via pill filter. Colored dots on event cards. Managed in Settings. See `/features/family-members.md`.
 
-### 🚧 WhatsApp / SMS Bot Integration
-**Why it's #1 priority:** Parents already forward event info via WhatsApp. Forward any message to a famcal.ai phone number → AI parses it → event added to calendar. Zero friction. No other calendar does this.
+### 💡 WhatsApp / SMS Bot Integration
+**Why it's high value:** Parents already forward event info via WhatsApp. Forward any message to a famcal.ai phone number → AI parses it → event added to calendar. Zero friction. No other calendar does this.
 
-- Implementation: Twilio (SMS/WhatsApp) webhook → same NLP parser used for the chat interface
-- Confirmation reply back to the user with parsed details before creating
-- Deep link to view/edit the created event
+- Full spec + Twilio setup instructions + ngrok local testing guide: `/features/whatsapp-sms-bot.md`
+- Implementation is complete in the spec — ready to ship when Twilio account is set up
 
 ### 🎯 NLP Family Member Tagging
 **Why:** "Add soccer practice for Maya at 3pm" is the most natural way parents speak. The NLP system currently ignores names entirely — it creates the event but never tags the family member. Closing this gap makes the NLP feel genuinely intelligent rather than just a date parser.

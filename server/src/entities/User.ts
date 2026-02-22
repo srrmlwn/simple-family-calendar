@@ -35,9 +35,6 @@ export class User {
   @IsNotEmpty({ message: 'Last name is required' })
   lastName!: string;
 
-  @Column({ nullable: true, unique: true })
-  phoneNumber?: string;
-
   @OneToMany(() => Event, event => event.user)
   events?: Event[];
 
