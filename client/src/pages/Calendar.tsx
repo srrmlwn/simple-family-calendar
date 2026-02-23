@@ -5,6 +5,7 @@ import EventForm from '../components/EventForm';
 import NLPInput from '../components/NLPInput';
 import FamilyMemberFilter from '../components/FamilyMemberFilter';
 import OnboardingFlow from '../components/OnboardingFlow';
+import ImportButton from '../components/ImportButton';
 import eventService, { Event, EventInput, RecurringScope } from '../services/eventService';
 import familyMemberService, { FamilyMember } from '../services/familyMemberService';
 import api from '../services/api';
@@ -178,16 +179,21 @@ const CalendarPage: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {familyMembers.length > 0 && (
-                            <div className="mb-3">
-                                <FamilyMemberFilter
-                                    members={familyMembers}
-                                    selectedIds={selectedMemberIds}
-                                    onToggle={handleMemberToggle}
-                                    onSelectAll={() => setSelectedMemberIds([])}
-                                />
+                        {/* Toolbar row: family member filter + import button */}
+                        <div className="flex items-center justify-between mb-3">
+                            <div>
+                                {familyMembers.length > 0 && (
+                                    <FamilyMemberFilter
+                                        members={familyMembers}
+                                        selectedIds={selectedMemberIds}
+                                        onToggle={handleMemberToggle}
+                                        onSelectAll={() => setSelectedMemberIds([])}
+                                    />
+                                )}
                             </div>
-                        )}
+                            <ImportButton onImportComplete={fetchEvents} />
+                        </div>
+
                         <div className="h-full bg-white rounded-lg shadow flex">
                             <DatePicker
                                 events={filteredEvents}

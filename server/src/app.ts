@@ -59,15 +59,16 @@ import eventRoutes from './routes/event';
 import recipientRoutes from './routes/recipient';
 import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notificationRoutes';
-import familyMemberRoutes from './routes/familyMember';
+import googleCalendarRoutes from './routes/googleCalendar';
 import { authenticateJWT } from './middleware/auth';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', authenticateJWT, eventRoutes);
 app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
-app.use('/api/family-members', authenticateJWT, familyMemberRoutes);
 app.use('/api/notifications', notificationRoutes);
+// Google Calendar routes — /callback is public (Google redirect), others are JWT-protected inline
+app.use('/api/google-calendar', googleCalendarRoutes);
 
 // Serve static files in production
 if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production') {

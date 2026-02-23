@@ -33,6 +33,15 @@ export class UserSettings {
     @Column({ name: 'onboarding_completed', default: false })
     onboardingCompleted!: boolean;
 
+    @Column({ name: 'google_refresh_token', type: 'text', nullable: true })
+    googleRefreshToken?: string;
+
+    @Column({ name: 'google_access_token', type: 'text', nullable: true })
+    googleAccessToken?: string;
+
+    @Column({ name: 'google_token_expiry', type: 'timestamp', nullable: true })
+    googleTokenExpiry?: Date;
+
     @ManyToOne(() => User, user => user.settings)
     @JoinColumn({ name: 'user_id' })
     user!: User;
