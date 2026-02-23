@@ -1,13 +1,21 @@
 /**
  * onboarding.test.ts — E2E tests for the new user onboarding flow.
  *
+ * Steps:
+ *   0 — Welcome
+ *   1 — Family Members
+ *   2 — Notifications
+ *   3 — Email Recipients
+ *   4 — Try It (NLP demo)
+ *
  * Covers:
  * - Onboarding overlay shown on first login
  * - Skipping the entire flow via the X button
  * - Skipping from the Welcome screen
- * - Walking through all 4 steps with Continue
- * - Adding a recipient in Step 2 and verifying it persists
- * - NLP demo in Step 3 creates a real event
+ * - Walking through all 5 steps with Continue/Skip
+ * - Adding a family member in Step 1 and verifying it persists
+ * - Adding a recipient in Step 3 and verifying it persists
+ * - NLP demo in Step 4 creates a real event
  * - Overlay absent on subsequent logins (onboarding already complete)
  * - localStorage step resume (refresh mid-flow)
  */
@@ -161,34 +169,42 @@ describe('Onboarding flow', () => {
     const dot0 = await page.$('[data-testid="onboarding-dot-0"][data-active="true"]');
     expect(dot0).not.toBeNull();
 
-    // Advance to step 1
+    // Advance to step 1 (Family Members)
     await page.click('[data-testid="onboarding-start"]');
     await page.waitForSelector('[data-testid="onboarding-step-1"]', { timeout: 3000 });
     const dot1 = await page.$('[data-testid="onboarding-dot-1"][data-active="true"]');
     expect(dot1).not.toBeNull();
 
-    // Advance to step 2
-    await clickContinue(page);
+    // Advance to step 2 (Notifications)
+    await clickSkipStep(page);
     await page.waitForSelector('[data-testid="onboarding-step-2"]', { timeout: 3000 });
     const dot2 = await page.$('[data-testid="onboarding-dot-2"][data-active="true"]');
     expect(dot2).not.toBeNull();
   });
 
-  // ── 5. Full happy path: walk all 4 steps ──────────────────────────────────
+  // ── 5. Full happy path: walk all 5 steps ──────────────────────────────────
 
-  test('walking all steps with Continue completes onboarding', async () => {
+  test('walking all steps with Continue/Skip completes onboarding', async () => {
     await loginFresh(page);
     await waitForOverlay(page);
 
+    // Step 0 → 1 (Family Members)
     await page.click('[data-testid="onboarding-start"]');
     await page.waitForSelector('[data-testid="onboarding-step-1"]');
 
-    await clickContinue(page);
+    // Step 1 → 2 (Notifications) — skip family members
+    await clickSkipStep(page);
     await page.waitForSelector('[data-testid="onboarding-step-2"]');
 
-    await clickSkipStep(page);
+    // Step 2 → 3 (Recipients) — continue through notifications
+    await clickContinue(page);
     await page.waitForSelector('[data-testid="onboarding-step-3"]');
 
+    // Step 3 → 4 (Try It) — skip recipients
+    await clickSkipStep(page);
+    await page.waitForSelector('[data-testid="onboarding-step-4"]');
+
+    // Finish
     await page.click('[data-testid="onboarding-finish"]');
 
     await waitForOverlayGone(page);
@@ -197,39 +213,58 @@ describe('Onboarding flow', () => {
     expect(await overlayVisible(page)).toBe(false);
   });
 
-  // ── 6. Step 2: recipient added shows in the confirmed list ────────────────
+  // ── 6. Step 1: family member added shows in the confirmed list ─────────────
 
-  test('recipient added in step 2 appears in the confirmed list', async () => {
+  test('family member added in step 1 appears in the confirmed list', async () => {
     await loginFresh(page);
     await waitForOverlay(page);
 
     await page.click('[data-testid="onboarding-start"]');
     await page.waitForSelector('[data-testid="onboarding-step-1"]');
-    await clickContinue(page);
+
+    await page.type('[data-testid="onboarding-member-name"]', 'Alex Test');
+    await page.click('[data-testid="onboarding-member-add"]');
+
+    await page.waitForSelector('[data-testid="onboarding-members-list"]', { timeout: 5000 });
+    await waitForText(page, '[data-testid="onboarding-members-list"]', 'Alex Test');
+  });
+
+  // ── 7. Step 3: recipient added shows in the confirmed list ────────────────
+
+  test('recipient added in step 3 appears in the confirmed list', async () => {
+    await loginFresh(page);
+    await waitForOverlay(page);
+
+    await page.click('[data-testid="onboarding-start"]');
+    await page.waitForSelector('[data-testid="onboarding-step-1"]');
+    await clickSkipStep(page); // skip family members
     await page.waitForSelector('[data-testid="onboarding-step-2"]');
+    await clickContinue(page); // through notifications
+    await page.waitForSelector('[data-testid="onboarding-step-3"]');
 
     await page.type('[data-testid="onboarding-recipient-name"]', 'Sarah Test');
     await page.type('[data-testid="onboarding-recipient-email"]', 'sarah@famcal.test');
     await page.click('[data-testid="onboarding-recipient-add"]');
 
     await page.waitForSelector('[data-testid="onboarding-recipients-list"]', { timeout: 5000 });
-    await waitForText(page, '[data-testid="onboarding-recipients-list"]', 'sarah');
     await waitForText(page, '[data-testid="onboarding-recipients-list"]', 'Sarah Test');
   });
 
-  // ── 7. Step 3: NLP demo creates a real event ──────────────────────────────
+  // ── 8. Step 4: NLP demo creates a real event ──────────────────────────────
 
-  test('NLP input in step 3 creates an event and shows success', async () => {
+  test('NLP input in step 4 creates an event and shows success', async () => {
     await clearTestUserEvents(userId);
     await loginFresh(page);
     await waitForOverlay(page);
 
     await page.click('[data-testid="onboarding-start"]');
     await page.waitForSelector('[data-testid="onboarding-step-1"]');
-    await clickContinue(page);
+    await clickSkipStep(page);
     await page.waitForSelector('[data-testid="onboarding-step-2"]');
     await clickSkipStep(page);
     await page.waitForSelector('[data-testid="onboarding-step-3"]');
+    await clickSkipStep(page);
+    await page.waitForSelector('[data-testid="onboarding-step-4"]');
 
     // Replace pre-filled text with a test command
     await page.click('[data-testid="onboarding-nlp-input"]', { clickCount: 3 });
@@ -244,7 +279,7 @@ describe('Onboarding flow', () => {
     expect(successText.toLowerCase()).toContain('event');
   });
 
-  // ── 8. Returning user does NOT see overlay ────────────────────────────────
+  // ── 9. Returning user does NOT see overlay ────────────────────────────────
 
   test('returning user with onboarding already done sees no overlay', async () => {
     await markOnboardingComplete(userId);
@@ -255,16 +290,16 @@ describe('Onboarding flow', () => {
     expect(await overlayVisible(page)).toBe(false);
   });
 
-  // ── 9. localStorage resume: refresh mid-flow lands on same step ───────────
+  // ── 10. localStorage resume: refresh mid-flow lands on same step ───────────
 
   test('refreshing mid-flow resumes at the same step', async () => {
     await loginFresh(page);
     await waitForOverlay(page);
 
-    // Advance to step 2
+    // Advance to step 2 (Notifications)
     await page.click('[data-testid="onboarding-start"]');
     await page.waitForSelector('[data-testid="onboarding-step-1"]');
-    await clickContinue(page);
+    await clickSkipStep(page);
     await page.waitForSelector('[data-testid="onboarding-step-2"]');
 
     // Reload without clearing localStorage
@@ -276,7 +311,7 @@ describe('Onboarding flow', () => {
     expect(step2).not.toBeNull();
   });
 
-  // ── 10. DayView empty state shows NLP hint ────────────────────────────────
+  // ── 11. DayView empty state shows NLP hint ────────────────────────────────
 
   test('empty calendar day shows NLP hint text after onboarding completes', async () => {
     await clearTestUserEvents(userId);

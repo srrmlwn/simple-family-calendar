@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ArrowRight, Bell, Mail, Wand, Check } from 'lucide-react';
+import { X, ArrowRight, Bell, Mail, Wand, Check, Users } from 'lucide-react';
 import api from '../services/api';
 import eventService from '../services/eventService';
+import familyMemberService from '../services/familyMemberService';
 
 const STORAGE_KEY = 'onboarding_step';
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
+
+// 10 fixed colors — must match the server's ALLOWED_COLORS set
+const MEMBER_COLORS = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+    '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16',
+];
 
 interface OnboardingFlowProps {
     userName: string;
@@ -14,10 +21,12 @@ interface OnboardingFlowProps {
 // ── Step indicator ───────────────────────────────────────────────────────────
 
 const StepDots: React.FC<{ current: number; total: number }> = ({ current, total }) => (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center gap-2" data-testid="onboarding-step-dots">
         {Array.from({ length: total }).map((_, i) => (
             <div
                 key={i}
+                data-testid={`onboarding-dot-${i}`}
+                data-active={i === current ? 'true' : 'false'}
                 className={`rounded-full transition-all duration-200 ${
                     i === current
                         ? 'w-6 h-2 bg-indigo-600'
@@ -36,12 +45,14 @@ const PrimaryButton: React.FC<{
     onClick: () => void;
     disabled?: boolean;
     loading?: boolean;
+    'data-testid'?: string;
     children: React.ReactNode;
-}> = ({ onClick, disabled, loading, children }) => (
+}> = ({ onClick, disabled, loading, 'data-testid': testId, children }) => (
     <button
         type="button"
         onClick={onClick}
         disabled={disabled || loading}
+        data-testid={testId}
         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
     >
         {loading ? (
@@ -52,6 +63,40 @@ const PrimaryButton: React.FC<{
     </button>
 );
 
+// ── Shared footer (Back / Skip / Continue) ───────────────────────────────────
+
+const StepFooter: React.FC<{
+    onBack: () => void;
+    onContinue: () => void;
+    onSkip: () => void;
+    saving?: boolean;
+    skipLabel?: string;
+}> = ({ onBack, onContinue, onSkip, saving, skipLabel }) => (
+    <div className="flex items-center justify-between pt-2">
+        <button
+            type="button"
+            onClick={onBack}
+            data-testid="onboarding-back"
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+            Back
+        </button>
+        <div className="flex items-center gap-3">
+            <button
+                type="button"
+                onClick={onSkip}
+                data-testid="onboarding-skip-step"
+                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+                {skipLabel ?? 'Skip'}
+            </button>
+            <PrimaryButton onClick={onContinue} loading={saving} data-testid="onboarding-continue">
+                Continue <ArrowRight className="w-4 h-4" />
+            </PrimaryButton>
+        </div>
+    </div>
+);
+
 // ── Step 0: Welcome ──────────────────────────────────────────────────────────
 
 const WelcomeStep: React.FC<{ userName: string; onNext: () => void; onSkip: () => void }> = ({
@@ -59,7 +104,7 @@ const WelcomeStep: React.FC<{ userName: string; onNext: () => void; onSkip: () =
     onNext,
     onSkip,
 }) => (
-    <div className="flex flex-col items-center text-center px-2">
+    <div className="flex flex-col items-center text-center px-2" data-testid="onboarding-step-0">
         <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-5">
             <span className="text-3xl">🗓️</span>
         </div>
@@ -71,9 +116,9 @@ const WelcomeStep: React.FC<{ userName: string; onNext: () => void; onSkip: () =
         </p>
         <div className="w-full space-y-3 mb-8 text-left">
             {[
+                { icon: '👨‍👩‍👧', text: "See everyone's schedule at a glance with family member tags" },
                 { icon: '💬', text: 'Add events in plain English — just type or speak' },
                 { icon: '📧', text: 'Get a daily email summary of tomorrow\'s schedule' },
-                { icon: '👨‍👩‍👧', text: 'Keep the whole family in the loop with calendar invites' },
             ].map(({ icon, text }) => (
                 <div key={text} className="flex items-start gap-3">
                     <span className="text-lg leading-none mt-0.5">{icon}</span>
@@ -82,12 +127,13 @@ const WelcomeStep: React.FC<{ userName: string; onNext: () => void; onSkip: () =
             ))}
         </div>
         <div className="flex flex-col gap-3 w-full">
-            <PrimaryButton onClick={onNext}>
+            <PrimaryButton onClick={onNext} data-testid="onboarding-start">
                 Let's get started <ArrowRight className="w-4 h-4" />
             </PrimaryButton>
             <button
                 type="button"
                 onClick={onSkip}
+                data-testid="onboarding-skip-all"
                 className="text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
             >
                 Skip setup, go straight to calendar
@@ -96,7 +142,136 @@ const WelcomeStep: React.FC<{ userName: string; onNext: () => void; onSkip: () =
     </div>
 );
 
-// ── Step 1: Notifications ────────────────────────────────────────────────────
+// ── Step 1: Family Members ───────────────────────────────────────────────────
+
+interface AddedMember {
+    id: string;
+    name: string;
+    color: string;
+}
+
+const FamilyMembersStep: React.FC<{
+    onNext: () => void;
+    onBack: () => void;
+    onSkip: () => void;
+}> = ({ onNext, onBack, onSkip }) => {
+    const [members, setMembers] = useState<AddedMember[]>([]);
+    const [name, setName] = useState('');
+    const [color, setColor] = useState(MEMBER_COLORS[0]);
+    const [adding, setAdding] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAdd = async () => {
+        if (!name.trim()) {
+            setError('Please enter a name');
+            return;
+        }
+        setAdding(true);
+        setError(null);
+        try {
+            const member = await familyMemberService.create({ name: name.trim(), color });
+            setMembers((prev) => [...prev, member]);
+            setName('');
+            // Auto-advance to next color for convenience
+            const idx = MEMBER_COLORS.indexOf(color);
+            setColor(MEMBER_COLORS[(idx + 1) % MEMBER_COLORS.length]);
+        } catch {
+            setError('Could not add family member. Try again or skip for now.');
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAdd();
+        }
+    };
+
+    return (
+        <div className="flex flex-col" data-testid="onboarding-step-1">
+            <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-indigo-500" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-gray-900">Who's in your family?</h2>
+                    <p className="text-sm text-gray-500">Add household members to tag events and filter your calendar.</p>
+                </div>
+            </div>
+
+            {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3" data-testid="onboarding-member-error">
+                    {error}
+                </p>
+            )}
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+                <input
+                    type="text"
+                    placeholder="Name (e.g. Sarah)"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={adding}
+                    data-testid="onboarding-member-name"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+                {/* Color swatches */}
+                <div className="flex gap-2 flex-wrap">
+                    {MEMBER_COLORS.map((c) => (
+                        <button
+                            key={c}
+                            type="button"
+                            onClick={() => setColor(c)}
+                            aria-label={`Select color ${c}`}
+                            data-testid={`onboarding-member-color-${c.replace('#', '')}`}
+                            className={`w-7 h-7 rounded-full transition-all ${
+                                color === c
+                                    ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                                    : 'hover:scale-105'
+                            }`}
+                            style={{ backgroundColor: c }}
+                        />
+                    ))}
+                </div>
+                <button
+                    type="button"
+                    onClick={handleAdd}
+                    disabled={adding || !name.trim()}
+                    data-testid="onboarding-member-add"
+                    className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
+                >
+                    {adding ? 'Adding…' : '+ Add'}
+                </button>
+            </div>
+
+            {members.length > 0 && (
+                <div className="mb-4 space-y-2" data-testid="onboarding-members-list">
+                    {members.map((m) => (
+                        <div key={m.id} className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-100 shadow-sm">
+                            <span
+                                className="w-3 h-3 rounded-full shrink-0"
+                                style={{ backgroundColor: m.color }}
+                            />
+                            <p className="text-sm font-medium text-gray-800">{m.name}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <StepFooter
+                onBack={onBack}
+                onContinue={onNext}
+                onSkip={onSkip}
+                skipLabel={members.length === 0 ? 'Skip for now' : undefined}
+            />
+        </div>
+    );
+};
+
+// ── Step 2: Notifications ────────────────────────────────────────────────────
 
 interface NotifPrefs {
     digestTime: string;
@@ -120,14 +295,14 @@ const NotificationsStep: React.FC<{
             onNext();
         } catch {
             setError('Could not save preferences. You can update them later in Settings.');
-            onNext(); // still advance — this is non-blocking in onboarding
+            onNext(); // non-blocking — still advance
         } finally {
             setSaving(false);
         }
     };
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col" data-testid="onboarding-step-2">
             <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
                     <Bell className="w-5 h-5 text-amber-500" />
@@ -145,7 +320,6 @@ const NotificationsStep: React.FC<{
             )}
 
             <div className="space-y-4 mb-6">
-                {/* Enable/disable toggle */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                     <div>
                         <p className="text-sm font-medium text-gray-800">Daily digest email</p>
@@ -157,12 +331,12 @@ const NotificationsStep: React.FC<{
                             className="sr-only peer"
                             checked={prefs.isDigestEnabled}
                             onChange={(e) => setPrefs({ ...prefs, isDigestEnabled: e.target.checked })}
+                            data-testid="onboarding-digest-toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                     </label>
                 </div>
 
-                {/* Time picker */}
                 {prefs.isDigestEnabled && (
                     <div className="p-4 bg-gray-50 rounded-xl">
                         <label htmlFor="onboarding-digest-time" className="block text-sm font-medium text-gray-800 mb-2">
@@ -184,7 +358,7 @@ const NotificationsStep: React.FC<{
     );
 };
 
-// ── Step 2: Email Recipients ─────────────────────────────────────────────────
+// ── Step 3: Email Recipients ─────────────────────────────────────────────────
 
 interface Recipient {
     id: string;
@@ -230,7 +404,7 @@ const RecipientsStep: React.FC<{
     };
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col" data-testid="onboarding-step-3">
             <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                     <Mail className="w-5 h-5 text-blue-500" />
@@ -242,12 +416,11 @@ const RecipientsStep: React.FC<{
             </div>
 
             {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3" data-testid="onboarding-recipient-error">
                     {error}
                 </p>
             )}
 
-            {/* Add form */}
             <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
                 <input
                     type="text"
@@ -255,8 +428,9 @@ const RecipientsStep: React.FC<{
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
                     disabled={adding}
+                    data-testid="onboarding-recipient-name"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 />
                 <input
                     type="email"
@@ -264,22 +438,23 @@ const RecipientsStep: React.FC<{
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
                     disabled={adding}
+                    data-testid="onboarding-recipient-email"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 />
                 <button
                     type="button"
                     onClick={handleAdd}
                     disabled={adding || !name.trim() || !email.trim()}
+                    data-testid="onboarding-recipient-add"
                     className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
                 >
                     {adding ? 'Adding…' : '+ Add'}
                 </button>
             </div>
 
-            {/* Added recipients */}
             {recipients.length > 0 && (
-                <div className="mb-4 space-y-2">
+                <div className="mb-4 space-y-2" data-testid="onboarding-recipients-list">
                     {recipients.map((r) => (
                         <div key={r.id} className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-100">
                             <Check className="w-4 h-4 text-green-500 shrink-0" />
@@ -302,7 +477,7 @@ const RecipientsStep: React.FC<{
     );
 };
 
-// ── Step 3: Try It ───────────────────────────────────────────────────────────
+// ── Step 4: Try It ───────────────────────────────────────────────────────────
 
 const TryItStep: React.FC<{
     onFinish: () => void;
@@ -322,7 +497,6 @@ const TryItStep: React.FC<{
                 setStatus('success');
                 setMessage(result.message || 'Event added to your calendar!');
             } else {
-                // query or other intent — still count as success for onboarding
                 setStatus('success');
                 setMessage(result.message || 'Done!');
             }
@@ -337,7 +511,7 @@ const TryItStep: React.FC<{
     };
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col" data-testid="onboarding-step-4">
             <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                     <Wand className="w-5 h-5 text-purple-500" />
@@ -357,6 +531,7 @@ const TryItStep: React.FC<{
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             disabled={status === 'loading'}
+                            data-testid="onboarding-nlp-input"
                             className="flex-1 px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
                             placeholder="Add dentist appointment on Thursday at 10am"
                         />
@@ -364,6 +539,7 @@ const TryItStep: React.FC<{
                             type="button"
                             onClick={handleTry}
                             disabled={status === 'loading' || !input.trim()}
+                            data-testid="onboarding-nlp-send"
                             className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors"
                         >
                             {status === 'loading' ? (
@@ -378,7 +554,7 @@ const TryItStep: React.FC<{
                     </p>
                 </div>
             ) : status === 'success' ? (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3" data-testid="onboarding-nlp-success">
                     <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                     <div>
                         <p className="text-sm font-medium text-green-800">Event created!</p>
@@ -386,7 +562,7 @@ const TryItStep: React.FC<{
                     </div>
                 </div>
             ) : (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl" data-testid="onboarding-nlp-error">
                     <p className="text-sm text-amber-800">{message}</p>
                 </div>
             )}
@@ -395,11 +571,12 @@ const TryItStep: React.FC<{
                 <button
                     type="button"
                     onClick={onBack}
+                    data-testid="onboarding-back"
                     className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
                     Back
                 </button>
-                <PrimaryButton onClick={onFinish}>
+                <PrimaryButton onClick={onFinish} data-testid="onboarding-finish">
                     {status === 'success' ? 'Go to my calendar' : 'Skip, go to calendar'}{' '}
                     <ArrowRight className="w-4 h-4" />
                 </PrimaryButton>
@@ -407,38 +584,6 @@ const TryItStep: React.FC<{
         </div>
     );
 };
-
-// ── Shared footer (Back / Continue / Skip) ───────────────────────────────────
-
-const StepFooter: React.FC<{
-    onBack: () => void;
-    onContinue: () => void;
-    onSkip: () => void;
-    saving?: boolean;
-    skipLabel?: string;
-}> = ({ onBack, onContinue, onSkip, saving, skipLabel }) => (
-    <div className="flex items-center justify-between pt-2">
-        <button
-            type="button"
-            onClick={onBack}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-        >
-            Back
-        </button>
-        <div className="flex items-center gap-3">
-            <button
-                type="button"
-                onClick={onSkip}
-                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-            >
-                {skipLabel ?? 'Skip'}
-            </button>
-            <PrimaryButton onClick={onContinue} loading={saving}>
-                Continue <ArrowRight className="w-4 h-4" />
-            </PrimaryButton>
-        </div>
-    </div>
-);
 
 // ── Main orchestrator ────────────────────────────────────────────────────────
 
@@ -450,7 +595,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete })
     });
     const [completing, setCompleting] = useState(false);
 
-    // Persist step to localStorage whenever it changes
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, String(step));
     }, [step]);
@@ -476,10 +620,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete })
             case 0:
                 return <WelcomeStep userName={userName} onNext={goNext} onSkip={markComplete} />;
             case 1:
-                return <NotificationsStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
+                return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
             case 2:
-                return <RecipientsStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
+                return <NotificationsStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
             case 3:
+                return <RecipientsStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
+            case 4:
                 return <TryItStep onFinish={markComplete} onBack={goBack} />;
             default:
                 return null;
@@ -487,26 +633,29 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete })
     };
 
     return (
-        // Full-screen backdrop — calendar is blurred behind
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
-                {/* Skip button in top-right corner */}
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+            data-testid="onboarding-overlay"
+        >
+            <div
+                className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8"
+                data-testid="onboarding-card"
+            >
                 <button
                     type="button"
                     onClick={markComplete}
                     disabled={completing}
                     aria-label="Skip setup"
+                    data-testid="onboarding-close"
                     className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                 >
                     <X className="w-4 h-4" />
                 </button>
 
-                {/* Step indicator */}
                 <div className="mb-6">
                     <StepDots current={step} total={TOTAL_STEPS} />
                 </div>
 
-                {/* Step content */}
                 {renderStep()}
             </div>
         </div>
