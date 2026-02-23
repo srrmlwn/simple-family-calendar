@@ -1,10 +1,10 @@
 # Feature Roadmap
 
-_Last updated: 2026-02-22_
+_Last updated: 2026-02-22 (audited against codebase)_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 0 complete. Family Members + NLP tagging + Onboarding all shipped. Active: Recurring Events → Google Calendar Sync.
+> **Current focus:** Tier 1 foundations nearly complete — NLP CRUD, Family Members, Onboarding, Daily Digest, Email Invites all shipped. Basic voice input (Web Speech API) live. Next: Recurring Events → Google Calendar Sync.
 
 ---
 
@@ -127,7 +127,7 @@ These are good ideas. They will be ordered and tiered when the Tier 1 foundation
 | Per-Member iCal Feed URLs | Subscribe from Google/Apple Calendar; removes "I use Google" objection |
 | Conflict Detection & Alerts | Proactive flag when two members overlap |
 | Smart Reminders with Travel Buffer | "Leave by 3:45 to make 4pm soccer" |
-| Voice Input (Mobile) | Whisper API; most natural on mobile |
+| Voice Input — Whisper Upgrade | Basic voice input via browser Web Speech API is already live in NLPInput.tsx (microphone button). Upgrade to OpenAI Whisper API for offline/native app support and better accuracy. |
 | Event Templates | Soccer season, school year, weekly routine |
 | "Add to FamCal" Browser Extension | Right-click any webpage date/event |
 | WhatsApp / SMS Bot | Forward messages → AI parses → event created. Spec ready in `/features/whatsapp-sms-bot.md`. Revisit after foundations complete. |
