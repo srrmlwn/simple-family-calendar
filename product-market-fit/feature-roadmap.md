@@ -4,7 +4,7 @@ _Last updated: 2026-02-22_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 0 complete. Family Members + NLP tagging shipped. Active: Onboarding → Recurring Events → Google Calendar Sync.
+> **Current focus:** Tier 0 complete. Family Members + NLP tagging + Onboarding all shipped. Active: Recurring Events → Google Calendar Sync.
 
 ---
 
@@ -71,14 +71,17 @@ Named, color-coded family member profiles. Tag events to members in EventForm. F
 ### ✅ NLP Family Member Tagging
 "Add soccer practice for Maya at 3pm" correctly tags Maya on the event. Names extracted from NLP input, fuzzy-matched against actual family members. See `/features/nlp-family-member-tagging.md`.
 
-### 🎯 Full Onboarding Flow
-**Why:** New users land on a blank calendar with no guidance. The core differentiators (family members, NLP, notifications) are invisible. First-time retention depends on users immediately seeing value — and completing setup correctly.
+### ✅ Full Onboarding Flow
+**Shipped:** 5-step guided setup shown to new users on first login.
 
-- Welcome screen post-signup: guided setup covering family members, notification preferences, timezone, and a first NLP example
-- Step-by-step flow (skippable at any point): Add family members → Set notification time → Try NLP input
-- Empty-state prompts on calendar: "Try: Add soccer for Maya on Friday at 4pm"
-- Settings completeness indicator (nudge to fill in missing config)
-- Smart defaults that disappear once used
+- Step 0: Welcome screen with feature highlights
+- Step 1: Add family members (name + color picker, saved immediately)
+- Step 2: Notification preferences (digest toggle + send time)
+- Step 3: Email recipients (who gets calendar invites)
+- Step 4: Try NLP — pre-filled example, live event creation
+- Skippable at any step; X button exits the whole flow
+- Step persisted in `localStorage` so partial progress survives a refresh
+- `onboardingCompleted` flag stored in `user_settings`; flow never shown again once completed
 
 ### 🎯 Recurring Events
 **Why:** A calendar without solid recurring events feels like a prototype. Weekly practices, school pickups, and standing appointments are the majority of a family's schedule. This is table-stakes functionality.
