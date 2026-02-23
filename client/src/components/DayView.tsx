@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import moment from 'moment';
-import { Event, EventInput } from '../services/eventService';
+import { Event, EventInput, RecurringScope } from '../services/eventService';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import EventForm from './EventForm';
-import BottomSheet from './BottomSheet';
+import EventDetails from './EventDetails';
 import { CalendarDays, Pencil } from 'lucide-react';
 import { getEventIcon } from '../utils/eventIcons';
 
@@ -12,7 +11,7 @@ interface DayViewProps {
     events: Event[];
     onNavigate: (date: Date | 'TODAY') => void;
     onUpdateEvent: (eventId: string, eventData: EventInput) => Promise<void>;
-    onDeleteEvent: (eventId: string) => Promise<void>;
+    onDeleteEvent: (eventId: string, options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => Promise<void>;
 }
 
 const DayView: React.FC<DayViewProps> = ({
@@ -52,9 +51,10 @@ const DayView: React.FC<DayViewProps> = ({
         }
     };
 
-    const handleEventDelete = async (eventId: string) => {
+    const handleEventDelete = async (options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => {
+        if (!selectedEvent) return;
         try {
-            await onDeleteEvent(eventId);
+            await onDeleteEvent(selectedEvent.id, options);
             setSelectedEvent(null);
         } catch (error) {
             console.error('Error deleting event:', error);
@@ -171,21 +171,14 @@ const DayView: React.FC<DayViewProps> = ({
                 </div>
             </div>
 
-            {/* Event Form Bottom Sheet */}
+            {/* Event Details Bottom Sheet — handles recurring scope dialogs */}
             {selectedEvent && (
-                <BottomSheet
-                    isOpen={!!selectedEvent}
+                <EventDetails
+                    event={selectedEvent}
                     onClose={() => setSelectedEvent(null)}
-                    className="max-h-[90vh] overflow-y-auto"
-                    showHeader={false}
-                >
-                    <EventForm
-                        event={selectedEvent}
-                        onSubmit={(eventData) => handleEventUpdate(selectedEvent.id, eventData)}
-                        onDelete={() => handleEventDelete(selectedEvent.id)}
-                        onCancel={() => setSelectedEvent(null)}
-                    />
-                </BottomSheet>
+                    onUpdate={(eventData) => handleEventUpdate(selectedEvent.id, eventData)}
+                    onDelete={handleEventDelete}
+                />
             )}
         </>
     );

@@ -5,7 +5,7 @@ import EventForm from '../components/EventForm';
 import NLPInput from '../components/NLPInput';
 import FamilyMemberFilter from '../components/FamilyMemberFilter';
 import OnboardingFlow from '../components/OnboardingFlow';
-import eventService, { Event, EventInput } from '../services/eventService';
+import eventService, { Event, EventInput, RecurringScope } from '../services/eventService';
 import familyMemberService, { FamilyMember } from '../services/familyMemberService';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -90,33 +90,42 @@ const CalendarPage: React.FC = () => {
         }
     }, []);
 
-    // Handle event update
+    // Handle event update. EventInput may carry recurringScope + occurrenceDate for recurring events.
     const handleEventUpdate = useCallback(async (eventId: string, eventData: EventInput) => {
         try {
             const updatedEvent = await eventService.update(eventId, eventData);
-            setEvents(prevEvents => 
-                prevEvents.map(event => 
-                    event.id === eventId ? updatedEvent : event
-                )
-            );
+            // After a recurring scope update the series may have changed — refetch to stay accurate.
+            if (eventData.recurringScope) {
+                await fetchEvents();
+            } else {
+                setEvents(prevEvents =>
+                    prevEvents.map(event => event.id === eventId ? updatedEvent : event)
+                );
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to update event');
             throw err;
         }
-    }, []);
+    }, [fetchEvents]);
 
-    // Handle event delete
-    const handleEventDelete = useCallback(async (eventId: string) => {
+    // Handle event delete. Options carry scope for recurring events.
+    const handleEventDelete = useCallback(async (
+        eventId: string,
+        options?: { recurringScope?: RecurringScope; occurrenceDate?: string }
+    ) => {
         try {
-            await eventService.delete(eventId);
-            setEvents(prevEvents => 
-                prevEvents.filter(event => event.id !== eventId)
-            );
+            await eventService.delete(eventId, options);
+            if (options?.recurringScope) {
+                // Series was modified — refetch so virtual occurrences update correctly.
+                await fetchEvents();
+            } else {
+                setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete event');
             throw err;
         }
-    }, []);
+    }, [fetchEvents]);
 
     // Handle event save (used by EventForm modal)
     const handleEventSave = useCallback(async (eventData: EventInput) => {
@@ -222,8 +231,8 @@ const CalendarPage: React.FC = () => {
                                             await handleEventUpdate(nlpSelectedEvent.id, eventData);
                                             setNlpSelectedEvent(null);
                                         }}
-                                        onDelete={async () => {
-                                            await handleEventDelete(nlpSelectedEvent.id);
+                                        onDelete={async (options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => {
+                                            await handleEventDelete(nlpSelectedEvent.id, options);
                                             setNlpSelectedEvent(null);
                                         }}
                                         onCancel={() => setNlpSelectedEvent(null)}

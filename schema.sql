@@ -29,11 +29,20 @@ CREATE TABLE IF NOT EXISTS events (
     color VARCHAR(50), -- for calendar display
     status VARCHAR(50) DEFAULT 'confirmed',
     external_id VARCHAR(255), -- for external calendar integration
+    -- Recurring events
+    rrule TEXT,                          -- RFC 5545 RRULE string, e.g. 'FREQ=WEEKLY;BYDAY=MO;UNTIL=20261220T000000Z'
+    exception_dates JSONB,               -- array of ISO date strings to skip, e.g. ["2026-11-27","2026-12-25"]
+    recurring_event_id UUID,             -- FK to master event (set on single-occurrence overrides)
+    exception_date TIMESTAMP,            -- original occurrence start time this override replaces
     user_id UUID NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_event_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_event_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_recurring_event FOREIGN KEY (recurring_event_id) REFERENCES events(id) ON DELETE CASCADE
 );
+
+-- Index for efficient override lookups
+CREATE INDEX idx_event_recurring_event_id ON events(recurring_event_id);
 
 -- Create index on start_time for efficient date range queries
 CREATE INDEX idx_event_start_time ON events(start_time);

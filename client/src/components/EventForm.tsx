@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Event, EventInput } from '../services/eventService';
+import { Event, EventInput, RecurringScope } from '../services/eventService';
 import { validateEvent, EventState, EventStatus, getEventStatusMessage, getValidationMessage } from '../utils/eventValidation';
 import { getEventIcon } from '../utils/eventIcons';
 import { CalendarPlus, Clock } from 'lucide-react';
 import familyMemberService, { FamilyMember } from '../services/familyMemberService';
+import { buildRRule, parseRRule, RecurrencePattern, RECURRENCE_LABELS } from '../utils/recurrenceUtils';
+import RecurrenceScopeDialog from './RecurrenceScopeDialog';
 
 interface EventFormProps {
     event?: Event;
     initialDate?: Date;
     onSubmit: (eventData: EventInput) => Promise<void>;
     onCancel: () => void;
-    onDelete?: () => Promise<void>;
+    onDelete?: (options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => Promise<void>;
     isDeleting?: boolean;
     eventState?: EventState;
 }
@@ -33,11 +35,18 @@ const EventForm: React.FC<EventFormProps> = ({
     const [location, setLocation] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Pending event data waiting for recurrence scope selection
+    const [pendingEventData, setPendingEventData] = useState<EventInput | null>(null);
     const [validation, setValidation] = useState(() => validateEvent({}));
     const [activeField, setActiveField] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+    // Recurrence state
+    const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>('none');
+    const [recurrenceEndsOn, setRecurrenceEndsOn] = useState(''); // YYYY-MM-DD or ''
+    const [exceptionDates, setExceptionDates] = useState<string[]>([]); // YYYY-MM-DD strings
+    const [newExceptionDate, setNewExceptionDate] = useState('');
 
     // Load family members
     useEffect(() => {
@@ -56,6 +65,23 @@ const EventForm: React.FC<EventFormProps> = ({
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     };
+
+    // Initialize recurrence from existing event
+    useEffect(() => {
+        if (event?.rrule) {
+            const parsed = parseRRule(event.rrule);
+            setRecurrencePattern(parsed.pattern);
+            setRecurrenceEndsOn(parsed.endsOn ?? '');
+        } else {
+            setRecurrencePattern('none');
+            setRecurrenceEndsOn('');
+        }
+        if (event?.exceptionDates) {
+            setExceptionDates(event.exceptionDates);
+        } else {
+            setExceptionDates([]);
+        }
+    }, [event]);
 
     // Initialize form with existing event data or defaults
     useEffect(() => {
@@ -115,13 +141,19 @@ const EventForm: React.FC<EventFormProps> = ({
                 endDateTime = moment(startDateTime).add(1, 'hour').toDate();
             }
 
+            const builtRRule = recurrencePattern !== 'none'
+                ? buildRRule(recurrencePattern, startDateTime, recurrenceEndsOn || undefined)
+                : undefined;
+
             const eventData: EventInput = {
                 title,
                 startTime: startDateTime,
                 endTime: endDateTime,
-                isAllDay: false, // Always false now
+                isAllDay: false,
                 location: location || undefined,
                 familyMemberIds: selectedMemberIds,
+                rrule: builtRRule,
+                exceptionDates: builtRRule ? exceptionDates : undefined,
             };
 
             // If this is an existing event, check if anything has changed
@@ -130,12 +162,11 @@ const EventForm: React.FC<EventFormProps> = ({
                     title: event.title,
                     startTime: moment(event.startTime).toDate(),
                     endTime: moment(event.endTime).toDate(),
-                    isAllDay: false, // Always false now
+                    isAllDay: false,
                     location: event.location || undefined,
                 };
 
-                // Compare all fields
-                const hasChanges = 
+                const hasChanges =
                     originalEvent.title !== eventData.title ||
                     !moment(originalEvent.startTime).isSame(eventData.startTime) ||
                     !moment(originalEvent.endTime).isSame(eventData.endTime) ||
@@ -143,6 +174,13 @@ const EventForm: React.FC<EventFormProps> = ({
 
                 if (!hasChanges) {
                     onCancel();
+                    return;
+                }
+
+                // For recurring events, show the scope dialog before submitting.
+                if (event.rrule) {
+                    setPendingEventData(eventData);
+                    setIsSubmitting(false);
                     return;
                 }
             }
@@ -410,9 +448,36 @@ const EventForm: React.FC<EventFormProps> = ({
         );
     };
 
+    const handleScopeConfirm = async (scope: RecurringScope) => {
+        if (!pendingEventData || !event) return;
+        const dataWithScope: EventInput = {
+            ...pendingEventData,
+            recurringScope: scope,
+            // occurrenceDate: the original occurrence this virtual instance represents
+            occurrenceDate: event.occurrenceDate ?? moment(event.startTime).toISOString(),
+        };
+        setPendingEventData(null);
+        try {
+            setIsSubmitting(true);
+            await onSubmit(dataWithScope);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save event');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const EventIcon = getEventIcon(title);
 
     return (
+        <>
+        {pendingEventData && (
+            <RecurrenceScopeDialog
+                action="edit"
+                onConfirm={handleScopeConfirm}
+                onCancel={() => setPendingEventData(null)}
+            />
+        )}
         <form onSubmit={handleSubmit} className="flex flex-col">
             <div className="p-4">
                 {/* Error message */}
@@ -519,6 +584,118 @@ const EventForm: React.FC<EventFormProps> = ({
                             </div>
                         </div>
                     )}
+
+                    {/* ── Recurrence ─────────────────────────────────────────── */}
+                    <div className="flex items-center gap-2 pt-1">
+                        <label className="text-sm font-medium text-gray-700 w-20">
+                            Repeat:
+                        </label>
+                        <select
+                            value={recurrencePattern}
+                            onChange={e => setRecurrencePattern(e.target.value as RecurrencePattern)}
+                            className="flex-1 text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                        >
+                            {(Object.entries(RECURRENCE_LABELS) as [RecurrencePattern, string][]).map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Ends On — only shown when a recurrence is selected */}
+                    {recurrencePattern !== 'none' && (
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700 w-20">
+                                Ends:
+                            </label>
+                            <div className="flex items-center gap-2 flex-1">
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        value={recurrenceEndsOn}
+                                        onChange={e => setRecurrenceEndsOn(e.target.value)}
+                                        className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 w-36 [&::-webkit-calendar-picker-indicator]:hidden"
+                                        id="recurrence-ends-date"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => (document.getElementById('recurrence-ends-date') as HTMLInputElement)?.showPicker()}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                    >
+                                        <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
+                                    </button>
+                                </div>
+                                {recurrenceEndsOn && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setRecurrenceEndsOn('')}
+                                        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        Never
+                                    </button>
+                                )}
+                                {!recurrenceEndsOn && (
+                                    <span className="text-xs text-gray-400">Never</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Exception dates — skip specific dates in the series */}
+                    {recurrencePattern !== 'none' && (
+                        <div className="flex items-start gap-2">
+                            <label className="text-sm font-medium text-gray-700 w-20 pt-1">
+                                Skip:
+                            </label>
+                            <div className="flex-1 space-y-1.5">
+                                {exceptionDates.map(d => (
+                                    <div key={d} className="flex items-center gap-1.5">
+                                        <span className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-0.5">
+                                            {moment(d).format('MMM D, YYYY')}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setExceptionDates(prev => prev.filter(x => x !== d))}
+                                            className="text-gray-400 hover:text-red-500 transition-colors text-xs"
+                                            aria-label="Remove exception date"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <input
+                                            type="date"
+                                            value={newExceptionDate}
+                                            onChange={e => setNewExceptionDate(e.target.value)}
+                                            className="text-sm border border-dashed border-gray-300 rounded-md px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 w-36 [&::-webkit-calendar-picker-indicator]:hidden"
+                                            id="exception-date-picker"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => (document.getElementById('exception-date-picker') as HTMLInputElement)?.showPicker()}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                        >
+                                            <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
+                                        </button>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (newExceptionDate && !exceptionDates.includes(newExceptionDate)) {
+                                                setExceptionDates(prev => [...prev, newExceptionDate].sort());
+                                                setNewExceptionDate('');
+                                            }
+                                        }}
+                                        disabled={!newExceptionDate}
+                                        className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+                                    >
+                                        + Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -527,7 +704,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 {onDelete && (
                     <button
                         type="button"
-                        onClick={onDelete}
+                        onClick={() => onDelete?.()}
                         disabled={isSubmitting || isDeleting}
                         className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md disabled:text-gray-400 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
                         title="Delete"
@@ -565,6 +742,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 </div>
             </div>
         </form>
+        </>
     );
 };
 

@@ -48,6 +48,24 @@ export class Event {
   @Column({ nullable: true })
   externalId?: string;
 
+  // Recurring events support
+  // rrule: RFC 5545 recurrence rule, e.g. 'FREQ=WEEKLY;BYDAY=MO;UNTIL=20261220T000000Z'
+  // Only set on master (template) recurring events.
+  @Column({ nullable: true })
+  rrule?: string;
+
+  // Dates to skip when expanding this recurring series (stored as ISO date strings).
+  @Column({ type: 'jsonb', nullable: true })
+  exceptionDates?: string[];
+
+  // Set on single-occurrence overrides; points to the master recurring event.
+  @Column({ nullable: true, name: 'recurring_event_id' })
+  recurringEventId?: string;
+
+  // The original occurrence start time that this override replaces.
+  @Column({ type: 'timestamp', nullable: true, name: 'exception_date' })
+  exceptionDate?: Date | string;
+
   @Column()
   userId!: string;
 

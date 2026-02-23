@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
-import { Event, EventInput } from '../services/eventService';
+import { Event, EventInput, RecurringScope } from '../services/eventService';
 import DayView from './DayView';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
@@ -10,7 +10,7 @@ interface DatePickerProps {
     date: Date;
     onNavigate: (date: Date | 'TODAY') => void;
     onEventUpdate: (eventId: string, eventData: EventInput) => Promise<void>;
-    onEventDelete: (eventId: string) => Promise<void>;
+    onEventDelete: (eventId: string, options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => Promise<void>;
     onCreateEvent?: (date: Date) => void;
 }
 

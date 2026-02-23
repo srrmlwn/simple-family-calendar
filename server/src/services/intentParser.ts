@@ -28,6 +28,8 @@ export interface CreateIntentResult {
         location?: string;
         duration: number; // minutes
         familyMemberNames?: string[];
+        /** RFC 5545 RRULE string without DTSTART, e.g. 'FREQ=WEEKLY;BYDAY=MO' */
+        rrule?: string;
     };
 }
 
@@ -109,7 +111,7 @@ Based on the user's message, determine what they want to do and return ONLY a JS
 --- RESPONSE FORMATS ---
 
 CREATE a new event:
-{"intent":"create","event":{"title":"string","startTime":"ISO UTC","endTime":"ISO UTC","isAllDay":false,"location":"string or omit"${familyMemberCreateFormat}}}
+{"intent":"create","event":{"title":"string","startTime":"ISO UTC","endTime":"ISO UTC","isAllDay":false,"location":"string or omit"${familyMemberCreateFormat},"rrule":"RFC5545 RRULE string or omit if not recurring"}}
 
 UPDATE an existing event (single match):
 {"intent":"update","eventId":"uuid","changes":{"title":"string (only if changing)","startTime":"ISO UTC (only if changing)","endTime":"ISO UTC (only if changing)","location":"string (only if changing)"${familyMemberCreateFormat}}}
@@ -134,7 +136,16 @@ QUERY — user is asking about events:
 5. If the intent is ambiguous (could be create or update/delete), prefer CREATE.
 6. For queries about what is on the calendar, answer concisely and list event titles + times.
 7. Return ONLY valid JSON.
-8. If family members are listed above and a person's name appears in the command, include their name in familyMemberNames. Only include names that exactly or closely match names in the family members list.`;
+8. If family members are listed above and a person's name appears in the command, include their name in familyMemberNames. Only include names that exactly or closely match names in the family members list.
+9. For CREATE: if the user's command implies recurrence ("every Monday", "every week", "daily", "bi-weekly", "monthly", "every other Thursday"), include an "rrule" field with an RFC 5545 RRULE string (WITHOUT DTSTART). Examples:
+   - "every Monday" → "FREQ=WEEKLY;BYDAY=MO"
+   - "every day" → "FREQ=DAILY"
+   - "every Tuesday and Thursday" → "FREQ=WEEKLY;BYDAY=TU,TH"
+   - "every other week on Wednesday" → "FREQ=WEEKLY;INTERVAL=2;BYDAY=WE"
+   - "monthly" → "FREQ=MONTHLY"
+   - "every first Monday of the month" → "FREQ=MONTHLY;BYDAY=1MO"
+   - If the user specifies an end date (e.g. "until June 15"), append ";UNTIL=20260615T000000Z" to the rrule.
+   - Omit "rrule" entirely if the event is not recurring.`;
 
         const userPrompt = `User command: ${text}`;
 
@@ -174,6 +185,7 @@ QUERY — user is asking about events:
                         familyMemberNames: Array.isArray(raw.event.familyMemberNames)
                             ? raw.event.familyMemberNames
                             : undefined,
+                        rrule: typeof raw.event.rrule === 'string' ? raw.event.rrule : undefined,
                     },
                 };
             }

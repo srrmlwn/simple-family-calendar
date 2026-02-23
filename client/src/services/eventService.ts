@@ -16,7 +16,22 @@ export interface Event {
     familyMembers?: FamilyMember[];
     createdAt: Date | string;
     updatedAt: Date | string;
+    // Recurring events
+    /** RFC 5545 RRULE string, set on master recurring events. */
+    rrule?: string;
+    /** ISO date strings of occurrences to skip (manual exception dates). */
+    exceptionDates?: string[];
+    /** Set on single-occurrence overrides; points to the master event id. */
+    recurringEventId?: string;
+    /** Original occurrence start time this override replaces (ISO string). */
+    exceptionDate?: string;
+    /** Present on virtual occurrences — equals the master event's DB id. */
+    masterEventId?: string;
+    /** Present on virtual occurrences — the original start time of this occurrence (ISO UTC). */
+    occurrenceDate?: string;
 }
+
+export type RecurringScope = 'this' | 'future' | 'all';
 
 export interface EventInput {
     title: string;
@@ -28,6 +43,13 @@ export interface EventInput {
     color?: string;
     recipientIds?: string[];
     familyMemberIds?: string[];
+    // Recurring events
+    rrule?: string;
+    exceptionDates?: string[];
+    /** Scope for editing/deleting recurring event occurrences. */
+    recurringScope?: RecurringScope;
+    /** ISO UTC string of the original occurrence being edited/deleted. */
+    occurrenceDate?: string;
 }
 
 export interface NLPCommandResponse {
@@ -146,10 +168,16 @@ const eventService = {
         }
     },
 
-    // Delete event
-    delete: async (id: string): Promise<void> => {
+    // Delete event. For recurring events pass recurringScope and occurrenceDate as query params.
+    delete: async (
+        id: string,
+        options?: { recurringScope?: RecurringScope; occurrenceDate?: string }
+    ): Promise<void> => {
         try {
-            await api.delete(`/api/events/${id}`);
+            const params: Record<string, string> = {};
+            if (options?.recurringScope) params.recurringScope = options.recurringScope;
+            if (options?.occurrenceDate) params.occurrenceDate = options.occurrenceDate;
+            await api.delete(`/api/events/${id}`, { params });
         } catch (error) {
             throw new Error('Failed to delete event');
         }

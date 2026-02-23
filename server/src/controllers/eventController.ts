@@ -6,7 +6,7 @@ import { EventRecipient } from '../entities/EventRecipient';
 import { EmailRecipient } from '../entities/EmailRecipient';
 import { FamilyMember } from '../entities/FamilyMember';
 import { EventFamilyMember } from '../entities/EventFamilyMember';
-import { EventService } from '../services/eventService';
+import { EventService, VirtualOccurrence } from '../services/eventService';
 import { EmailService } from '../services/emailService';
 import { hybridParser } from '../services/hybridParser';
 import { intentParser, IntentParser } from '../services/intentParser';
@@ -136,9 +136,11 @@ export class EventController {
 
     /**
      * Attach family members to an array of events (batch, avoids N+1).
+     * Works for both real Event rows and VirtualOccurrence objects.
+     * Virtual occurrences use the master event's id so the join returns the right members.
      */
-    private async attachFamilyMembers(events: Event[]): Promise<(Event & { familyMembers: FamilyMember[] })[]> {
-        if (events.length === 0) return events.map(e => ({ ...e, familyMembers: [] }));
+    private async attachFamilyMembers(events: (Event | VirtualOccurrence)[]): Promise<(Event & { familyMembers: FamilyMember[] })[]> {
+        if (events.length === 0) return events.map(e => ({ ...(e as Event), familyMembers: [] }));
         const { In } = await import('typeorm');
         const efmRepo = AppDataSource.getRepository(EventFamilyMember);
         const tags = await efmRepo.find({
@@ -151,7 +153,7 @@ export class EventController {
             list.push(tag.familyMember);
             byEventId.set(tag.eventId, list);
         }
-        return events.map(e => ({ ...e, familyMembers: byEventId.get(e.id) ?? [] }));
+        return events.map(e => ({ ...(e as Event), familyMembers: byEventId.get(e.id) ?? [] }));
     }
 
     /**
@@ -257,6 +259,9 @@ export class EventController {
             event.isAllDay = eventData.isAllDay;
             event.location = eventData.location;
             event.userId = userId!;
+            // Recurring events support
+            if (eventData.rrule) event.rrule = eventData.rrule;
+            if (Array.isArray(eventData.exceptionDates)) event.exceptionDates = eventData.exceptionDates;
 
             // Validate event data
             await validateOrReject(event);
@@ -346,16 +351,23 @@ export class EventController {
     };
 
     /**
-     * Update an existing event
+     * Update an existing event.
+     * For recurring events, accepts `recurringScope` ('this' | 'future' | 'all')
+     * and `occurrenceDate` (ISO UTC string of the original occurrence being edited).
      */
     public updateEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
             const userId = (req.user as any)?.id;
+            const timezone = (req.body.timezone as string) || 'UTC';
 
             // Allowlist updatable fields — never allow userId or id to be overwritten
-            const { title, description, startTime, endTime, duration, isAllDay, location, color, status, familyMemberIds } = req.body;
-            const updates = { title, description, startTime, endTime, duration, isAllDay, location, color, status };
+            const {
+                title, description, startTime, endTime, duration, isAllDay,
+                location, color, status, familyMemberIds,
+                rrule, exceptionDates,
+                recurringScope, occurrenceDate,
+            } = req.body;
 
             // Get the existing event
             const existingEvent = await this.eventService.findById(id);
@@ -367,30 +379,63 @@ export class EventController {
                 return res.status(403).json({ error: 'Not authorized to update this event' });
             }
 
-            // Update the event
-            const updatedEvent = await this.eventService.update(id, updates);
+            let updatedEvent: Event;
 
-            // Get recipient details for email
-            const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
-            const eventRecipients = await eventRecipientRepository.find({
-                where: { eventId: id }
-            });
+            if (existingEvent.rrule && recurringScope && recurringScope !== 'all') {
+                // Scoped recurring update: 'this' or 'future'
+                if (!occurrenceDate) {
+                    return res.status(400).json({ error: 'occurrenceDate is required for scoped recurring updates' });
+                }
+                const scope = recurringScope as 'this' | 'future';
+                const changes: Partial<Event> = {};
+                if (title !== undefined) changes.title = title;
+                if (description !== undefined) changes.description = description;
+                if (startTime !== undefined) changes.startTime = startTime;
+                if (endTime !== undefined) changes.endTime = endTime;
+                if (duration !== undefined) changes.duration = duration;
+                if (isAllDay !== undefined) changes.isAllDay = isAllDay;
+                if (location !== undefined) changes.location = location;
+                if (color !== undefined) changes.color = color;
+                if (rrule !== undefined) changes.rrule = rrule;
+                if (exceptionDates !== undefined) changes.exceptionDates = exceptionDates;
 
-            if (eventRecipients.length > 0) {
-                // Get user details for sender information
-                const userRepository = AppDataSource.getRepository(User);
-                const user = await userRepository.findOneOrFail({ where: { id: userId } });
+                updatedEvent = await this.eventService.updateRecurring(id, occurrenceDate, scope, changes, timezone);
+            } else {
+                // Non-recurring update or 'all' scope
+                const updates: Partial<Event> = {};
+                if (title !== undefined) updates.title = title;
+                if (description !== undefined) updates.description = description;
+                if (startTime !== undefined) updates.startTime = startTime;
+                if (endTime !== undefined) updates.endTime = endTime;
+                if (duration !== undefined) updates.duration = duration;
+                if (isAllDay !== undefined) updates.isAllDay = isAllDay;
+                if (location !== undefined) updates.location = location;
+                if (color !== undefined) updates.color = color;
+                if (status !== undefined) updates.status = status;
+                if (rrule !== undefined) updates.rrule = rrule;
+                if (exceptionDates !== undefined) updates.exceptionDates = exceptionDates;
 
-                // Send calendar updates
-                await this.emailService.sendCalendarUpdates(updatedEvent, eventRecipients, {
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`
-                });
+                updatedEvent = await this.eventService.update(id, updates);
             }
 
-            // Update family member tags if provided
+            // Send calendar update emails for non-recurring or 'all' scope
+            if (!existingEvent.rrule || recurringScope === 'all') {
+                const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
+                const eventRecipients = await eventRecipientRepository.find({ where: { eventId: id } });
+
+                if (eventRecipients.length > 0) {
+                    const userRepository = AppDataSource.getRepository(User);
+                    const user = await userRepository.findOneOrFail({ where: { id: userId } });
+                    await this.emailService.sendCalendarUpdates(updatedEvent, eventRecipients, {
+                        email: user.email,
+                        name: `${user.firstName} ${user.lastName}`
+                    });
+                }
+            }
+
+            // Update family member tags if provided (use updatedEvent.id — may be new row for 'this' scope)
             if (Array.isArray(familyMemberIds)) {
-                await this.saveFamilyMemberTags(id, familyMemberIds, userId!);
+                await this.saveFamilyMemberTags(updatedEvent.id, familyMemberIds, userId!);
             }
 
             const [enriched] = await this.attachFamilyMembers([updatedEvent]);
@@ -459,6 +504,8 @@ export class EventController {
                 event.isAllDay = result.event.isAllDay;
                 event.location = result.event.location;
                 event.userId = userId!;
+                // Recurring event from NLP
+                if (result.event.rrule) event.rrule = result.event.rrule;
 
                 await validateOrReject(event);
                 const saved = await this.eventService.create(event);
@@ -577,14 +624,18 @@ export class EventController {
     };
 
     /**
-     * Delete an event
+     * Delete an event.
+     * For recurring events, accepts query params:
+     *   ?recurringScope=this|future|all  (default 'all' for non-recurring)
+     *   &occurrenceDate=<ISO UTC>        (required for 'this' and 'future')
      */
     public deleteEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
             const userId = (req.user as any)?.id;
+            const recurringScope = req.query.recurringScope as 'this' | 'future' | 'all' | undefined;
+            const occurrenceDate = req.query.occurrenceDate as string | undefined;
 
-            // Get the existing event and recipients before deletion
             const existingEvent = await this.eventService.findById(id);
             if (!existingEvent) {
                 return res.status(404).json({ error: 'Event not found' });
@@ -594,21 +645,24 @@ export class EventController {
                 return res.status(403).json({ error: 'Not authorized to delete this event' });
             }
 
-            // Get recipient details for email
-            const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
-            const eventRecipients = await eventRecipientRepository.find({
-                where: { eventId: id }
-            });
+            if (existingEvent.rrule && recurringScope && recurringScope !== 'all') {
+                // Scoped recurring delete: 'this' or 'future'
+                if (!occurrenceDate) {
+                    return res.status(400).json({ error: 'occurrenceDate is required for scoped recurring deletes' });
+                }
+                await this.eventService.deleteRecurring(id, occurrenceDate, recurringScope);
+                return res.status(204).send();
+            }
 
-            // Delete the event
+            // Non-recurring delete or 'all' scope — standard full delete
+            const eventRecipientRepository = AppDataSource.getRepository(EventRecipient);
+            const eventRecipients = await eventRecipientRepository.find({ where: { eventId: id } });
+
             await this.eventService.delete(id);
 
             if (eventRecipients.length > 0) {
-                // Get user details for sender information
                 const userRepository = AppDataSource.getRepository(User);
                 const user = await userRepository.findOneOrFail({ where: { id: userId } });
-
-                // Send calendar cancellations
                 await this.emailService.sendCalendarCancellations(existingEvent, eventRecipients, {
                     email: user.email,
                     name: `${user.firstName} ${user.lastName}`
