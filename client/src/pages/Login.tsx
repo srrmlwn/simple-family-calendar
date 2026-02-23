@@ -48,8 +48,25 @@ const Login: React.FC = () => {
         title: state.error,
         message: state.message || 'Please try again.'
       });
-      // Clear the state to prevent showing the error again on refresh
       window.history.replaceState({}, document.title);
+      return;
+    }
+
+    // OAuth redirects pass errors as query params (e.g. ?error=access_denied)
+    const params = new URLSearchParams(location.search);
+    const urlError = params.get('error');
+    if (urlError === 'access_denied') {
+      setSubmitError({
+        title: 'Access Restricted',
+        message: "famcal.ai is currently in private beta. Your email is not on the access list. Reach out if you'd like to be added."
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlError === 'auth_failed') {
+      setSubmitError({
+        title: 'Sign-in Failed',
+        message: 'Something went wrong during sign-in. Please try again.'
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [location]);
 
@@ -147,7 +164,19 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      {/* Private beta banner */}
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-center">
+          <p className="text-sm font-medium text-amber-800">
+            famcal.ai is in private beta
+          </p>
+          <p className="mt-0.5 text-xs text-amber-700">
+            Sign-in is currently limited to invited testers. Working on something great — stay tuned.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-xl sm:px-10 border border-gray-100">
           {submitError && (
             <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200">

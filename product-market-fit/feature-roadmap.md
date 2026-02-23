@@ -135,6 +135,20 @@ These are good ideas. They will be ordered and tiered when the Tier 1 foundation
 
 ---
 
+## Open Access — Remove Private Beta Restriction
+
+**Status:** 💡 Not yet prioritized
+
+**Context:** famcal.ai launched in private beta on 2026-02-22 with access restricted to an email allowlist (`ALLOWED_EMAILS` env var on the server). The login page shows a "private beta" banner. Before opening to the public, do the following:
+
+1. Remove or unset `ALLOWED_EMAILS` from Heroku config (`heroku config:unset ALLOWED_EMAILS --app simple-family-calendar`)
+2. Update or remove the beta banner on the `Login.tsx` page
+3. Optionally: add a waitlist / early-access signup form instead of a hard block
+
+**When to do this:** Once the core product is stable enough for general users and you're ready to grow.
+
+---
+
 ## What NOT to Build (Yet)
 
 - **Full chat/AI assistant UI** — The NLP input embedded in the calendar is enough for now. A dedicated chat view adds navigation complexity. Revisit after multi-channel is working.

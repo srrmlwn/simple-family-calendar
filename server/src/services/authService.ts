@@ -8,6 +8,36 @@ import fetch from 'node-fetch';
 import { Request } from 'express';
 import { randomBytes } from 'crypto';
 
+/**
+ * Thrown when a sign-in or registration attempt is made from an email address
+ * that is not on the ALLOWED_EMAILS allowlist.
+ */
+export class AccessDeniedError extends Error {
+    constructor(message = 'famcal.ai is currently in private beta. Your email is not on the access list.') {
+        super(message);
+        this.name = 'AccessDeniedError';
+    }
+}
+
+/**
+ * If the ALLOWED_EMAILS env var is set, throw AccessDeniedError for any email
+ * not in the comma-separated list. If the var is not set, all emails are allowed
+ * (useful for local development and open deployments).
+ */
+export function checkEmailAllowed(email: string): void {
+    const raw = process.env.ALLOWED_EMAILS;
+    if (!raw?.trim()) return; // no restriction configured
+
+    const allowed = raw
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(Boolean);
+
+    if (!allowed.includes(email.trim().toLowerCase())) {
+        throw new AccessDeniedError();
+    }
+}
+
 export class AuthService {
     /**
      * Register a new user
@@ -20,6 +50,8 @@ export class AuthService {
         token: string;
     }> {
         console.log("Registering user - " + JSON.stringify(user));
+        checkEmailAllowed(user.email);
+
         const userRepository = AppDataSource.getRepository(User);
 
         // Check if user with this email already exists
@@ -62,6 +94,8 @@ export class AuthService {
         lastName: string;
         token: string;
     } | null> {
+        checkEmailAllowed(email);
+
         const userRepository = AppDataSource.getRepository(User);
 
         // Find user by email
@@ -162,6 +196,8 @@ export class AuthService {
                 throw new Error('Invalid Google user info');
             }
 
+            checkEmailAllowed(userInfo.email);
+
             const userRepository = AppDataSource.getRepository(User);
             
             // Check if user exists
@@ -184,6 +220,7 @@ export class AuthService {
 
             return user;
         } catch (error) {
+            if (error instanceof AccessDeniedError) throw error; // propagate as-is
             console.error('Google token verification error:', error);
             throw new Error('Failed to verify Google token');
         }

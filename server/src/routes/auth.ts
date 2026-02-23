@@ -27,7 +27,17 @@ router.get('/google',
 
 router.get('/google/callback',
     oauthLimiter,
-    passport.authenticate('google', { session: false }),
+    (req, res, next) => {
+        passport.authenticate('google', { session: false }, (err: Error | null, user: Express.User | false) => {
+            if (err) return next(err);
+            if (!user) {
+                const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+                return res.redirect(`${clientUrl}/login?error=access_denied`);
+            }
+            req.user = user;
+            next();
+        })(req, res, next);
+    },
     asyncHandler(authController.handleGoogleCallback)
 );
 

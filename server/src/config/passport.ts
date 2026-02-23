@@ -3,6 +3,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
 import config from './index';
+import { checkEmailAllowed, AccessDeniedError } from '../services/authService';
 
 passport.use(
     new GoogleStrategy(
@@ -22,25 +23,36 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
+                const email = profile.emails?.[0]?.value || '';
+
                 console.log('Google OAuth profile:', {
                     id: profile.id,
-                    email: profile.emails?.[0]?.value,
+                    email,
                     name: profile.name,
                     photos: profile.photos,
                     hasProfileImage: !!profile.photos?.[0]?.value
                 });
 
+                try {
+                    checkEmailAllowed(email);
+                } catch (e) {
+                    if (e instanceof AccessDeniedError) {
+                        return done(null, false);
+                    }
+                    return done(e as Error);
+                }
+
                 const userRepository = AppDataSource.getRepository(User);
                 
                 // Check if user already exists
                 let user = await userRepository.findOne({
-                    where: { email: profile.emails?.[0].value }
+                    where: { email }
                 });
 
                 if (!user) {
                     // Create new user if doesn't exist
                     user = new User();
-                    user.email = profile.emails?.[0].value || '';
+                    user.email = email;
                     user.firstName = profile.name?.givenName || '';
                     user.lastName = profile.name?.familyName || '';
                     // For Google users, we'll set a random password since they'll use Google to login

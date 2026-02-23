@@ -1,6 +1,6 @@
 // src/controllers/authController.ts
 import { Request, Response } from 'express';
-import { AuthService } from '../services/authService';
+import { AuthService, AccessDeniedError } from '../services/authService';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import passport from 'passport';
@@ -56,6 +56,10 @@ export class AuthController {
                 },
             });
         } catch (error) {
+            if (error instanceof AccessDeniedError) {
+                return res.status(403).json({ error: error.message });
+            }
+
             console.error('Error registering user:', error);
 
             if (error instanceof Error) {
@@ -99,6 +103,9 @@ export class AuthController {
                 },
             });
         } catch (error) {
+            if (error instanceof AccessDeniedError) {
+                return res.status(403).json({ error: error.message });
+            }
             console.error('Error logging in:', error);
             return res.status(500).json({ error: 'Failed to login' });
         }
@@ -180,6 +187,10 @@ export class AuthController {
             res.cookie(COOKIE_NAME, token, cookieOptions);
             res.json({ user });
         } catch (error) {
+            if (error instanceof AccessDeniedError) {
+                res.status(403).json({ error: (error as Error).message });
+                return;
+            }
             console.error('Google token verification error:', error);
             res.status(401).json({ error: 'Failed to verify Google token' });
         }
