@@ -14,6 +14,8 @@ import { newPage } from './helpers/browser';
 import { login } from './helpers/auth';
 import { TEST_USER, clearTestUserEvents, seedTestUser } from './helpers/seed';
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe('Natural Language Input', () => {
   let page: Page;
   let userId: string;
@@ -91,7 +93,7 @@ describe('Natural Language Input', () => {
     );
     if (confirmBtn) {
       await confirmBtn.click();
-      await page.waitForTimeout(2000);
+      await sleep(2000);
     }
 
     // Event should appear on calendar
@@ -113,7 +115,7 @@ describe('Natural Language Input', () => {
     await nlpInput.type('xyzzy 12345 $$$'); // gibberish
     await page.keyboard.press('Enter');
 
-    await page.waitForTimeout(3000);
+    await sleep(3000);
 
     // Should show error, suggestion, or empty state — NOT crash
     const hasError = await page.$(

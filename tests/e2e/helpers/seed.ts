@@ -70,6 +70,32 @@ export async function clearTestUserEvents(userId: string): Promise<void> {
   }
 }
 
+/** Resets the onboarding flag so the test user sees the flow again. */
+export async function resetOnboarding(userId: string): Promise<void> {
+  const client = getClient();
+  await client.connect();
+  try {
+    await client.query(
+      `UPDATE user_settings SET onboarding_completed = false WHERE user_id = $1`,
+      [userId]
+    );
+    // If no settings row exists yet, insert one (new user scenario)
+    const result = await client.query(
+      'SELECT id FROM user_settings WHERE user_id = $1',
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      await client.query(
+        `INSERT INTO user_settings (user_id, theme, time_format, timezone, onboarding_completed)
+         VALUES ($1, 'light', '12h', 'America/New_York', false)`,
+        [userId]
+      );
+    }
+  } finally {
+    await client.end();
+  }
+}
+
 /** Removes the test user and all their data entirely. */
 export async function teardownTestUser(): Promise<void> {
   const client = getClient();

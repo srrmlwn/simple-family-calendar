@@ -96,4 +96,25 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
     return res.json(updatedSettings);
 }));
 
+// Mark onboarding as complete
+router.post('/complete-onboarding', asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req.user as any)?.id;
+
+    const settingsRepository = AppDataSource.getRepository(UserSettings);
+    let settings = await settingsRepository.findOne({ where: { userId } });
+
+    if (!settings) {
+        settings = new UserSettings();
+        settings.userId = userId!;
+        settings.theme = 'light';
+        settings.timeFormat = '12h';
+        settings.timezone = 'America/New_York';
+    }
+
+    settings.onboardingCompleted = true;
+    await settingsRepository.save(settings);
+
+    return res.json({ success: true });
+}));
+
 export default router;

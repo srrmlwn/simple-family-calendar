@@ -14,6 +14,8 @@ import { newPage, BASE_URL } from './helpers/browser';
 import { login } from './helpers/auth';
 import { TEST_USER, clearTestUserEvents, seedTestUser } from './helpers/seed';
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe('Calendar Events', () => {
   let page: Page;
   let userId: string;
@@ -91,7 +93,7 @@ describe('Calendar Events', () => {
     );
     if (saveBtn) {
       await saveBtn.click();
-      await page.waitForTimeout(1500); // wait for save + calendar refresh
+      await sleep(1500); // wait for save + calendar refresh
     }
 
     // Verify the event title appears on the calendar
@@ -125,7 +127,7 @@ describe('Calendar Events', () => {
     const saveBtn = await page.$('button[type="submit"], [data-testid="save-event"]');
     if (saveBtn) {
       await saveBtn.click();
-      await page.waitForTimeout(1500);
+      await sleep(1500);
     }
 
     // Click the event to open details
@@ -136,7 +138,7 @@ describe('Calendar Events', () => {
 
     if (eventEl) {
       await (eventEl as any).click();
-      await page.waitForTimeout(500);
+      await sleep(500);
 
       // Click delete button
       const deleteBtn = await page.$(
@@ -144,12 +146,12 @@ describe('Calendar Events', () => {
       );
       if (deleteBtn) {
         await deleteBtn.click();
-        await page.waitForTimeout(1000);
+        await sleep(1000);
 
         // Confirm deletion if dialog appears
         const confirmBtn = await page.$('[data-testid="confirm-delete"], button[aria-label*="Confirm"]');
         if (confirmBtn) await confirmBtn.click();
-        await page.waitForTimeout(1000);
+        await sleep(1000);
       }
     }
 

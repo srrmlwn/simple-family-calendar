@@ -30,6 +30,9 @@ export class UserSettings {
     @Column('json', { nullable: true })
     notificationPreferences?: object;
 
+    @Column({ name: 'onboarding_completed', default: false })
+    onboardingCompleted!: boolean;
+
     @ManyToOne(() => User, user => user.settings)
     @JoinColumn({ name: 'user_id' })
     user!: User;

@@ -80,8 +80,14 @@ const DayView: React.FC<DayViewProps> = ({
 
                 <div className="flex-1 overflow-y-auto">
                     {dayEvents.length === 0 ? (
-                        <div className="text-center text-gray-600 mt-8">
-                            No events scheduled for this day
+                        <div className="text-center text-gray-400 mt-8 px-4">
+                            <p className="text-sm">Nothing here yet.</p>
+                            <p className="text-sm mt-1">
+                                Try:{' '}
+                                <span className="font-medium text-gray-600">
+                                    Add dentist appointment on Thursday at 10am
+                                </span>
+                            </p>
                         </div>
                     ) : (
                         <div className="space-y-3">

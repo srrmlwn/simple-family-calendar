@@ -4,10 +4,14 @@ import DatePicker from '../components/DatePicker';
 import EventForm from '../components/EventForm';
 import NLPInput from '../components/NLPInput';
 import FamilyMemberFilter from '../components/FamilyMemberFilter';
+import OnboardingFlow from '../components/OnboardingFlow';
 import eventService, { Event, EventInput } from '../services/eventService';
 import familyMemberService, { FamilyMember } from '../services/familyMemberService';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const CalendarPage: React.FC = () => {
+    const { user } = useAuth();
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -18,6 +22,23 @@ const CalendarPage: React.FC = () => {
     // Family member filter
     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+    // Onboarding overlay
+    const [showOnboarding, setShowOnboarding] = useState(false);
+
+    // Check whether this is a first-time user by fetching their settings
+    useEffect(() => {
+        const checkOnboarding = async () => {
+            try {
+                const res = await api.get('/api/settings');
+                if (!res.data.onboardingCompleted) {
+                    setShowOnboarding(true);
+                }
+            } catch {
+                // If settings fetch fails, don't block the user with onboarding
+            }
+        };
+        checkOnboarding();
+    }, []);
 
     // Fetch events from API with date range filtering
     const fetchEvents = useCallback(async () => {
@@ -126,6 +147,14 @@ const CalendarPage: React.FC = () => {
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             <Header />
+
+            {/* Onboarding overlay — shown once for new users */}
+            {showOnboarding && (
+                <OnboardingFlow
+                    userName={user?.firstName ?? 'there'}
+                    onComplete={() => setShowOnboarding(false)}
+                />
+            )}
 
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-3">
