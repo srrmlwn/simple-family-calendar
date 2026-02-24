@@ -28,7 +28,7 @@ export interface ImportResult {
 
 export class GoogleCalendarService {
 
-    getAuthUrl(userId: string): string {
+    getAuthUrl(userId: string, loginHint?: string): string {
         const oauth2Client = getOAuth2Client();
         const state = Buffer.from(userId).toString('base64');
         return oauth2Client.generateAuthUrl({
@@ -36,6 +36,7 @@ export class GoogleCalendarService {
             prompt: 'consent',
             scope: SCOPES,
             state,
+            ...(loginHint ? { login_hint: loginHint } : {}),
         });
     }
 

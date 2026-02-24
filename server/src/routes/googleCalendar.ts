@@ -9,7 +9,8 @@ const router = Router();
 // GET /api/google-calendar/connect — redirect to Google OAuth (JWT protected)
 router.get('/connect', authenticateJWT, asyncHandler(async (req: Request, res: Response) => {
     const userId = (req.user as any)?.id as string;
-    const authUrl = googleCalendarService.getAuthUrl(userId);
+    const email = (req.user as any)?.email as string | undefined;
+    const authUrl = googleCalendarService.getAuthUrl(userId, email);
     res.redirect(authUrl);
 }));
 

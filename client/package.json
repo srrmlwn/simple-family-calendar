@@ -37,6 +37,7 @@
     "build:dev": "REACT_APP_ENV=development react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "lint": "eslint src --ext .ts,.tsx",
     "android:debug": "REACT_APP_ENV=development react-scripts build && npx cap sync && npx cap build android",
     "android:release": "REACT_APP_ENV=production react-scripts build && npx cap sync && npx cap build android"
   },
