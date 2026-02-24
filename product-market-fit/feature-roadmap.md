@@ -1,10 +1,10 @@
 # Feature Roadmap
 
-_Last updated: 2026-02-23 (PM review — 7 new features added to Tier 1 + 2)_
+_Last updated: 2026-02-23 (multi-parent co-manager access shipped)_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 1 foundations nearly complete — NLP CRUD, Family Members, Onboarding, Daily Digest, Email Invites, Google Calendar Import all shipped. Basic voice input (Web Speech API) live. Next: Recurring Events → NLP-driven Google Calendar sync. Then: Multi-parent access, Tier 2 growth features.
+> **Current focus:** Tier 1 complete — NLP CRUD, Family Members, Onboarding, Daily Digest, Email Invites, Google Calendar Import, Recurring Events, NLP-driven Google Calendar sync, and Multi-parent / co-manager access all shipped. Next: Tier 2 growth features (Photo → Events, Conflict Detection, iCal Feeds).
 
 ---
 
@@ -83,16 +83,17 @@ Named, color-coded family member profiles. Tag events to members in EventForm. F
 - Step persisted in `localStorage` so partial progress survives a refresh
 - `onboardingCompleted` flag stored in `user_settings`; flow never shown again once completed
 
-### 💡 Multi-Parent / Co-Manager Access
+### ✅ Multi-Parent / Co-Manager Access
 **Why:** Without this, famcal.ai is a single-user tool with family branding. In a two-parent household, the second parent either doesn't engage or both share one login — neither is acceptable for a product whose core promise is *shared* family coordination. This is the single biggest adoption multiplier for household-wide usage.
 
-- "Invite a co-manager" flow from Settings — sends an email invite to a second parent or partner
-- Invited user signs up (Google OAuth) and joins the same family calendar with full read/write access
-- Both parents share one family namespace: same events, same family members, same settings
-- Audit trail for who created/modified an event (future)
-- Open question: see Q5 below
+- "Invite a co-manager" flow in Settings — sends a tokenized email invite (7-day expiry)
+- Invitee visits `/accept-invite?token=xxx`, signs in with Google, and accepts
+- Co-manager lands directly on the owner's calendar — same events, family members, settings
+- JWT carries `managingFamilyId`; `effectiveUserId()` scopes all data queries transparently
+- Co-managing banner shown in app header; co-managers blocked from sending further invites
+- Owner can revoke pending invites and remove active co-managers from Settings
 
-### 🎯 Recurring Events
+### ✅ Recurring Events
 **Why:** A calendar without solid recurring events feels like a prototype. Weekly practices, school pickups, and standing appointments are the majority of a family's schedule. This is table-stakes functionality.
 
 - Basic implementation already exists; needs polish for complex patterns
@@ -104,7 +105,7 @@ Named, color-coded family member profiles. Tag events to members in EventForm. F
 ### ✅ Google Calendar Import (one-way)
 One-way import from Google Calendar into famcal.ai. Import button in calendar toolbar. OAuth separate from login (calendar.readonly scope). Deduplicates by `externalId`. Imports 30 days past → 12 months future.
 
-### 🎯 NLP-Driven Google Calendar Sync
+### ✅ NLP-Driven Google Calendar Sync
 **Why:** The Import button is discoverable but manual. Power users should be able to trigger a sync via natural language, and eventually have it happen automatically.
 
 - **NLP trigger:** "Sync my Google Calendar", "Import from Google" → calls the import endpoint directly from the NLP bar
@@ -234,4 +235,4 @@ _Note: Weekly Family Briefing, Per-Member iCal Feed URLs, and Conflict Detection
 2. What's the right confirmation UX for WhatsApp-parsed events — reply in WhatsApp, or require opening the app?
 3. For the weekly briefing, should it go to one parent, all adults, or be configurable?
 4. Privacy model for children's events — should kids be able to see their own events on the family calendar?
-5. Multi-parent access model: (a) invite-based co-manager joining the same family account, or (b) each parent has their own account and they "link" families? Option (a) is simpler to build; option (b) is more flexible if family structures change (divorce, blended families).
+5. ✅ Multi-parent access model: shipped as option (a) — invite-based co-manager joining the owner's family account. Option (b) (linked separate accounts) remains a future consideration for blended/divorced family structures.
