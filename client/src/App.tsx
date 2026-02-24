@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
 import ForgotPassword from './pages/ForgotPassword';
+import AcceptInvite from './pages/AcceptInvite';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -21,6 +22,7 @@ const App: React.FC = () => {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/accept-invite" element={<AcceptInvite />} />
                     <Route path="/" element={
                         <PrivateRoute>
                             <Calendar />

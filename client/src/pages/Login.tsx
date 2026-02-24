@@ -39,10 +39,16 @@ const Login: React.FC = () => {
     password: ''
   });
   const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  // Check for auth error message on component mount
+  // Check for auth error/info message on component mount
   useEffect(() => {
-    const state = location.state as { error?: string; message?: string } | null;
+    const state = location.state as { error?: string; message?: string; info?: string } | null;
+    if (state?.info) {
+      setInfoMessage(state.info);
+      window.history.replaceState({}, document.title);
+      return;
+    }
     if (state?.error) {
       setSubmitError({
         title: state.error,
@@ -178,6 +184,12 @@ const Login: React.FC = () => {
 
       <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-xl sm:px-10 border border-gray-100">
+          {infoMessage && (
+            <div className="mb-6 p-4 rounded-md bg-indigo-50 border border-indigo-200">
+              <p className="text-sm text-indigo-800">{infoMessage}</p>
+            </div>
+          )}
+
           {submitError && (
             <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
               <h3 className="text-sm font-medium text-red-800">

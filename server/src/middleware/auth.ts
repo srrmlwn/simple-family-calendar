@@ -19,6 +19,8 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
             id: string;
             email: string;
             profileImage?: string;
+            managingFamilyId?: string;
+            managingFamilyName?: string;
         };
         req.user = user;
         next();
@@ -45,6 +47,8 @@ export const optionalJWT = (req: Request, res: Response, next: NextFunction): vo
                 id: string;
                 email: string;
                 profileImage?: string;
+                managingFamilyId?: string;
+                managingFamilyName?: string;
             };
             req.user = user;
         } catch {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import NotificationPreferences from '../components/NotificationPreferences';
 import FamilyMemberManager from '../components/FamilyMemberManager';
+import FamilyAccessSettings from '../components/FamilyAccessSettings';
 import { Plus, Trash2, Check, X } from 'lucide-react';
 import api from '../services/api';
 import { getUserTimezone } from '../utils/timezone';
@@ -255,6 +256,9 @@ const Settings: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Co-Manager Access */}
+                <FamilyAccessSettings />
 
                 {/* Family Members */}
                 <div className="mb-6">

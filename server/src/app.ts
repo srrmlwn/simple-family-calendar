@@ -61,6 +61,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import googleCalendarRoutes from './routes/googleCalendar';
 import familyMemberRoutes from './routes/familyMember';
 import voiceRoutes from './routes/voice';
+import familyAccessRoutes from './routes/familyAccess';
 import { authenticateJWT } from './middleware/auth';
 
 app.use('/api/auth', authRoutes);
@@ -73,6 +74,8 @@ app.use('/api/family-members', authenticateJWT, familyMemberRoutes);
 app.use('/api/google-calendar', googleCalendarRoutes);
 // Voice transcription — JWT required
 app.use('/api/voice', authenticateJWT, voiceRoutes);
+// Family access — invite/validate is public, others require JWT (handled inside router)
+app.use('/api/family', familyAccessRoutes);
 
 // Serve static files in production
 if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production') {

@@ -4,13 +4,14 @@ import { Request, Response } from 'express';
 import {AppDataSource} from "../data-source";
 import { UserSettings } from '../entities/UserSettings';
 import asyncHandler from '../utils/asyncHandler';
+import { effectiveUserId } from '../utils/effectiveUserId';
 
 const router = Router();
 
 // Get user settings
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = effectiveUserId(req);
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);
     let settings = await settingsRepository.findOne({
@@ -47,8 +48,8 @@ const VALID_NOTIFICATION_PREFS_KEYS = new Set(['emailNotifications', 'reminderTi
 
 // Update user settings
 router.put('/', asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = effectiveUserId(req);
     const { theme, timeFormat, timezone, notificationPreferences } = req.body;
 
     // Validate each field against an allowlist
@@ -101,8 +102,8 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
 
 // Mark onboarding as complete
 router.post('/complete-onboarding', asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = effectiveUserId(req);
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);
     let settings = await settingsRepository.findOne({ where: { userId } });

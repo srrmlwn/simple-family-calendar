@@ -1,6 +1,7 @@
 // src/services/authService.ts
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
+import { FamilyAccess } from '../entities/FamilyAccess';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config';
@@ -73,7 +74,7 @@ export class AuthService {
         const savedUser = await userRepository.save(user);
 
         // Generate JWT token
-        const token = this.generateToken(savedUser);
+        const token = await this.generateToken(savedUser);
 
         return {
             id: savedUser.id,
@@ -115,7 +116,7 @@ export class AuthService {
         }
 
         // Generate JWT token
-        const token = this.generateToken(user);
+        const token = await this.generateToken(user);
 
         return {
             id: user.id,
@@ -140,14 +141,28 @@ export class AuthService {
     }
 
     /**
-     * Generate JWT token for user
+     * Generate JWT token for user.
+     * If the user is a co-manager, injects managingFamilyId / managingFamilyName
+     * into the payload so downstream controllers can use effectiveUserId().
      */
-    public generateToken(user: User & { profileImage?: string }): string {
-        const payload = {
+    public async generateToken(user: User & { profileImage?: string }): Promise<string> {
+        const accessRepo = AppDataSource.getRepository(FamilyAccess);
+        const access = await accessRepo.findOne({
+            where: { coManagerUserId: user.id },
+            relations: ['owner'],
+        });
+
+        const payload: Record<string, string | undefined> = {
             id: user.id,
             email: user.email,
-            profileImage: user.profileImage
+            profileImage: user.profileImage,
         };
+
+        if (access) {
+            payload.managingFamilyId = access.ownerUserId;
+            const owner = access.owner;
+            payload.managingFamilyName = (`${owner.firstName} ${owner.lastName}`).trim() || owner.email;
+        }
 
         return jwt.sign(payload, config.jwt.secret, {
             expiresIn: '24h'

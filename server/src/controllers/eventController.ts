@@ -14,6 +14,7 @@ import { googleCalendarService } from '../services/GoogleCalendarService';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import moment from 'moment-timezone';
+import { effectiveUserId } from '../utils/effectiveUserId';
 
 export class EventController {
     private eventService: EventService;
@@ -82,8 +83,8 @@ export class EventController {
     public createEventFromText = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { text, timezone } = req.body;
-            const userId = req.user?.id;
-            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+            const userId = effectiveUserId(req);
 
             if (!text) {
                 return res.status(400).json({ error: 'Text input is required' });
@@ -177,8 +178,8 @@ export class EventController {
      */
     public getAllEvents = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = req.user?.id;
-            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+            const userId = effectiveUserId(req);
             const { start, end, timezone } = req.query;
 
             if (!timezone) {
@@ -209,7 +210,7 @@ export class EventController {
     public getEventById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = effectiveUserId(req);
             const { timezone } = req.query;
 
             if (!timezone) {
@@ -240,8 +241,8 @@ export class EventController {
     public createEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { timezone, familyMemberIds, ...eventData } = req.body;
-            const userId = req.user?.id;
-            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+            const userId = effectiveUserId(req);
 
             if (!timezone) {
                 return res.status(400).json({ error: 'Timezone is required' });
@@ -356,8 +357,8 @@ export class EventController {
     public updateEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
-            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+            const userId = effectiveUserId(req);
             const timezone = (req.body.timezone as string) || 'UTC';
 
             // Allowlist updatable fields — never allow userId or id to be overwritten
@@ -470,8 +471,8 @@ export class EventController {
     public handleNLPCommand = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { text, timezone } = req.body;
-            const userId = req.user?.id;
-            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+            const userId = effectiveUserId(req);
 
             if (!text || typeof text !== 'string' || text.length > 500) {
                 return res.status(400).json({ error: 'Text must be a non-empty string under 500 characters' });
@@ -654,7 +655,7 @@ export class EventController {
     public deleteEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = effectiveUserId(req);
             const recurringScope = req.query.recurringScope as 'this' | 'future' | 'all' | undefined;
             const occurrenceDate = req.query.occurrenceDate as string | undefined;
 

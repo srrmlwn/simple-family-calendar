@@ -53,6 +53,11 @@ const Header: React.FC = () => {
 
     return (
         <header className="bg-white border-b border-gray-200">
+            {user?.managingFamilyId && (
+                <div className="bg-indigo-600 text-white text-xs text-center py-1 px-4">
+                    Co-managing {user.managingFamilyName ? `${user.managingFamilyName}'s` : 'a'} family calendar
+                </div>
+            )}
             <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Left side - Logo and Brand */}

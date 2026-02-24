@@ -146,6 +146,8 @@ export class AuthController {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 profileImage: profileImage || undefined,
+                managingFamilyId: req.user?.managingFamilyId,
+                managingFamilyName: req.user?.managingFamilyName,
             });
         } catch (error) {
             console.error('Error getting current user:', error);
@@ -180,7 +182,7 @@ export class AuthController {
             }
 
             const user = await this.authService.verifyGoogleToken(accessToken, req);
-            const token = this.authService.generateToken(user);
+            const token = await this.authService.generateToken(user);
 
             res.cookie(COOKIE_NAME, token, cookieOptions);
             res.json({ user });
@@ -206,7 +208,7 @@ export class AuthController {
             }
 
             const user = req.user as User & { profileImage?: string };
-            const token = this.authService.generateToken(user);
+            const token = await this.authService.generateToken(user);
 
             res.cookie(COOKIE_NAME, token, cookieOptions);
 

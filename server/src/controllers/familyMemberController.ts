@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { FamilyMember } from '../entities/FamilyMember';
 import { validateOrReject } from 'class-validator';
+import { effectiveUserId } from '../utils/effectiveUserId';
 
 const ALLOWED_COLORS = new Set([
     '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -11,7 +12,7 @@ const ALLOWED_COLORS = new Set([
 export class FamilyMemberController {
     public getAll = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = req.user?.id;
+            const userId = effectiveUserId(req);
             const repo = AppDataSource.getRepository(FamilyMember);
             const members = await repo.find({ where: { userId }, order: { createdAt: 'ASC' } });
             return res.json(members);
@@ -23,8 +24,8 @@ export class FamilyMemberController {
 
     public create = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = req.user?.id;
-            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+            const userId = effectiveUserId(req);
             const { name, color } = req.body;
 
             if (!name || !color) {
@@ -57,7 +58,7 @@ export class FamilyMemberController {
     public update = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = effectiveUserId(req);
             const { name, color } = req.body;
 
             const repo = AppDataSource.getRepository(FamilyMember);
@@ -90,7 +91,7 @@ export class FamilyMemberController {
     public delete = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = req.user?.id;
+            const userId = effectiveUserId(req);
 
             const repo = AppDataSource.getRepository(FamilyMember);
             const member = await repo.findOne({ where: { id, userId } });

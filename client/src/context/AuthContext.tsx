@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import api from '../services/api';
 
 interface User {
   id: string;
@@ -8,6 +9,8 @@ interface User {
   firstName: string;
   lastName: string;
   profileImage?: string;
+  managingFamilyId?: string;
+  managingFamilyName?: string;
 }
 
 interface AuthContextType {
@@ -83,6 +86,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
 
       const { user: authUser } = await authService.handleGoogleCallback();
+
+      // If there's a pending invite token (from accept-invite flow), accept it now.
+      // After accepting, force a fresh login so the new JWT includes managingFamilyId.
+      const pendingToken = localStorage.getItem('pendingInviteToken');
+      if (pendingToken) {
+        localStorage.removeItem('pendingInviteToken');
+        try {
+          await api.post('/api/family/invite/accept', { token: pendingToken });
+          // Log out so the next login issues a JWT with managingFamilyId
+          await authService.logout();
+          navigate('/login', {
+            replace: true,
+            state: { info: 'Invitation accepted! Please sign in again to access the family calendar.' },
+          });
+          return;
+        } catch {
+          // Accept failed — still log in normally as the user's own account
+        }
+      }
+
       handleAuthSuccess(authUser);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete authentication');
