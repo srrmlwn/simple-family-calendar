@@ -30,7 +30,7 @@ export const FAMILY_MEMBER_COLORS = [
 const familyMemberService = {
     getAll: async (): Promise<FamilyMember[]> => {
         const response = await api.get<FamilyMember[]>('/api/family-members');
-        return response.data;
+        return Array.isArray(response.data) ? response.data : [];
     },
 
     create: async (data: FamilyMemberInput): Promise<FamilyMember> => {
