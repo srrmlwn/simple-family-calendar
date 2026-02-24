@@ -11,7 +11,7 @@ const ALLOWED_COLORS = new Set([
 export class FamilyMemberController {
     public getAll = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
             const repo = AppDataSource.getRepository(FamilyMember);
             const members = await repo.find({ where: { userId }, order: { createdAt: 'ASC' } });
             return res.json(members);
@@ -23,7 +23,8 @@ export class FamilyMemberController {
 
     public create = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const { name, color } = req.body;
 
             if (!name || !color) {
@@ -37,7 +38,7 @@ export class FamilyMemberController {
             const member = new FamilyMember();
             member.name = name;
             member.color = color;
-            member.userId = userId!;
+            member.userId = userId;
 
             await validateOrReject(member);
 
@@ -56,7 +57,7 @@ export class FamilyMemberController {
     public update = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
             const { name, color } = req.body;
 
             const repo = AppDataSource.getRepository(FamilyMember);
@@ -89,7 +90,7 @@ export class FamilyMemberController {
     public delete = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
 
             const repo = AppDataSource.getRepository(FamilyMember);
             const member = await repo.findOne({ where: { id, userId } });

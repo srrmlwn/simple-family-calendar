@@ -1,5 +1,5 @@
 declare module 'react-big-calendar' {
-    import { Component, ComponentType, ReactNode } from 'react';
+    import { Component, ComponentType } from 'react';
 
     export interface CalendarProps {
         localizer: any;

@@ -19,7 +19,7 @@ describe('NotificationController', () => {
     let testPreferences: NotificationPreferences;
     let mockRequest: Partial<AuthenticatedRequest>;
     let mockResponse: Partial<Response>;
-    let responseObject: any;
+    let responseObject: Record<string, unknown>;
 
     beforeAll(async () => {
         // Initialize database connection

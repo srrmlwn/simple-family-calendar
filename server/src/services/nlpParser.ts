@@ -9,7 +9,7 @@ export interface ParsedEvent {
 }
 
 export class NLPParser {
-    private defaultDuration: number = 60; // minutes
+    private defaultDuration = 60; // minutes
 
     constructor() {
         // Remove currentDate from constructor as it will be created per request
@@ -21,7 +21,7 @@ export class NLPParser {
      * @param timezone The user's timezone (e.g., 'America/New_York')
      * @returns ParsedEvent object with extracted information
      */
-    public parseEvent(input: string, timezone: string = 'UTC'): ParsedEvent {
+    public parseEvent(input: string, timezone = 'UTC'): ParsedEvent {
         // Create currentDate in the context of the user's timezone
         const currentDate = this.getCurrentDateInTimezone(timezone);
         console.log('==> Starting event parsing');
@@ -51,7 +51,7 @@ export class NLPParser {
         console.log('    End time:', endTime); 
         console.log('    Duration:', duration, 'minutes');
 
-        let parsedEvent = {
+        const parsedEvent = {
             title,
             description,
             startTime,
@@ -64,7 +64,7 @@ export class NLPParser {
         return parsedEvent;
     }
 
-    private getServerTimezone(): String {
+    private getServerTimezone(): string {
         return Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
 
@@ -190,7 +190,7 @@ export class NLPParser {
             const remainingText = input.replace(title, '').trim();
 
             // Remove time, location, and duration patterns from remaining text
-            let potentialDesc = remainingText
+            const potentialDesc = remainingText
                 .replace(/\bon\s+(\d{1,2}(?:st|nd|rd|th)?)(?:\s+of\s+\w+)?/ig, '')
                 .replace(/\bat\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/ig, '')
                 .replace(/\bfrom\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/ig, '')
@@ -270,7 +270,7 @@ export class NLPParser {
     private extractTimeInformation(
         input: string, 
         isAllDay: boolean, 
-        timezone: string = 'UTC',
+        timezone = 'UTC',
         currentDate: Date
     ): { startTime: Date, endTime: Date, duration: number } {
         // Extract date information
@@ -330,7 +330,7 @@ export class NLPParser {
      * @param currentDate The current date in the user's timezone
      * @returns Date object or null if no date found
      */
-    private extractDateInfo(input: string, timezone: string = 'UTC', currentDate: Date): Date | null {
+    private extractDateInfo(input: string, timezone = 'UTC', currentDate: Date): Date | null {
         const result = new Date(currentDate);
 
         // Check for specific date patterns
@@ -566,7 +566,7 @@ export class NLPParser {
      * @param currentDate The current date in the user's timezone
      * @returns Date object with time set or null if no time found
      */
-    private extractTimeInfo(input: string, timezone: string = 'UTC', currentDate: Date): Date | null {
+    private extractTimeInfo(input: string, timezone = 'UTC', currentDate: Date): Date | null {
         const result = new Date(currentDate);
         result.setSeconds(0, 0);
 

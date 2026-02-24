@@ -9,7 +9,8 @@ const router = Router();
 
 // Get user settings
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);
     let settings = await settingsRepository.findOne({
@@ -19,7 +20,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     if (!settings) {
         // Create default settings if none exist
         settings = new UserSettings();
-        settings.userId = userId!;
+        settings.userId = userId;
         settings.theme = 'light';
         settings.timeFormat = '12h';
         settings.timezone = 'America/New_York';
@@ -37,15 +38,17 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 const VALID_THEMES = ['light', 'dark'];
 const VALID_TIME_FORMATS = ['12h', '24h'];
 // Intl.supportedValuesOf available in Node 18+; fall back to accepting any string if unavailable
-const VALID_TIMEZONES: Set<string> | null = typeof (Intl as any).supportedValuesOf === 'function'
-    ? new Set((Intl as any).supportedValuesOf('timeZone'))
+const intlWithSupportedValues = Intl as typeof Intl & { supportedValuesOf?: (key: string) => string[] };
+const VALID_TIMEZONES: Set<string> | null = typeof intlWithSupportedValues.supportedValuesOf === 'function'
+    ? new Set(intlWithSupportedValues.supportedValuesOf('timeZone'))
     : null;
 
 const VALID_NOTIFICATION_PREFS_KEYS = new Set(['emailNotifications', 'reminderTime']);
 
 // Update user settings
 router.put('/', asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     const { theme, timeFormat, timezone, notificationPreferences } = req.body;
 
     // Validate each field against an allowlist
@@ -83,7 +86,7 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
 
     if (!settings) {
         settings = new UserSettings();
-        settings.userId = userId!;
+        settings.userId = userId;
     }
 
     if (theme !== undefined) settings.theme = theme;
@@ -98,14 +101,15 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
 
 // Mark onboarding as complete
 router.post('/complete-onboarding', asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const settingsRepository = AppDataSource.getRepository(UserSettings);
     let settings = await settingsRepository.findOne({ where: { userId } });
 
     if (!settings) {
         settings = new UserSettings();
-        settings.userId = userId!;
+        settings.userId = userId;
         settings.theme = 'light';
         settings.timeFormat = '12h';
         settings.timezone = 'America/New_York';

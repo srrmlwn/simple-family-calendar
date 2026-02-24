@@ -4,7 +4,6 @@ import { digestService } from '../../src/services/DigestService';
 import { User } from '../../src/entities/User';
 import { NotificationPreferences } from '../../src/entities/NotificationPreferences';
 import { createTestUser, deleteTestUser } from '../helpers/userHelper';
-import moment from 'moment-timezone';
 
 // Mock the DigestService
 jest.mock('../../src/services/DigestService', () => ({

@@ -1,10 +1,9 @@
 // src/services/emailService.ts
 import nodemailer from 'nodemailer';
-import ical, { ICalCalendar, ICalEventStatus, ICalCalendarMethod } from 'ical-generator';
+import ical, { ICalCalendar, ICalCalendarMethod, ICalEventStatus } from 'ical-generator';
 import { Event } from '../entities/Event';
 import { EmailRecipient } from '../entities/EmailRecipient';
 import { EventRecipient } from '../entities/EventRecipient';
-import config from '../config';
 import { escapeHtml } from '../utils/html';
 
 interface EmailSender {
@@ -28,7 +27,7 @@ export class EmailService {
         });
 
         // Verify SMTP connection configuration
-        this.transporter.verify((error, success) => {
+        this.transporter.verify((error, _success) => {
             if (error) {
                 console.error('SMTP Connection Error:', error);
             }
@@ -38,14 +37,14 @@ export class EmailService {
     /**
      * Generate iCalendar data for an event
      */
-    private generateICalendar(event: Event, sender: EmailSender, method: string = 'REQUEST'): ICalCalendar {
+    private generateICalendar(event: Event, sender: EmailSender, method: ICalCalendarMethod = ICalCalendarMethod.REQUEST): ICalCalendar {
         const calendar = ical({
             name: 'Simple Family Calendar',
             prodId: '//SimpleFamilyCalendar//Calendar//EN',
-            method: method as any,
+            method,
         });
 
-        const eventStatus = method === 'CANCEL'
+        const eventStatus = method === ICalCalendarMethod.CANCEL
             ? ICalEventStatus.CANCELLED
             : ICalEventStatus.CONFIRMED;
 
@@ -72,7 +71,7 @@ export class EmailService {
      * Send calendar invites to recipients
      */
     public async sendCalendarInvites(event: Event, recipients: EmailRecipient[], sender: EmailSender): Promise<void> {
-        const calendar = this.generateICalendar(event, sender, 'REQUEST');
+        const calendar = this.generateICalendar(event, sender, ICalCalendarMethod.REQUEST);
         const calendarData = calendar.toString();
 
         const emailAddresses = recipients.map(r => ({
@@ -114,7 +113,7 @@ export class EmailService {
      * Send calendar updates to recipients
      */
     public async sendCalendarUpdates(event: Event, eventRecipients: EventRecipient[], sender: EmailSender): Promise<void> {
-        const calendar = this.generateICalendar(event, sender, 'REQUEST');
+        const calendar = this.generateICalendar(event, sender, ICalCalendarMethod.REQUEST);
         const calendarData = calendar.toString();
 
         const emailAddresses = eventRecipients.map(er => ({
@@ -142,7 +141,7 @@ export class EmailService {
      * Send calendar cancellations to recipients
      */
     public async sendCalendarCancellations(event: Event, eventRecipients: EventRecipient[], sender: EmailSender): Promise<void> {
-        const calendar = this.generateICalendar(event, sender, 'CANCEL');
+        const calendar = this.generateICalendar(event, sender, ICalCalendarMethod.CANCEL);
         const calendarData = calendar.toString();
 
         const emailAddresses = eventRecipients.map(er => ({

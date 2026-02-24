@@ -3,7 +3,6 @@ import {
     Target, // For sports and competitions
     Gamepad2, // For games and gaming
     Activity, // For running and athletics
-    Circle, // For sports
     Timer, // For practice and training
     
     // Meetings & Communication

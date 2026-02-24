@@ -11,7 +11,7 @@ export class RecipientController {
      */
     public getAllRecipients = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
 
             const recipientRepository = AppDataSource.getRepository(EmailRecipient);
             const recipients = await recipientRepository.find({
@@ -31,7 +31,7 @@ export class RecipientController {
     public getRecipientById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
 
             const recipientRepository = AppDataSource.getRepository(EmailRecipient);
             const recipient = await recipientRepository.findOne({
@@ -54,7 +54,8 @@ export class RecipientController {
      */
     public createRecipient = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const { name, email, isDefault = false } = req.body;
 
             if (!name || !email) {
@@ -65,7 +66,7 @@ export class RecipientController {
             recipient.name = name;
             recipient.email = email;
             recipient.isDefault = isDefault;
-            recipient.userId = userId!;
+            recipient.userId = userId;
 
             // Validate recipient data
             await validateOrReject(recipient);
@@ -94,7 +95,7 @@ export class RecipientController {
     public updateRecipient = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
             const { name, email, isDefault } = req.body;
 
             const recipientRepository = AppDataSource.getRepository(EmailRecipient);
@@ -137,7 +138,7 @@ export class RecipientController {
     public deleteRecipient = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
 
             const recipientRepository = AppDataSource.getRepository(EmailRecipient);
             const recipient = await recipientRepository.findOne({
@@ -162,7 +163,7 @@ export class RecipientController {
      */
     public setDefaultRecipients = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
             const { recipientIds } = req.body;
 
             if (!Array.isArray(recipientIds)) {

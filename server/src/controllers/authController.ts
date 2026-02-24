@@ -3,8 +3,6 @@ import { Request, Response } from 'express';
 import { AuthService, AccessDeniedError } from '../services/authService';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
-import passport from 'passport';
-import { NextFunction } from 'express';
 
 const COOKIE_NAME = 'token';
 
@@ -128,7 +126,7 @@ export class AuthController {
      */
     public getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
 
             if (!userId) {
                 return res.status(401).json({ error: 'Not authenticated' });
@@ -140,7 +138,7 @@ export class AuthController {
                 return res.status(404).json({ error: 'User not found' });
             }
 
-            const profileImage = (req.user as any)?.profileImage;
+            const profileImage = req.user?.profileImage;
 
             return res.json({
                 id: user.id,

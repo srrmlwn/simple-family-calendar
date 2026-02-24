@@ -105,6 +105,14 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
     const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
     const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // ── Toast ────────────────────────────────────────────────────────────────
+
+    const fireToast = useCallback((message: string, isError = false) => {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast({ message, isError });
+        toastTimer.current = setTimeout(() => setToast(null), 2500);
+    }, []);
+
     // ── Speech recognition setup ─────────────────────────────────────────────
 
     useEffect(() => {
@@ -125,7 +133,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
         rec.onend = () => setIsListening(false);
         setRecognition(rec);
         return () => { rec.abort(); };
-    }, []);
+    }, [fireToast]);
 
     const toggleListening = useCallback(() => {
         if (!recognition) {
@@ -140,15 +148,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
             recognition.start();
             setIsListening(true);
         }
-    }, [recognition, isListening]);
-
-    // ── Toast ────────────────────────────────────────────────────────────────
-
-    const fireToast = useCallback((message: string, isError = false) => {
-        if (toastTimer.current) clearTimeout(toastTimer.current);
-        setToast({ message, isError });
-        toastTimer.current = setTimeout(() => setToast(null), 2500);
-    }, []);
+    }, [recognition, isListening, fireToast]);
 
     // ── Submit ───────────────────────────────────────────────────────────────
 

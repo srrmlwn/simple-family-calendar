@@ -138,7 +138,7 @@ export class DigestService {
     public async sendDigest(userId: string, userEmail: string, userName: string, timezone: string): Promise<void> {
         try {
             // Generate digest content
-            const { events, htmlContent, textContent } = await this.generateDigestContent(userId, timezone);
+            const { htmlContent, textContent } = await this.generateDigestContent(userId, timezone);
 
             // Send email using the email service
             await this.emailService.sendEmail({

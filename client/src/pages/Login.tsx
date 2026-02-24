@@ -31,7 +31,7 @@ const GoogleIcon = () => (
 );
 
 const Login: React.FC = () => {
-  const { login, loginWithGoogle, loading, error } = useAuth();
+  const { login, loginWithGoogle, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({

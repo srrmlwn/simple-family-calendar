@@ -8,8 +8,8 @@ const router = Router();
 
 // GET /api/google-calendar/connect — redirect to Google OAuth (JWT protected)
 router.get('/connect', authenticateJWT, asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id as string;
-    const email = (req.user as any)?.email as string | undefined;
+    const userId = req.user?.id ?? '';
+    const email = req.user?.email;
     const authUrl = googleCalendarService.getAuthUrl(userId, email);
     res.redirect(authUrl);
 }));
@@ -34,21 +34,21 @@ router.get('/callback', asyncHandler(async (req: Request, res: Response) => {
 
 // POST /api/google-calendar/import — run import for authenticated user
 router.post('/import', authenticateJWT, asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id as string;
+    const userId = req.user?.id ?? '';
     const result = await googleCalendarService.importEvents(userId);
     res.json(result);
 }));
 
 // GET /api/google-calendar/status — check if connected
 router.get('/status', authenticateJWT, asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id as string;
+    const userId = req.user?.id ?? '';
     const connected = await googleCalendarService.isConnected(userId);
     res.json({ connected });
 }));
 
 // DELETE /api/google-calendar/disconnect — remove stored tokens
 router.delete('/disconnect', authenticateJWT, asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req.user as any)?.id as string;
+    const userId = req.user?.id ?? '';
     await googleCalendarService.disconnect(userId);
     res.json({ success: true });
 }));

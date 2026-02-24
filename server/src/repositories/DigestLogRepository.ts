@@ -13,7 +13,7 @@ export class DigestLogRepository {
     /**
      * Get digest logs for a user
      */
-    async findByUserId(userId: string, limit: number = 10): Promise<DigestLog[]> {
+    async findByUserId(userId: string, limit = 10): Promise<DigestLog[]> {
         return this.repository.find({
             where: { userId },
             order: { sentAt: 'DESC' },

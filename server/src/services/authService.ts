@@ -157,7 +157,7 @@ export class AuthService {
     /**
      * Verify Google OAuth token and get/create user
      */
-    public async verifyGoogleToken(accessToken: string, req?: Request): Promise<User> {
+    public async verifyGoogleToken(accessToken: string, _req?: Request): Promise<User> {
         try {
             // Verify the token was issued to OUR Google client, not any other app.
             // tokeninfo returns azp (authorized party) and aud which must match GOOGLE_CLIENT_ID.

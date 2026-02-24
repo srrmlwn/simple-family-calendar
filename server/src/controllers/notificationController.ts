@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { notificationPreferencesRepository } from '../repositories/NotificationPreferencesRepository';
 import { digestLogRepository } from '../repositories/DigestLogRepository';
-import { NotificationPreferences } from '../entities/NotificationPreferences';
-import { validateOrReject } from 'class-validator';
 
 export class NotificationController {
     /**
@@ -10,7 +8,8 @@ export class NotificationController {
      */
     public getPreferences = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const prefs = await notificationPreferencesRepository.findByUserId(userId);
 
             if (!prefs) {
@@ -36,7 +35,8 @@ export class NotificationController {
      */
     public updatePreferences = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const { digestTime, isDigestEnabled } = req.body;
 
             // Validate input
@@ -69,7 +69,8 @@ export class NotificationController {
      */
     public getDigestLogs = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const limit = parseInt(req.query.limit as string) || 10;
 
             if (isNaN(limit) || limit < 1 || limit > 50) {
@@ -92,7 +93,8 @@ export class NotificationController {
      */
     public getDigestStats = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const { startDate, endDate } = req.query;
 
             if (!startDate || !endDate) {

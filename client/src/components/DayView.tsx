@@ -33,11 +33,6 @@ const DayView: React.FC<DayViewProps> = ({
         });
     }, [events, date]);
 
-    // Format time for display
-    const formatTime = (date: string | Date) => {
-        return moment(date).format('h:mm A');
-    };
-
     const handleEventClick = (event: Event) => {
         setSelectedEvent(event);
     };

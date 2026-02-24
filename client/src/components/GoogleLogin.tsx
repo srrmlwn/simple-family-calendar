@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 interface GoogleLoginProps {
   onLoginSuccess?: (idToken: string) => void;
@@ -13,51 +13,36 @@ type GoogleCredentialResponse = {
 const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Load the Google API script
-    const loadGoogleScript = () => {
-      // Check if the script is already loaded
-      if (document.querySelector('script#google-oauth')) {
-        console.log('Google OAuth script already loaded');
-        initializeGoogleLogin();
-        return;
+
+  const handleCredentialResponse = useCallback((response: GoogleCredentialResponse) => {
+    console.log('Received Google credential response'); // security-scan-ignore: no credential value logged
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (!response.credential) {
+        throw new Error('No credential received from Google');
       }
-      
-      console.log('Loading Google OAuth script...');
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.id = 'google-oauth';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log('Google OAuth script loaded successfully');
-        initializeGoogleLogin();
-      };
-      script.onerror = (error) => {
-        console.error('Error loading Google OAuth script:', error);
-        setError('Failed to load Google Sign-In. Please refresh the page.');
-      };
-      document.body.appendChild(script);
-    };
-    
-    loadGoogleScript();
-    
-    return () => {
-      // Cleanup function to remove the Google script when component unmounts
-      const scriptTag = document.querySelector('script#google-oauth');
-      if (scriptTag) {
-        scriptTag.remove();
+
+      // The response contains a credential with an ID token
+      const idToken = response.credential;
+      console.log('Processing Google login token...'); // security-scan-ignore: no token value logged
+
+      // Call the onLoginSuccess callback if provided
+      if (onLoginSuccess) {
+        onLoginSuccess(idToken);
+      } else {
+        console.warn('No onLoginSuccess callback provided');
       }
-      // Also remove any Google containers
-      const googleDiv = document.getElementById('g_id_onload');
-      if (googleDiv) {
-        googleDiv.remove();
-      }
-    };
-  }, []);
-  
-  const initializeGoogleLogin = () => {
+    } catch (err) {
+      console.error('Error handling Google credential:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process Google login');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onLoginSuccess]);
+
+  const initializeGoogleLogin = useCallback(() => {
     // Type assertion for the Google API
     const google = (window as any).google;
     if (!google) {
@@ -79,16 +64,16 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
         context: 'signin',
         flow: 'implicit'
       });
-      
+
       console.log('Rendering Google Sign-In button...');
       // Render the Google Sign-In button
       const buttonContainer = document.getElementById('google-signin-button');
       if (buttonContainer) {
         google.accounts.id.renderButton(
           buttonContainer,
-          { 
-            type: 'standard', 
-            theme: 'outline', 
+          {
+            type: 'standard',
+            theme: 'outline',
             size: 'large',
             text: 'signin_with',
             shape: 'rectangular',
@@ -105,36 +90,51 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
       console.error('Error initializing Google Sign-In:', err);
       setError('Failed to initialize Google Sign-In. Please refresh the page.');
     }
-  };
-  
-  const handleCredentialResponse = (response: GoogleCredentialResponse) => {
-    console.log('Received Google credential response'); // security-scan-ignore: no credential value logged
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      if (!response.credential) {
-        throw new Error('No credential received from Google');
+  }, [handleCredentialResponse]);
+
+  useEffect(() => {
+    // Load the Google API script
+    const loadGoogleScript = () => {
+      // Check if the script is already loaded
+      if (document.querySelector('script#google-oauth')) {
+        console.log('Google OAuth script already loaded');
+        initializeGoogleLogin();
+        return;
       }
 
-      // The response contains a credential with an ID token
-      const idToken = response.credential;
-      console.log('Processing Google login token...'); // security-scan-ignore: no token value logged
-      
-      // Call the onLoginSuccess callback if provided
-      if (onLoginSuccess) {
-        onLoginSuccess(idToken);
-      } else {
-        console.warn('No onLoginSuccess callback provided');
+      console.log('Loading Google OAuth script...');
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.id = 'google-oauth';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log('Google OAuth script loaded successfully');
+        initializeGoogleLogin();
+      };
+      script.onerror = (error) => {
+        console.error('Error loading Google OAuth script:', error);
+        setError('Failed to load Google Sign-In. Please refresh the page.');
+      };
+      document.body.appendChild(script);
+    };
+
+    loadGoogleScript();
+
+    return () => {
+      // Cleanup function to remove the Google script when component unmounts
+      const scriptTag = document.querySelector('script#google-oauth');
+      if (scriptTag) {
+        scriptTag.remove();
       }
-    } catch (err) {
-      console.error('Error handling Google credential:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process Google login');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
+      // Also remove any Google containers
+      const googleDiv = document.getElementById('g_id_onload');
+      if (googleDiv) {
+        googleDiv.remove();
+      }
+    };
+  }, [initializeGoogleLogin]);
+
   return (
     <div className="google-login-container">
       {error && (

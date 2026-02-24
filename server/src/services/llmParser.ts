@@ -14,7 +14,7 @@ export interface ParsedEvent {
 
 export class LLMParser {
     private anthropic: Anthropic;
-    private defaultDuration: number = 60; // minutes
+    private defaultDuration = 60; // minutes
 
     constructor(apiKey: string) {
         this.anthropic = new Anthropic({
@@ -28,7 +28,7 @@ export class LLMParser {
      * @param timezone The user's timezone (e.g., 'America/New_York')
      * @returns ParsedEvent object with extracted information
      */
-    public async parseEvent(input: string, timezone: string = 'UTC'): Promise<ParsedEvent> {
+    public async parseEvent(input: string, timezone = 'UTC'): Promise<ParsedEvent> {
         console.log('Input:', input);
         console.log('Timezone:', timezone);
         

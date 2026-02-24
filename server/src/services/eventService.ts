@@ -33,7 +33,7 @@ export class EventService {
         userId: string,
         startDate?: Date,
         endDate?: Date,
-        timezone: string = 'UTC'
+        timezone = 'UTC'
     ): Promise<EventOrOccurrence[]> {
         const eventRepository = AppDataSource.getRepository(Event);
 
@@ -106,7 +106,7 @@ export class EventService {
         );
     }
 
-    public async findById(id: string, timezone: string = 'UTC'): Promise<Event | null> {
+    public async findById(id: string, timezone = 'UTC'): Promise<Event | null> {
         const eventRepository = AppDataSource.getRepository(Event);
         const event = await eventRepository.findOne({ where: { id } });
         if (!event) return null;
@@ -144,7 +144,7 @@ export class EventService {
         occurrenceDate: string,
         scope: 'this' | 'future' | 'all',
         changes: Partial<Event>,
-        timezone: string = 'UTC'
+        _timezone = 'UTC'
     ): Promise<Event> {
         const eventRepository = AppDataSource.getRepository(Event);
         const master = await eventRepository.findOne({ where: { id: masterId } });
@@ -170,7 +170,7 @@ export class EventService {
             // Create an override row for this occurrence.
             const override = eventRepository.create({
                 ...master,
-                id: undefined as any,
+                id: undefined as unknown as string,
                 rrule: undefined,
                 exceptionDates: undefined,
                 recurringEventId: master.id,
@@ -184,7 +184,7 @@ export class EventService {
         // Terminate the master series just before this occurrence.
         const occDateTime = new Date(occurrenceDate);
         const untilDate = new Date(occDateTime.getTime() - 1000); // 1 second before
-        master.rrule = this.setRRuleUntil(master.rrule!, untilDate);
+        master.rrule = this.setRRuleUntil(master.rrule ?? '', untilDate);
         await eventRepository.save(master);
 
         // Create a new master starting from this occurrence, inheriting changes.
@@ -204,7 +204,7 @@ export class EventService {
 
         const newMaster = eventRepository.create({
             ...master,
-            id: undefined as any,
+            id: undefined as unknown as string,
             recurringEventId: undefined,
             exceptionDate: undefined,
             startTime: changes.startTime ?? new Date(occurrenceDate),
@@ -213,7 +213,7 @@ export class EventService {
             ...changes,
             // rrule must come AFTER ...changes so a client-supplied rrule with UNTIL
             // (e.g. the old series' UNTIL) is stripped rather than preserved on the new master.
-            rrule: this.removeRRuleUntil((changes.rrule ?? master.rrule)!),
+            rrule: this.removeRRuleUntil(changes.rrule ?? master.rrule ?? ''),
         });
         return await eventRepository.save(newMaster);
     }
@@ -303,7 +303,7 @@ export class EventService {
         // scope === 'future'
         const occDateTime = new Date(occurrenceDate);
         const untilDate = new Date(occDateTime.getTime() - 1000);
-        master.rrule = this.setRRuleUntil(master.rrule!, untilDate);
+        master.rrule = this.setRRuleUntil(master.rrule ?? '', untilDate);
         await eventRepository.save(master);
 
         // Also delete stored overrides that fall on or after the cut-off.
@@ -319,7 +319,7 @@ export class EventService {
     public async findByDateRange(
         startDate: Date,
         endDate: Date,
-        timezone: string = 'UTC'
+        timezone = 'UTC'
     ): Promise<Event[]> {
         const eventRepository = AppDataSource.getRepository(Event);
 
@@ -335,8 +335,8 @@ export class EventService {
 
     public async findUpcomingEvents(
         userId: string,
-        limit: number = 5,
-        timezone: string = 'UTC'
+        limit = 5,
+        timezone = 'UTC'
     ): Promise<Event[]> {
         const eventRepository = AppDataSource.getRepository(Event);
         const now = new Date();

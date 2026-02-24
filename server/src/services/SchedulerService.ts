@@ -1,5 +1,4 @@
 import { digestService } from './DigestService';
-import moment from 'moment-timezone';
 import cron, { ScheduledTask } from 'node-cron';
 
 export class SchedulerService {

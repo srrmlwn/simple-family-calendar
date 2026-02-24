@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import { Event, EventInput, RecurringScope } from '../services/eventService';
-import { validateEvent, EventState, EventStatus, getEventStatusMessage, getValidationMessage } from '../utils/eventValidation';
-import { getEventIcon } from '../utils/eventIcons';
+import { validateEvent, EventState } from '../utils/eventValidation';
 import { CalendarPlus, Clock } from 'lucide-react';
 import familyMemberService, { FamilyMember } from '../services/familyMemberService';
 import { buildRRule, parseRRule, RecurrencePattern, RECURRENCE_LABELS } from '../utils/recurrenceUtils';
@@ -194,92 +193,6 @@ const EventForm: React.FC<EventFormProps> = ({
         }
     };
 
-    const getStatusMessage = () => {
-        if (eventState) {
-            return getEventStatusMessage(eventState);
-        }
-        return validation.isValid ? 'Great! Your event is ready to save' : getValidationMessage(validation);
-    };
-
-    const getStatusMessageClass = () => {
-        if (eventState) {
-            switch (eventState.status) {
-                case 'saved':
-                    return 'bg-green-50 border-green-200 text-green-700';
-                case 'saving':
-                    return 'bg-blue-50 border-blue-200 text-blue-700';
-                case 'error':
-                    return 'bg-red-50 border-red-200 text-red-700';
-                case 'draft':
-                    return 'bg-yellow-50 border-yellow-200 text-yellow-700';
-                default:
-                    return '';
-            }
-        }
-        return validation.isValid 
-            ? 'bg-green-50 border-green-200 text-green-700'
-            : 'bg-yellow-50 border-yellow-200 text-yellow-700';
-    };
-
-    const formatDisplayTime = (date: string, time: string) => {
-        if (!date) return '';
-        const momentDate = moment(`${date} ${time || '00:00'}`);
-        return momentDate.format('MMM D, h:mm A');
-    };
-
-    const validateDateTime = (value: string, isStart: boolean): { isValid: boolean; message?: string } => {
-        // Try parsing with different formats
-        const formats = [
-            'MMM D',           // "Jan 15"
-            'MMM D, h:mm A',   // "Jan 15, 3:30 PM"
-            'h:mm A',          // "3:30 PM"
-            'MMM D YYYY',      // "Jan 15 2024"
-            'MMM D YYYY, h:mm A', // "Jan 15 2024, 3:30 PM"
-            'YYYY-MM-DD',      // "2024-01-15"
-            'YYYY-MM-DD HH:mm' // "2024-01-15 15:30"
-        ];
-
-        const parsed = moment(value, formats, true);
-        
-        if (!parsed.isValid()) {
-            return {
-                isValid: false,
-                message: 'Please enter a valid date and time'
-            };
-        }
-
-        // For end time, ensure it's after start time
-        if (!isStart && parsed.isValid()) {
-            const startMoment = moment(`${startDate} ${startTime}`);
-            if (parsed.isSameOrBefore(startMoment)) {
-                return {
-                    isValid: false,
-                    message: 'End time must be after start time'
-                };
-            }
-        }
-
-        return { isValid: true };
-    };
-
-    const handleFieldChange = (field: string, value: string, isDateTime: boolean, isStart: boolean, onChange: (value: string) => void) => {
-        if (isDateTime) {
-            const validation = validateDateTime(value, isStart);
-            if (!validation.isValid) {
-                setValidationErrors(prev => ({
-                    ...prev,
-                    [field]: validation.message || 'Invalid date/time'
-                }));
-                return;
-            }
-            setValidationErrors(prev => ({
-                ...prev,
-                [field]: null
-            }));
-        }
-        onChange(value);
-    };
-
     const renderTextField = (field: string, value: string, onChange: (value: string) => void) => {
         const isActive = activeField === field;
         const validationError = validationErrors[field];
@@ -466,8 +379,6 @@ const EventForm: React.FC<EventFormProps> = ({
             setIsSubmitting(false);
         }
     };
-
-    const EventIcon = getEventIcon(title);
 
     return (
         <>

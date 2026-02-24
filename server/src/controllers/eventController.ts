@@ -9,7 +9,7 @@ import { EventFamilyMember } from '../entities/EventFamilyMember';
 import { EventService, VirtualOccurrence } from '../services/eventService';
 import { EmailService } from '../services/emailService';
 import { hybridParser } from '../services/hybridParser';
-import { intentParser, IntentParser } from '../services/intentParser';
+import { IntentParser } from '../services/intentParser';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import moment from 'moment-timezone';
@@ -81,7 +81,8 @@ export class EventController {
     public createEventFromText = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { text, timezone } = req.body;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
             if (!text) {
                 return res.status(400).json({ error: 'Text input is required' });
@@ -111,19 +112,13 @@ export class EventController {
             event.duration = parsedEvent.duration;
             event.isAllDay = parsedEvent.isAllDay;
             event.location = parsedEvent.location;
-            event.userId = userId!;
+            event.userId = userId;
 
             // Validate event data
             await validateOrReject(event);
 
             // Save the event
             const savedEvent = await this.eventService.create(event);
-
-            // Get default recipients for this user
-            const recipientRepository = AppDataSource.getRepository(EmailRecipient);
-            const defaultRecipients = await recipientRepository.find({
-                where: { userId, isDefault: true }
-            });
 
             return res.json(savedEvent);
         } catch (error) {
@@ -181,7 +176,8 @@ export class EventController {
      */
     public getAllEvents = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const { start, end, timezone } = req.query;
 
             if (!timezone) {
@@ -193,7 +189,7 @@ export class EventController {
             const endDate = end ? new Date(end as string) : undefined;
 
             const events = await this.eventService.findByUserIdAndDateRange(
-                userId!,
+                userId,
                 startDate,
                 endDate,
                 timezone as string
@@ -212,7 +208,7 @@ export class EventController {
     public getEventById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
             const { timezone } = req.query;
 
             if (!timezone) {
@@ -243,7 +239,8 @@ export class EventController {
     public createEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { timezone, familyMemberIds, ...eventData } = req.body;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
             if (!timezone) {
                 return res.status(400).json({ error: 'Timezone is required' });
@@ -258,7 +255,7 @@ export class EventController {
             event.duration = eventData.duration;
             event.isAllDay = eventData.isAllDay;
             event.location = eventData.location;
-            event.userId = userId!;
+            event.userId = userId;
             // Recurring events support
             if (eventData.rrule) event.rrule = eventData.rrule;
             if (Array.isArray(eventData.exceptionDates)) event.exceptionDates = eventData.exceptionDates;
@@ -336,7 +333,7 @@ export class EventController {
 
             // Save family member tags
             if (Array.isArray(familyMemberIds) && familyMemberIds.length > 0) {
-                await this.saveFamilyMemberTags(savedEvent.id, familyMemberIds, userId!);
+                await this.saveFamilyMemberTags(savedEvent.id, familyMemberIds, userId);
             }
 
             const [enriched] = await this.attachFamilyMembers([savedEvent]);
@@ -358,7 +355,8 @@ export class EventController {
     public updateEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
             const timezone = (req.body.timezone as string) || 'UTC';
 
             // Allowlist updatable fields — never allow userId or id to be overwritten
@@ -435,7 +433,7 @@ export class EventController {
 
             // Update family member tags if provided (use updatedEvent.id — may be new row for 'this' scope)
             if (Array.isArray(familyMemberIds)) {
-                await this.saveFamilyMemberTags(updatedEvent.id, familyMemberIds, userId!);
+                await this.saveFamilyMemberTags(updatedEvent.id, familyMemberIds, userId);
             }
 
             const [enriched] = await this.attachFamilyMembers([updatedEvent]);
@@ -471,7 +469,8 @@ export class EventController {
     public handleNLPCommand = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { text, timezone } = req.body;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
             if (!text || typeof text !== 'string' || text.length > 500) {
                 return res.status(400).json({ error: 'Text must be a non-empty string under 500 characters' });
@@ -484,7 +483,7 @@ export class EventController {
             const contextStart = moment().subtract(7, 'days').toDate();
             const contextEnd = moment().add(90, 'days').toDate();
             const userEvents = await this.eventService.findByUserIdAndDateRange(
-                userId!, contextStart, contextEnd, timezone
+                userId, contextStart, contextEnd, timezone
             );
 
             // Fetch family members to provide as NLP context
@@ -503,7 +502,7 @@ export class EventController {
                 event.duration = result.event.duration;
                 event.isAllDay = result.event.isAllDay;
                 event.location = result.event.location;
-                event.userId = userId!;
+                event.userId = userId;
                 // Recurring event from NLP
                 if (result.event.rrule) event.rrule = result.event.rrule;
 
@@ -515,7 +514,7 @@ export class EventController {
                     result.event.familyMemberNames ?? [], userFamilyMembers
                 );
                 if (memberIds.length > 0) {
-                    await this.saveFamilyMemberTags(saved.id, memberIds, userId!);
+                    await this.saveFamilyMemberTags(saved.id, memberIds, userId);
                 }
 
                 const [enriched] = await this.attachFamilyMembers([saved]);
@@ -530,7 +529,7 @@ export class EventController {
             if (result.intent === 'update') {
                 // Disambiguation: multiple events match
                 if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
-                    const candidates = userEvents.filter(e => result.candidateIds!.includes(e.id));
+                    const candidates = userEvents.filter(e => result.candidateIds?.includes(e.id));
                     return res.json({
                         intent: 'update',
                         requiresDisambiguation: true,
@@ -564,7 +563,7 @@ export class EventController {
                     const memberIds = this.resolveMemberIds(
                         result.changes.familyMemberNames, userFamilyMembers
                     );
-                    await this.saveFamilyMemberTags(eventId, memberIds, userId!);
+                    await this.saveFamilyMemberTags(eventId, memberIds, userId);
                 }
 
                 const [enriched] = await this.attachFamilyMembers([updated]);
@@ -578,7 +577,7 @@ export class EventController {
             // ── DELETE ──────────────────────────────────────────────────────────
             if (result.intent === 'delete') {
                 if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
-                    const candidates = userEvents.filter(e => result.candidateIds!.includes(e.id));
+                    const candidates = userEvents.filter(e => result.candidateIds?.includes(e.id));
                     return res.json({
                         intent: 'delete',
                         requiresDisambiguation: true,
@@ -632,7 +631,7 @@ export class EventController {
     public deleteEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const userId = (req.user as any)?.id;
+            const userId = req.user?.id;
             const recurringScope = req.query.recurringScope as 'this' | 'future' | 'all' | undefined;
             const occurrenceDate = req.query.occurrenceDate as string | undefined;
 

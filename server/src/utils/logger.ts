@@ -1,4 +1,5 @@
 import winston from 'winston';
+import { Request, Response, NextFunction } from 'express';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -23,16 +24,16 @@ if (process.env.NODE_ENV !== 'production') {
 
 const REDACTED_FIELDS = new Set(['password', 'passwordHash', 'token', 'accessToken', 'secret', 'credential']);
 
-function redactBody(body: any): any {
+function redactBody(body: unknown): unknown {
   if (!body || typeof body !== 'object') return body;
   return Object.fromEntries(
-    Object.entries(body).map(([k, v]) =>
+    Object.entries(body as Record<string, unknown>).map(([k, v]) =>
       REDACTED_FIELDS.has(k) ? [k, '[REDACTED]'] : [k, v]
     )
   );
 }
 
-export const logRequest = (req: any, res: any, next: any) => {
+export const logRequest = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
 
   logger.info('Incoming Request', {
@@ -44,7 +45,7 @@ export const logRequest = (req: any, res: any, next: any) => {
 
   // Capture response
   const originalSend = res.send;
-  res.send = function (body: any) {
+  res.send = function (body: unknown) {
     const duration = Date.now() - start;
     
     // Log response
@@ -62,12 +63,12 @@ export const logRequest = (req: any, res: any, next: any) => {
   next();
 };
 
-export const logError = (error: any) => {
+export const logError = (error: unknown) => {
+  const err = error instanceof Error ? error : new Error(String(error));
   logger.error('Error occurred', {
     error: {
-      message: error.message,
-      stack: error.stack,
-      ...error
+      message: err.message,
+      stack: err.stack,
     }
   });
 };

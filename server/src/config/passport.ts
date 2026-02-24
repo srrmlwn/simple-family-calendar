@@ -2,7 +2,6 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
-import config from './index';
 import { checkEmailAllowed, AccessDeniedError } from '../services/authService';
 
 passport.use(
@@ -84,7 +83,7 @@ passport.use(
 );
 
 // Serialize user for the session
-passport.serializeUser((user: any, done) => {
+passport.serializeUser((user: Express.User, done) => {
     // Store both id and profileImage in the session
     done(null, {
         id: user.id,

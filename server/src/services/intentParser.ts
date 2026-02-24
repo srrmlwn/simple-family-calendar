@@ -65,6 +65,30 @@ export type IntentResult =
     | DeleteIntentResult
     | QueryIntentResult;
 
+interface LLMRawResult {
+    intent: string;
+    event?: {
+        title: string;
+        startTime: string;
+        endTime: string;
+        isAllDay?: boolean;
+        location?: string;
+        familyMemberNames?: string[];
+        rrule?: string;
+    };
+    changes?: {
+        title?: string;
+        location?: string;
+        startTime?: string;
+        endTime?: string;
+        familyMemberNames?: string[];
+    };
+    eventId?: string;
+    candidateIds?: string[];
+    eventIds?: string[];
+    answer?: string;
+}
+
 export class IntentParser {
     private anthropic: Anthropic;
 
@@ -161,31 +185,32 @@ QUERY — user is asking about events:
         if (!raw) throw new Error('No response from intent parser');
 
         const jsonStr = raw.replace(/^```json\n?|\n?```$/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
+        const parsed = JSON.parse(jsonStr) as LLMRawResult;
 
         return this.normalizeResult(parsed);
     }
 
     /** Convert raw LLM JSON into a typed IntentResult with Date objects. */
-    private normalizeResult(raw: any): IntentResult {
+    private normalizeResult(raw: LLMRawResult): IntentResult {
         switch (raw.intent) {
             case 'create': {
-                const startTime = new Date(raw.event.startTime);
-                const endTime = new Date(raw.event.endTime);
+                const evt = raw.event ?? { title: '', startTime: '', endTime: '' };
+                const startTime = new Date(evt.startTime);
+                const endTime = new Date(evt.endTime);
                 const duration = Math.round((endTime.getTime() - startTime.getTime()) / 60_000);
                 return {
                     intent: 'create',
                     event: {
-                        title: raw.event.title,
+                        title: evt.title,
                         startTime,
                         endTime,
-                        isAllDay: raw.event.isAllDay ?? false,
-                        location: raw.event.location,
+                        isAllDay: evt.isAllDay ?? false,
+                        location: evt.location,
                         duration,
-                        familyMemberNames: Array.isArray(raw.event.familyMemberNames)
-                            ? raw.event.familyMemberNames
+                        familyMemberNames: Array.isArray(evt.familyMemberNames)
+                            ? evt.familyMemberNames
                             : undefined,
-                        rrule: typeof raw.event.rrule === 'string' ? raw.event.rrule : undefined,
+                        rrule: typeof evt.rrule === 'string' ? evt.rrule : undefined,
                     },
                 };
             }
@@ -206,7 +231,7 @@ QUERY — user is asking about events:
                     );
                 }
                 if (Array.isArray(raw.changes?.familyMemberNames)) {
-                    changes.familyMemberNames = raw.changes.familyMemberNames;
+                    changes.familyMemberNames = raw.changes?.familyMemberNames;
                 }
                 return {
                     intent: 'update',

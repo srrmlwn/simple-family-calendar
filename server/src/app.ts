@@ -2,7 +2,6 @@
 import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppDataSource } from './data-source';
 import path from 'path';

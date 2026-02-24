@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Bell, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 
-interface NotificationPreferences {
+interface DigestPreferences {
     digestTime: string;
     isDigestEnabled: boolean;
 }
@@ -21,7 +21,7 @@ interface DigestStats {
 }
 
 const NotificationPreferences: React.FC = () => {
-    const [preferences, setPreferences] = useState<NotificationPreferences>({
+    const [preferences, setPreferences] = useState<DigestPreferences>({
         digestTime: '18:00',
         isDigestEnabled: true
     });

@@ -18,7 +18,7 @@ export class HybridParser {
      * @param timezone The user's timezone (e.g., 'America/New_York')
      * @returns ParsedEvent object with extracted information
      */
-    public async parseEvent(input: string, timezone: string = 'UTC'): Promise<ParsedEvent> {
+    public async parseEvent(input: string, timezone = 'UTC'): Promise<ParsedEvent> {
         try {
             // First attempt: Use LLM Parser
             console.log('Attempting to parse event with LLM...');

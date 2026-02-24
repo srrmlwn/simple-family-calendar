@@ -141,11 +141,11 @@ export class GoogleCalendarService {
 
                 if (isAllDay) {
                     // All-day events: use noon UTC to avoid timezone shift issues
-                    startTime = new Date(`${gEvent.start!.date}T12:00:00Z`);
-                    endTime = new Date(`${gEvent.end!.date}T12:00:00Z`);
+                    startTime = new Date(`${gEvent.start?.date ?? ''}T12:00:00Z`);
+                    endTime = new Date(`${gEvent.end?.date ?? ''}T12:00:00Z`);
                 } else {
-                    startTime = new Date(gEvent.start!.dateTime!);
-                    endTime = new Date(gEvent.end!.dateTime!);
+                    startTime = new Date(gEvent.start?.dateTime ?? '');
+                    endTime = new Date(gEvent.end?.dateTime ?? '');
                 }
 
                 const duration = Math.round(
