@@ -100,7 +100,7 @@ cd client && npm start
 cd server && npm run dev
 
 # Run DB migrations
-cd server && npm run typeorm migration:run
+cd server && npm run typeorm -- migration:run -d src/data-source.ts
 ```
 
 ### Environment Variables
@@ -163,7 +163,8 @@ Every feature follows this pipeline. Two nested loops — a fast inner loop for 
                            │ happy with the logic?
 ┌──────────────────────────▼──────────────────────────────────┐
 │  OUTER LOOP (minutes — run once before committing)          │
-│  Start servers → Puppeteer E2E → Security scan → Commit     │
+│  Migrate DB → Start servers → Health check →                │
+│  Puppeteer E2E → Security scan → Commit                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -200,7 +201,19 @@ Fix everything here before moving to the outer loop. If TypeScript or lint is re
 
 ---
 
-### Step 2 — Outer loop: start servers
+### Step 2 — Outer loop: run DB migrations (if schema changed)
+
+If the feature added or modified files in `server/src/migrations/`, run migrations before starting servers:
+
+```bash
+cd server && npm run typeorm -- migration:run -d src/data-source.ts
+```
+
+If no new migration files exist, skip this step.
+
+---
+
+### Step 3 — Outer loop: start servers + health check
 
 ```bash
 # Terminal 1 — backend (port 4000)
@@ -213,11 +226,18 @@ cd client && npm start
 npm run dev
 ```
 
-Wait for both to be ready (the E2E test runner handles this automatically via `wait-on`).
+After the server starts, confirm it's healthy before running E2E tests:
+
+```bash
+curl http://localhost:4000/api/health
+# Expected: {"status":"ok"}
+```
+
+If the server crashes on startup, fix the error before proceeding. Common causes: missing env vars, migration not run, TypeScript ambient type issues.
 
 ---
 
-### Step 3 — Outer loop: Puppeteer E2E tests
+### Step 4 — Outer loop: Puppeteer E2E tests
 
 E2E tests live in `tests/e2e/`. Each feature has its own test file. Tests run against local servers (port 3000/4000) using a test user account seeded in the local DB.
 
@@ -241,7 +261,7 @@ If a Puppeteer test fails, go back to the inner loop to fix the issue.
 
 ---
 
-### Step 4 — Outer loop: scoped security scan
+### Step 5 — Outer loop: scoped security scan
 
 Run a fast automated security scan on **changed files only** before every commit. This catches new issues introduced in this session — not a full audit, just a regression guard.
 
@@ -264,7 +284,7 @@ If the scan flags something, fix it before committing.
 
 ---
 
-### Step 5 — Commit and push
+### Step 6 — Commit and push
 
 Once inner loop, E2E tests, and security scan all pass:
 
@@ -284,7 +304,7 @@ Always add files by name — never `git add .` or `git add -A` (risks accidental
 npm run verify
 ```
 
-This runs: `type-check → lint → unit tests → start servers → E2E tests → security scan`. If everything passes, it prints a commit-ready confirmation. Does **not** auto-commit — that remains a manual step.
+This runs: `type-check → lint → unit tests → start servers → E2E tests → security scan`. If everything passes, it prints a commit-ready confirmation. Does **not** run migrations or auto-commit — those remain manual steps.
 
 ---
 
