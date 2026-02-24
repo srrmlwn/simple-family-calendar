@@ -183,6 +183,16 @@ const eventService = {
         }
     },
 
+    // Upload audio blob to server and return Whisper transcript
+    transcribeAudio: async (blob: Blob): Promise<string> => {
+        const form = new FormData();
+        form.append('audio', blob, 'audio.webm');
+        const res = await api.post<{ transcript: string }>('/api/voice/transcribe', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return res.data.transcript;
+    },
+
     // Execute a natural language command (create / update / delete / query)
     nlpCommand: async (text: string): Promise<NLPCommandResponse> => {
         try {

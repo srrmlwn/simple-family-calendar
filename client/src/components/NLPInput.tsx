@@ -94,9 +94,14 @@ const TrayEventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event,
 
 const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, className }) => {
     const [inputText, setInputText] = useState('');
+    const [interimText, setInterimText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const streamRef = useRef<MediaStream | null>(null);
 
     // Tray: shown for query results and disambiguation
     const [tray, setTray] = useState<NLPCommandResponse | null>(null);
@@ -113,52 +118,16 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
         toastTimer.current = setTimeout(() => setToast(null), 2500);
     }, []);
 
-    // ── Speech recognition setup ─────────────────────────────────────────────
-
-    useEffect(() => {
-        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) return;
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const rec = new SR();
-        rec.continuous = false;
-        rec.interimResults = false;
-        rec.lang = 'en-US';
-        rec.onresult = (e: SpeechRecognitionEvent) => {
-            setInputText(e.results[0][0].transcript);
-            setIsListening(false);
-        };
-        rec.onerror = () => {
-            fireToast('Voice recognition failed. Please try again.', true);
-            setIsListening(false);
-        };
-        rec.onend = () => setIsListening(false);
-        setRecognition(rec);
-        return () => { rec.abort(); };
-    }, [fireToast]);
-
-    const toggleListening = useCallback(() => {
-        if (!recognition) {
-            fireToast('Voice recognition is not supported in your browser.', true);
-            return;
-        }
-        if (isListening) {
-            recognition.stop();
-        } else {
-            setTray(null);
-            setToast(null);
-            recognition.start();
-            setIsListening(true);
-        }
-    }, [recognition, isListening, fireToast]);
-
     // ── Submit ───────────────────────────────────────────────────────────────
 
-    const handleSubmit = useCallback(async () => {
-        const text = inputText.trim();
+    const handleSubmit = useCallback(async (overrideText?: string) => {
+        const text = (overrideText ?? inputText).trim();
         if (!text) return;
 
         setIsLoading(true);
         setTray(null);
         setToast(null);
+        setInterimText('');
 
         try {
             const result = await eventService.nlpCommand(text);
@@ -184,12 +153,144 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
         }
     }, [inputText, onEventsChanged, fireToast]);
 
+    // Stable ref so voice callbacks always call the latest version without re-registering handlers
+    const handleSubmitRef = useRef(handleSubmit);
+    handleSubmitRef.current = handleSubmit;
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
         }
     };
+
+    // ── Web Speech API fallback setup (created once) ─────────────────────────
+
+    useEffect(() => {
+        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) return;
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const rec = new SR();
+        rec.continuous = false;
+        rec.interimResults = true;
+        rec.lang = 'en-US';
+        rec.onresult = (e: SpeechRecognitionEvent) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                if (e.results[i].isFinal) {
+                    finalTranscript += e.results[i][0].transcript;
+                } else {
+                    interimTranscript += e.results[i][0].transcript;
+                }
+            }
+            if (interimTranscript) setInterimText(interimTranscript);
+            if (finalTranscript) {
+                setInterimText('');
+                setIsListening(false);
+                handleSubmitRef.current(finalTranscript);
+            }
+        };
+        rec.onerror = () => {
+            fireToast('Voice recognition failed. Please try again.', true);
+            setIsListening(false);
+            setInterimText('');
+        };
+        rec.onend = () => {
+            setIsListening(false);
+            setInterimText('');
+        };
+        setRecognition(rec);
+        return () => { rec.abort(); };
+    // handleSubmitRef is a stable ref — intentionally excluded from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fireToast]);
+
+    // ── Primary: Whisper via MediaRecorder ───────────────────────────────────
+
+    const startWhisperRecording = useCallback(async () => {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+
+        recorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+            mediaRecorderRef.current = null;
+            const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            audioChunksRef.current = [];
+            setIsListening(false);
+            setIsUploading(true);
+            try {
+                const transcript = await eventService.transcribeAudio(blob);
+                if (transcript.trim()) {
+                    handleSubmitRef.current(transcript.trim());
+                } else {
+                    fireToast('No speech detected. Please try again.', true);
+                }
+            } catch {
+                fireToast('Transcription failed. Please try again.', true);
+            } finally {
+                setIsUploading(false);
+            }
+        };
+
+        recorder.start();
+        setIsListening(true);
+    }, [fireToast]);
+
+    // ── toggleListening: Whisper primary, Web Speech fallback ────────────────
+
+    const toggleListening = useCallback(async () => {
+        if (isListening) {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            } else if (recognition) {
+                recognition.stop();
+            }
+            return;
+        }
+
+        setTray(null);
+        setToast(null);
+        setInterimText('');
+
+        // Primary: MediaRecorder + Whisper
+        if (navigator.mediaDevices) {
+            try {
+                await startWhisperRecording();
+                return;
+            } catch {
+                // Permission denied or not available — fall through to Web Speech
+            }
+        }
+
+        // Fallback: Web Speech API (with interim text support)
+        if (!recognition) {
+            fireToast('Voice input is not supported in your browser.', true);
+            return;
+        }
+        recognition.start();
+        setIsListening(true);
+    }, [isListening, recognition, startWhisperRecording, fireToast]);
+
+    // ── Alt+V keyboard shortcut ──────────────────────────────────────────────
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.altKey && e.key === 'v') {
+                e.preventDefault();
+                void toggleListening();
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [toggleListening]);
 
     // ── Disambiguation: user picks a candidate ───────────────────────────────
 
@@ -309,30 +410,41 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                         <label htmlFor="nlp-event-input" className="sr-only">
                             Describe what you want to do
                         </label>
-                        <input
-                            id="nlp-event-input"
-                            type="text"
-                            value={inputText}
-                            onChange={e => setInputText(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Add, update, delete, or ask about events…"
-                            className="flex-1 px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                            disabled={isLoading}
-                        />
+                        <div className="relative flex-1">
+                            <input
+                                id="nlp-event-input"
+                                type="text"
+                                value={inputText}
+                                onChange={e => setInputText(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder={
+                                    interimText
+                                        ? interimText
+                                        : 'Add, update, delete, or ask about events…'
+                                }
+                                className={`w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                                    interimText ? 'placeholder-gray-400 italic' : ''
+                                }`}
+                                disabled={isLoading}
+                            />
+                        </div>
                         <button
-                            onClick={toggleListening}
+                            onClick={() => void toggleListening()}
+                            disabled={isUploading}
                             aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
-                            title={isListening ? 'Stop listening' : 'Start voice input'}
-                            className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors ${
+                            title={isListening ? 'Stop listening' : 'Start voice input (Alt+V)'}
+                            className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                 isListening
-                                    ? 'bg-red-500 hover:bg-red-600 text-white'
-                                    : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
+                                    ? 'bg-red-500 hover:bg-red-600 text-white ring-2 ring-red-400 ring-offset-1 animate-pulse'
+                                    : isUploading
+                                        ? 'bg-amber-400 text-white'
+                                        : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
                             }`}
                         >
                             {isListening ? <MicOff size={18} /> : <Mic size={18} />}
                         </button>
                         <button
-                            onClick={handleSubmit}
+                            onClick={() => handleSubmit()}
                             disabled={isLoading || !inputText.trim()}
                             aria-label="Send"
                             title="Send"
@@ -341,6 +453,18 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                             <ArrowUp size={18} />
                         </button>
                     </div>
+
+                    {/* Listening / uploading status label */}
+                    {isListening && (
+                        <p className="mt-1.5 text-xs text-red-500 animate-pulse">
+                            Listening…
+                        </p>
+                    )}
+                    {isUploading && (
+                        <p className="mt-1.5 text-xs text-amber-600 animate-pulse">
+                            Transcribing…
+                        </p>
+                    )}
 
                     {/* Auto-dismiss toast */}
                     {toast && (

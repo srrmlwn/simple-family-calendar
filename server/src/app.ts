@@ -60,6 +60,7 @@ import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notificationRoutes';
 import googleCalendarRoutes from './routes/googleCalendar';
 import familyMemberRoutes from './routes/familyMember';
+import voiceRoutes from './routes/voice';
 import { authenticateJWT } from './middleware/auth';
 
 app.use('/api/auth', authRoutes);
@@ -70,6 +71,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/family-members', authenticateJWT, familyMemberRoutes);
 // Google Calendar routes — /callback is public (Google redirect), others are JWT-protected inline
 app.use('/api/google-calendar', googleCalendarRoutes);
+// Voice transcription — JWT required
+app.use('/api/voice', authenticateJWT, voiceRoutes);
 
 // Serve static files in production
 if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production') {
