@@ -1,10 +1,10 @@
 # Feature Roadmap
 
-_Last updated: 2026-02-22 (audited against codebase)_
+_Last updated: 2026-02-23_
 
 Prioritized by expected impact on adoption, retention, and differentiation. Features already shipped or in active development are noted.
 
-> **Current focus:** Tier 1 foundations nearly complete — NLP CRUD, Family Members, Onboarding, Daily Digest, Email Invites all shipped. Basic voice input (Web Speech API) live. Next: Recurring Events → Google Calendar Sync.
+> **Current focus:** Tier 1 foundations nearly complete — NLP CRUD, Family Members, Onboarding, Daily Digest, Email Invites, Google Calendar Import all shipped. Basic voice input (Web Speech API) live. Next: Recurring Events → NLP-driven + proactive Google Calendar sync.
 
 ---
 
@@ -92,14 +92,19 @@ Named, color-coded family member profiles. Tag events to members in EventForm. F
 - Edit one / edit all / edit this and future — standard recurrence UX
 - NLP support: "Add piano every Monday at 4pm"
 
-### 🎯 2-Way Google Calendar Sync
-**Why:** The single biggest adoption barrier. "I already use Google Calendar" is a hard objection if there's no bridge. Sync removes the switching cost and lets famcal.ai coexist with existing family workflows.
+### ✅ Google Calendar Import (one-way)
+One-way import from Google Calendar into famcal.ai. Import button in calendar toolbar. OAuth separate from login (calendar.readonly scope). Deduplicates by `externalId`. Imports 30 days past → 12 months future.
 
-- Import events from Google Calendar into famcal.ai
-- Push famcal.ai events back to Google Calendar
-- Incremental sync (not full re-import on every request)
-- Handle conflicts gracefully (last-write-wins or explicit merge UI)
-- OAuth scope: `https://www.googleapis.com/auth/calendar` (already have Google OAuth, scope extension needed)
+### 🎯 NLP-Driven Google Calendar Sync
+**Why:** The Import button is discoverable but manual. Power users should be able to trigger a sync via natural language, and eventually have it happen automatically.
+
+- **NLP trigger:** "Sync my Google Calendar", "Import from Google" → calls the import endpoint directly from the NLP bar
+- **Proactive sync setting:** Toggle in Settings → "Auto-sync Google Calendar" with frequency options (on login, every hour, daily). Stored in `user_settings`. Server-side scheduler calls import on the configured cadence.
+- **Sync status in UI:** Last synced timestamp shown near the Import button
+- **2-way sync (future):** Push famcal.ai events back to Google Calendar; handle conflicts (last-write-wins or merge UI); requires `calendar` scope upgrade
+
+### 💡 2-Way Google Calendar Sync
+Push famcal.ai events to Google Calendar + handle conflicts. Requires upgrading OAuth scope from `calendar.readonly` → `calendar`. Incremental sync preferred over full re-import.
 
 ---
 
