@@ -18,7 +18,12 @@ export const upload = multer({
     },
 }).single('audio');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Instantiate lazily so startup doesn't crash when OPENAI_API_KEY isn't set yet
+let openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+    if (!openai) openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    return openai;
+}
 
 export const transcribeAudio = async (req: Request, res: Response): Promise<Response> => {
     if (!req.file) {
@@ -29,7 +34,7 @@ export const transcribeAudio = async (req: Request, res: Response): Promise<Resp
         type: req.file.mimetype,
     });
 
-    const transcription = await openai.audio.transcriptions.create({
+    const transcription = await getOpenAI().audio.transcriptions.create({
         file,
         model: 'whisper-1',
         language: 'en',
