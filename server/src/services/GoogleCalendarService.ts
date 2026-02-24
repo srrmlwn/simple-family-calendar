@@ -170,6 +170,10 @@ export class GoogleCalendarService {
             }
         } while (pageToken);
 
+        // Record the sync timestamp
+        settings.googleLastSyncedAt = new Date();
+        await settingsRepo.save(settings);
+
         return { imported, skipped };
     }
 
@@ -177,6 +181,15 @@ export class GoogleCalendarService {
         const settingsRepo = AppDataSource.getRepository(UserSettings);
         const settings = await settingsRepo.findOne({ where: { userId } });
         return !!settings?.googleRefreshToken;
+    }
+
+    async getStatus(userId: string): Promise<{ connected: boolean; lastSyncedAt: Date | null }> {
+        const settingsRepo = AppDataSource.getRepository(UserSettings);
+        const settings = await settingsRepo.findOne({ where: { userId } });
+        return {
+            connected: !!settings?.googleRefreshToken,
+            lastSyncedAt: settings?.googleLastSyncedAt ?? null,
+        };
     }
 
     async disconnect(userId: string): Promise<void> {

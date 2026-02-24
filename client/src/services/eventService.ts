@@ -53,7 +53,7 @@ export interface EventInput {
 }
 
 export interface NLPCommandResponse {
-    intent: 'create' | 'update' | 'delete' | 'query';
+    intent: 'create' | 'update' | 'delete' | 'query' | 'sync';
     message: string;
     /** Created or updated event (for create/update) */
     event?: Event;

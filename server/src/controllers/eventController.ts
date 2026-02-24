@@ -10,6 +10,7 @@ import { EventService, VirtualOccurrence } from '../services/eventService';
 import { EmailService } from '../services/emailService';
 import { hybridParser } from '../services/hybridParser';
 import { IntentParser } from '../services/intentParser';
+import { googleCalendarService } from '../services/GoogleCalendarService';
 import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import moment from 'moment-timezone';
@@ -477,6 +478,28 @@ export class EventController {
             }
             if (!timezone) {
                 return res.status(400).json({ error: 'Timezone is required' });
+            }
+
+            // ── SYNC ─────────────────────────────────────────────────────────
+            // Detect Google Calendar sync intent via keywords — no LLM call needed
+            const isSyncRequest = /google\s+calendar|sync.*google|import.*google|refresh.*google|google.*(sync|import|refresh)|gcal/i.test(text);
+            if (isSyncRequest) {
+                try {
+                    const result = await googleCalendarService.importEvents(userId);
+                    const message = result.imported === 0
+                        ? `Already up to date — ${result.skipped} event${result.skipped !== 1 ? 's' : ''} already in your calendar`
+                        : `Synced ${result.imported} new event${result.imported !== 1 ? 's' : ''} from Google Calendar${result.skipped > 0 ? ` (${result.skipped} already existed)` : ''}`;
+                    return res.json({ intent: 'sync', message });
+                } catch (err) {
+                    const msg = err instanceof Error ? err.message : 'Sync failed';
+                    if (msg.toLowerCase().includes('not connected')) {
+                        return res.json({
+                            intent: 'sync',
+                            message: "Google Calendar isn't connected yet — click the Import button to connect.",
+                        });
+                    }
+                    return res.status(500).json({ error: msg });
+                }
             }
 
             // Fetch user events from 7 days ago through 90 days ahead as LLM context

@@ -39,11 +39,11 @@ router.post('/import', authenticateJWT, asyncHandler(async (req: Request, res: R
     res.json(result);
 }));
 
-// GET /api/google-calendar/status — check if connected
+// GET /api/google-calendar/status — check if connected + when last synced
 router.get('/status', authenticateJWT, asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id ?? '';
-    const connected = await googleCalendarService.isConnected(userId);
-    res.json({ connected });
+    const status = await googleCalendarService.getStatus(userId);
+    res.json(status);
 }));
 
 // DELETE /api/google-calendar/disconnect — remove stored tokens

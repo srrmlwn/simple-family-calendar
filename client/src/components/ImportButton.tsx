@@ -10,14 +10,25 @@ type Status = 'idle' | 'checking' | 'importing' | 'done' | 'error';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 
+function formatLastSynced(date: Date): string {
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60_000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
     const [open, setOpen] = useState(false);
     const [status, setStatus] = useState<Status>('idle');
     const [message, setMessage] = useState<string>('');
+    const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Handle post-OAuth redirect: ?google_calendar_connected=true or ?google_calendar_error=...
+    // On mount: handle post-OAuth redirect and fetch last synced timestamp
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const connected = params.get('google_calendar_connected');
@@ -36,6 +47,15 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
             setStatus('error');
             setMessage(`Google sign-in failed: ${decodeURIComponent(error)}`);
             scheduleDismiss();
+        } else {
+            // Fetch last synced timestamp silently
+            api.get<{ connected: boolean; lastSyncedAt: string | null }>('/api/google-calendar/status')
+                .then(res => {
+                    if (res.data.lastSyncedAt) {
+                        setLastSyncedAt(new Date(res.data.lastSyncedAt));
+                    }
+                })
+                .catch(() => { /* non-critical, ignore */ });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -66,6 +86,8 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
         try {
             const res = await api.post<{ imported: number; skipped: number }>('/api/google-calendar/import');
             const { imported, skipped } = res.data;
+            const syncedAt = new Date();
+            setLastSyncedAt(syncedAt);
             setStatus('done');
             setMessage(
                 imported === 0
@@ -105,7 +127,7 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
                 <button
                     onClick={() => setOpen((v) => !v)}
                     disabled={isWorking}
@@ -122,6 +144,11 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
                     <span>Import</span>
                     <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
+                {lastSyncedAt && (
+                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                        Synced {formatLastSynced(lastSyncedAt)}
+                    </span>
+                )}
             </div>
 
             {/* Inline status message */}

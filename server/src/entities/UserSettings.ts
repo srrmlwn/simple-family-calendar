@@ -42,6 +42,9 @@ export class UserSettings {
     @Column({ name: 'google_token_expiry', type: 'timestamp', nullable: true })
     googleTokenExpiry?: Date;
 
+    @Column({ name: 'google_last_synced_at', type: 'timestamp', nullable: true })
+    googleLastSyncedAt?: Date;
+
     @ManyToOne(() => User, user => user.settings)
     @JoinColumn({ name: 'user_id' })
     user!: User;
