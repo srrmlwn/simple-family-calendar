@@ -18,7 +18,8 @@ export class LLMParser {
 
     constructor(apiKey: string) {
         this.anthropic = new Anthropic({
-            apiKey: apiKey
+            apiKey: apiKey,
+            timeout: 15000,
         });
     }
 

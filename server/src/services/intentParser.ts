@@ -93,7 +93,7 @@ export class IntentParser {
     private anthropic: Anthropic;
 
     constructor(apiKey: string) {
-        this.anthropic = new Anthropic({ apiKey });
+        this.anthropic = new Anthropic({ apiKey, timeout: 15000 });
     }
 
     /**

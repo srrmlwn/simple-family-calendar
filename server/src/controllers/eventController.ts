@@ -24,8 +24,8 @@ export class EventController {
     constructor() {
         this.eventService = new EventService();
         this.emailService = new EmailService();
-        this.parser = hybridParser(process.env.OPENAI_API_KEY || '');
-        this.intentParser = new IntentParser(process.env.OPENAI_API_KEY || '');
+        this.parser = hybridParser(process.env.ANTHROPIC_API_KEY || '');
+        this.intentParser = new IntentParser(process.env.ANTHROPIC_API_KEY || '');
     }
 
     /**
