@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ArrowRight, Bell, Mail, Wand, Check, Users } from 'lucide-react';
+import { X, ArrowRight, Wand, Check, Users } from 'lucide-react';
 import api from '../services/api';
 import eventService from '../services/eventService';
 import familyMemberService from '../services/familyMemberService';
 
 const STORAGE_KEY = 'onboarding_step';
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 2;
 
 // 10 fixed colors — must match the server's ALLOWED_COLORS set
 const MEMBER_COLORS = [
@@ -97,52 +97,7 @@ const StepFooter: React.FC<{
     </div>
 );
 
-// ── Step 0: Welcome ──────────────────────────────────────────────────────────
-
-const WelcomeStep: React.FC<{ userName: string; onNext: () => void; onSkip: () => void }> = ({
-    userName,
-    onNext,
-    onSkip,
-}) => (
-    <div className="flex flex-col items-center text-center px-2" data-testid="onboarding-step-0">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-5">
-            <span className="text-3xl">🗓️</span>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome, {userName}!
-        </h2>
-        <p className="text-gray-500 text-sm mb-7 max-w-xs">
-            Let's take 60 seconds to set up famcal.ai so it's useful from day one.
-        </p>
-        <div className="w-full space-y-3 mb-8 text-left">
-            {[
-                { icon: '👨‍👩‍👧', text: "See everyone's schedule at a glance with family member tags" },
-                { icon: '💬', text: 'Add events in plain English — just type or speak' },
-                { icon: '📧', text: 'Get a daily email summary of tomorrow\'s schedule' },
-            ].map(({ icon, text }) => (
-                <div key={text} className="flex items-start gap-3">
-                    <span className="text-lg leading-none mt-0.5">{icon}</span>
-                    <span className="text-sm text-gray-600">{text}</span>
-                </div>
-            ))}
-        </div>
-        <div className="flex flex-col gap-3 w-full">
-            <PrimaryButton onClick={onNext} data-testid="onboarding-start">
-                Let's get started <ArrowRight className="w-4 h-4" />
-            </PrimaryButton>
-            <button
-                type="button"
-                onClick={onSkip}
-                data-testid="onboarding-skip-all"
-                className="text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
-            >
-                Skip setup, go straight to calendar
-            </button>
-        </div>
-    </div>
-);
-
-// ── Step 1: Family Members ───────────────────────────────────────────────────
+// ── Step 0: Family Members ───────────────────────────────────────────────────
 
 interface AddedMember {
     id: string;
@@ -271,213 +226,7 @@ const FamilyMembersStep: React.FC<{
     );
 };
 
-// ── Step 2: Notifications ────────────────────────────────────────────────────
-
-interface NotifPrefs {
-    digestTime: string;
-    isDigestEnabled: boolean;
-}
-
-const NotificationsStep: React.FC<{
-    onNext: () => void;
-    onBack: () => void;
-    onSkip: () => void;
-}> = ({ onNext, onBack, onSkip }) => {
-    const [prefs, setPrefs] = useState<NotifPrefs>({ digestTime: '18:00', isDigestEnabled: true });
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleContinue = async () => {
-        setSaving(true);
-        setError(null);
-        try {
-            await api.put('/api/notifications/preferences', prefs);
-            onNext();
-        } catch {
-            setError('Could not save preferences. You can update them later in Settings.');
-            onNext(); // non-blocking — still advance
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    return (
-        <div className="flex flex-col" data-testid="onboarding-step-2">
-            <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-amber-500" />
-                </div>
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900">Stay on top of tomorrow</h2>
-                    <p className="text-sm text-gray-500">Get a daily email digest of the next day's events.</p>
-                </div>
-            </div>
-
-            {error && (
-                <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-                    {error}
-                </p>
-            )}
-
-            <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                        <p className="text-sm font-medium text-gray-800">Daily digest email</p>
-                        <p className="text-xs text-gray-500 mt-0.5">A summary of tomorrow's events</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={prefs.isDigestEnabled}
-                            onChange={(e) => setPrefs({ ...prefs, isDigestEnabled: e.target.checked })}
-                            data-testid="onboarding-digest-toggle"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                    </label>
-                </div>
-
-                {prefs.isDigestEnabled && (
-                    <div className="p-4 bg-gray-50 rounded-xl">
-                        <label htmlFor="onboarding-digest-time" className="block text-sm font-medium text-gray-800 mb-2">
-                            Send it at
-                        </label>
-                        <input
-                            id="onboarding-digest-time"
-                            type="time"
-                            value={prefs.digestTime}
-                            onChange={(e) => setPrefs({ ...prefs, digestTime: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
-                        />
-                    </div>
-                )}
-            </div>
-
-            <StepFooter onBack={onBack} onContinue={handleContinue} onSkip={onSkip} saving={saving} />
-        </div>
-    );
-};
-
-// ── Step 3: Email Recipients ─────────────────────────────────────────────────
-
-interface Recipient {
-    id: string;
-    name: string;
-    email: string;
-}
-
-const RecipientsStep: React.FC<{
-    onNext: () => void;
-    onBack: () => void;
-    onSkip: () => void;
-}> = ({ onNext, onBack, onSkip }) => {
-    const [recipients, setRecipients] = useState<Recipient[]>([]);
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [adding, setAdding] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleAdd = async () => {
-        if (!name.trim() || !email.trim()) {
-            setError('Name and email are required');
-            return;
-        }
-        setAdding(true);
-        setError(null);
-        try {
-            const res = await api.post('/api/recipients', { name: name.trim(), email: email.trim(), isDefault: true });
-            setRecipients((prev) => [...prev, res.data]);
-            setName('');
-            setEmail('');
-        } catch {
-            setError('Could not add recipient. Try again or skip for now.');
-        } finally {
-            setAdding(false);
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAdd();
-        }
-    };
-
-    return (
-        <div className="flex flex-col" data-testid="onboarding-step-3">
-            <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900">Who gets calendar invites?</h2>
-                    <p className="text-sm text-gray-500">Add family members or contacts to notify when you create events.</p>
-                </div>
-            </div>
-
-            {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3" data-testid="onboarding-recipient-error">
-                    {error}
-                </p>
-            )}
-
-            <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
-                <input
-                    type="text"
-                    placeholder="Name (e.g. Sarah)"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={adding}
-                    data-testid="onboarding-recipient-name"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                />
-                <input
-                    type="email"
-                    placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={adding}
-                    data-testid="onboarding-recipient-email"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                />
-                <button
-                    type="button"
-                    onClick={handleAdd}
-                    disabled={adding || !name.trim() || !email.trim()}
-                    data-testid="onboarding-recipient-add"
-                    className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
-                >
-                    {adding ? 'Adding…' : '+ Add'}
-                </button>
-            </div>
-
-            {recipients.length > 0 && (
-                <div className="mb-4 space-y-2" data-testid="onboarding-recipients-list">
-                    {recipients.map((r) => (
-                        <div key={r.id} className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-100">
-                            <Check className="w-4 h-4 text-green-500 shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-800 truncate">{r.name}</p>
-                                <p className="text-xs text-gray-500 truncate">{r.email}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <StepFooter
-                onBack={onBack}
-                onContinue={onNext}
-                onSkip={onSkip}
-                skipLabel={recipients.length === 0 ? 'Skip for now' : undefined}
-            />
-        </div>
-    );
-};
-
-// ── Step 4: Try It ───────────────────────────────────────────────────────────
+// ── Step 1: Try It ───────────────────────────────────────────────────────────
 
 const TryItStep: React.FC<{
     onFinish: () => void;
@@ -618,14 +367,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete })
     const renderStep = () => {
         switch (step) {
             case 0:
-                return <WelcomeStep userName={userName} onNext={goNext} onSkip={markComplete} />;
-            case 1:
                 return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
-            case 2:
-                return <NotificationsStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
-            case 3:
-                return <RecipientsStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
-            case 4:
+            case 1:
                 return <TryItStep onFinish={markComplete} onBack={goBack} />;
             default:
                 return null;

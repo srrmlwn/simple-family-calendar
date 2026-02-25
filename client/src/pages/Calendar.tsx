@@ -23,6 +23,7 @@ const CalendarPage: React.FC = () => {
     // Family member filter
     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+    const [filterExpanded, setFilterExpanded] = useState(false);
     // Onboarding overlay
     const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -75,6 +76,11 @@ const CalendarPage: React.FC = () => {
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     }, []);
+
+    // Auto-expand filter when there are active filters
+    useEffect(() => {
+        if (selectedMemberIds.length > 0) setFilterExpanded(true);
+    }, [selectedMemberIds]);
 
     const filteredEvents = selectedMemberIds.length === 0
         ? events
@@ -188,6 +194,8 @@ const CalendarPage: React.FC = () => {
                                         selectedIds={selectedMemberIds}
                                         onToggle={handleMemberToggle}
                                         onSelectAll={() => setSelectedMemberIds([])}
+                                        isExpanded={filterExpanded}
+                                        onToggleExpand={() => setFilterExpanded(v => !v)}
                                     />
                                 )}
                             </div>

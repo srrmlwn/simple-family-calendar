@@ -4,6 +4,14 @@ import moment from 'moment';
 import eventService, { Event, NLPCommandResponse } from '../services/eventService';
 import { getEventIcon } from '../utils/eventIcons';
 
+const PLACEHOLDERS = [
+    'Add an event, ask a question, or make a change…',
+    'Try: "Soccer practice Friday at 3pm for Emma"',
+    'Ask: "What does Emma have this week?"',
+    'Try: "Move dentist to next Tuesday"',
+    'Ask: "Cancel Friday\'s swimming lesson"',
+];
+
 // ── Web Speech API type shims ────────────────────────────────────────────────
 
 interface SpeechRecognitionEvent extends globalThis.Event {
@@ -103,10 +111,14 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
     const audioChunksRef = useRef<Blob[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
 
+    const [placeholderIdx, setPlaceholderIdx] = useState(0);
+    const [showHint, setShowHint] = useState(() => localStorage.getItem('nlp_hint_dismissed') !== 'true');
+    const dismissHintRef = useRef<() => void>(() => {});
+
     // Tray: shown for query results and disambiguation
     const [tray, setTray] = useState<NLPCommandResponse | null>(null);
 
-    // Toast: 2.5s auto-dismiss for mutation confirmations
+    // Toast: 4s auto-dismiss for mutation confirmations
     const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
     const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -115,7 +127,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
     const fireToast = useCallback((message: string, isError = false) => {
         if (toastTimer.current) clearTimeout(toastTimer.current);
         setToast({ message, isError });
-        toastTimer.current = setTimeout(() => setToast(null), 2500);
+        toastTimer.current = setTimeout(() => setToast(null), 4000);
     }, []);
 
     // ── Submit ───────────────────────────────────────────────────────────────
@@ -132,6 +144,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
         try {
             const result = await eventService.nlpCommand(text);
             setInputText('');
+            dismissHintRef.current();
 
             if (result.intent === 'query') {
                 setTray(result);
@@ -156,6 +169,12 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
     // Stable ref so voice callbacks always call the latest version without re-registering handlers
     const handleSubmitRef = useRef(handleSubmit);
     handleSubmitRef.current = handleSubmit;
+
+    const dismissHint = useCallback(() => {
+        localStorage.setItem('nlp_hint_dismissed', 'true');
+        setShowHint(false);
+    }, []);
+    dismissHintRef.current = dismissHint;
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -292,6 +311,15 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
         return () => window.removeEventListener('keydown', handler);
     }, [toggleListening]);
 
+    // ── Placeholder rotation ─────────────────────────────────────────────────
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setPlaceholderIdx(prev => (prev + 1) % PLACEHOLDERS.length);
+        }, 3500);
+        return () => clearInterval(interval);
+    }, []);
+
     // ── Disambiguation: user picks a candidate ───────────────────────────────
 
     const handleCandidateSelect = useCallback(async (candidateId: string) => {
@@ -404,7 +432,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
             )}
 
             {/* Input bar */}
-            <div className="bg-indigo-50 border-t border-indigo-200 px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
+            <div className="bg-indigo-50 border-t border-indigo-200 px-4 py-4 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
                 <div className="max-w-3xl mx-auto">
                     <div className="flex items-center gap-2">
                         <label htmlFor="nlp-event-input" className="sr-only">
@@ -420,9 +448,9 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                                 placeholder={
                                     interimText
                                         ? interimText
-                                        : 'Add, update, delete, or ask about events…'
+                                        : PLACEHOLDERS[placeholderIdx]
                                 }
-                                className={`w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                                className={`w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
                                     interimText ? 'placeholder-gray-400 italic' : ''
                                 }`}
                                 disabled={isLoading}
@@ -441,7 +469,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                                         : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
                             }`}
                         >
-                            {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
                         </button>
                         <button
                             onClick={() => handleSubmit()}
@@ -450,7 +478,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                             title="Send"
                             className="p-2 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ArrowUp size={18} />
+                            <ArrowUp size={20} />
                         </button>
                     </div>
 
@@ -471,6 +499,22 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                         <p className={`mt-1.5 text-xs ${toast.isError ? 'text-red-600' : 'text-green-600'}`}>
                             {toast.isError ? toast.message : `✓ ${toast.message}`}
                         </p>
+                    )}
+
+                    {/* Dismissible hint strip */}
+                    {showHint && !isListening && !isUploading && !toast && (
+                        <div className="mt-2 flex items-center justify-between bg-white/60 border border-indigo-100 rounded-lg px-3 py-1.5">
+                            <p className="text-xs text-indigo-500 truncate pr-2">
+                                {PLACEHOLDERS[1 + (placeholderIdx % (PLACEHOLDERS.length - 1))]}
+                            </p>
+                            <button
+                                onClick={dismissHint}
+                                aria-label="Dismiss hint"
+                                className="shrink-0 text-indigo-300 hover:text-indigo-500 transition-colors"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
