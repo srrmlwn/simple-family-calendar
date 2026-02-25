@@ -253,6 +253,7 @@ const CalendarPage: React.FC = () => {
             <NLPInput
                 onEventsChanged={handleNLPEventsChanged}
                 onEventSelect={handleNLPEventSelect}
+                familyMembers={familyMembers}
             />
         </div>
     );

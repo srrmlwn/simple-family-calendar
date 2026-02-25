@@ -52,6 +52,15 @@ export interface EventInput {
     occurrenceDate?: string;
 }
 
+export interface ParsedFlyerEvent {
+    title: string;
+    startTime: string; // ISO UTC
+    endTime: string;   // ISO UTC
+    isAllDay: boolean;
+    location?: string;
+    familyMemberNames?: string[];
+}
+
 export interface NLPCommandResponse {
     intent: 'create' | 'update' | 'delete' | 'query' | 'sync';
     message: string;
@@ -181,6 +190,18 @@ const eventService = {
         } catch (error) {
             throw new Error('Failed to delete event');
         }
+    },
+
+    // Upload an image to the server and return extracted calendar events
+    parseFromImage: async (file: File): Promise<{ events: ParsedFlyerEvent[] }> => {
+        const timezone = getUserTimezone();
+        const form = new FormData();
+        form.append('image', file, file.name);
+        form.append('timezone', timezone);
+        const res = await api.post<{ events: ParsedFlyerEvent[] }>('/api/flyer/parse-image', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return res.data;
     },
 
     // Upload audio blob to server and return Whisper transcript
