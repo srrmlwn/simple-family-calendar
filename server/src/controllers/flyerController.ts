@@ -107,13 +107,41 @@ Return ONLY valid JSON with no extra text.`;
         : '[]';
     const jsonStr = raw.replace(/^```json\n?|\n?```$/g, '').trim();
 
-    let events: FlyerEvent[];
+    let raw_events: unknown[];
     try {
         const parsed = JSON.parse(jsonStr);
-        events = Array.isArray(parsed) ? parsed : [];
+        raw_events = Array.isArray(parsed) ? parsed : [];
     } catch {
-        events = [];
+        raw_events = [];
     }
+
+    // Normalize AI output — fill in missing startTime/endTime so the client always
+    // receives valid ISO strings. The AI may omit times when only a date is visible.
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const events: FlyerEvent[] = (raw_events as FlyerEvent[])
+        .filter(e => e && typeof e === 'object' && e.title)
+        .map(e => {
+            // Parse startTime; default to 08:00 local→UTC on today if missing/invalid
+            let start = e.startTime ? new Date(e.startTime) : null;
+            if (!start || isNaN(start.getTime())) {
+                // Use noon UTC today as a safe default — user can edit in EventForm
+                start = new Date();
+                start.setUTCHours(12, 0, 0, 0);
+            }
+
+            // Parse endTime; default to start + 1 hour if missing/invalid
+            let end = e.endTime ? new Date(e.endTime) : null;
+            if (!end || isNaN(end.getTime()) || end <= start) {
+                end = new Date(start.getTime() + ONE_HOUR_MS);
+            }
+
+            return {
+                ...e,
+                startTime: start.toISOString(),
+                endTime: end.toISOString(),
+                isAllDay: e.isAllDay ?? false,
+            };
+        });
 
     return res.json({ events });
 };

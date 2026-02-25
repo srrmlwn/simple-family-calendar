@@ -254,9 +254,10 @@ export class EventController {
             event.description = eventData.description;
             event.startTime = eventData.startTime;
             event.endTime = eventData.endTime;
-            event.duration = eventData.duration ?? Math.round(
+            const computedDuration = Math.round(
                 (new Date(eventData.endTime).getTime() - new Date(eventData.startTime).getTime()) / 60_000
             );
+            event.duration = eventData.duration ?? (Number.isFinite(computedDuration) ? computedDuration : 60);
             event.isAllDay = eventData.isAllDay;
             event.location = eventData.location;
             event.userId = userId;
