@@ -4,6 +4,8 @@ import api from '../services/api';
 
 interface ImportButtonProps {
     onImportComplete: () => void;
+    /** Render as icon-only button (no label/chevron) for use in toolbars */
+    compact?: boolean;
 }
 
 type Status = 'idle' | 'checking' | 'importing' | 'done' | 'error';
@@ -20,7 +22,7 @@ function formatLastSynced(date: Date): string {
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
+const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete, compact = false }) => {
     const [open, setOpen] = useState(false);
     const [status, setStatus] = useState<Status>('idle');
     const [message, setMessage] = useState<string>('');
@@ -131,20 +133,24 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete }) => {
                 <button
                     onClick={() => setOpen((v) => !v)}
                     disabled={isWorking}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className={compact
+                        ? "p-2 text-gray-600 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        : "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    }
                     aria-label="Import events"
                     aria-haspopup="true"
                     aria-expanded={open}
+                    title="Import events"
                 >
                     {isWorking ? (
                         <span className="h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                     ) : (
-                        <Download size={14} />
+                        <Download size={compact ? 20 : 14} />
                     )}
-                    <span>Import</span>
-                    <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+                    {!compact && <span>Import</span>}
+                    {!compact && <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />}
                 </button>
-                {lastSyncedAt && (
+                {!compact && lastSyncedAt && (
                     <span className="text-xs text-gray-400 whitespace-nowrap">
                         Synced {formatLastSynced(lastSyncedAt)}
                     </span>

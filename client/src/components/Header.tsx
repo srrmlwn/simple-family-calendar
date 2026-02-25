@@ -3,8 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Settings, LogOut } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useAuth } from '../context/AuthContext';
+import ImportButton from './ImportButton';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+    onImportComplete?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -79,8 +84,11 @@ const Header: React.FC = () => {
                         </h1>
                     </div>
 
-                    {/* Right side - Settings and Profile */}
+                    {/* Right side - Import, Settings and Profile */}
                     <div className="flex items-center space-x-4">
+                        {onImportComplete && (
+                            <ImportButton onImportComplete={onImportComplete} compact />
+                        )}
                         <button
                             onClick={handleSettingsClick}
                             className="p-2 text-gray-600 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors"

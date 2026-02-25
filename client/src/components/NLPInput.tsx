@@ -6,14 +6,7 @@ import { FamilyMember } from '../services/familyMemberService';
 import FlyerImportSheet from './FlyerImportSheet';
 import { getEventIcon } from '../utils/eventIcons';
 import { getUserTimezone } from '../utils/timezone';
-
-const PLACEHOLDERS = [
-    'Add an event, ask a question, or make a change…',
-    'Try: "Soccer practice Friday at 3pm for Emma"',
-    'Ask: "What does Emma have this week?"',
-    'Try: "Move dentist to next Tuesday"',
-    'Ask: "Cancel Friday\'s swimming lesson"',
-];
+import { NLP_SUGGESTIONS, SUGGESTION_INTERVAL_MS } from '../utils/nlpSuggestions';
 
 // ── Web Speech API type shims ────────────────────────────────────────────────
 
@@ -117,7 +110,6 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
     const streamRef = useRef<MediaStream | null>(null);
 
     const [placeholderIdx, setPlaceholderIdx] = useState(0);
-    const [showHint, setShowHint] = useState(() => localStorage.getItem('nlp_hint_dismissed') !== 'true');
     const dismissHintRef = useRef<() => void>(() => {});
 
     // ── Flyer import state ───────────────────────────────────────────────────
@@ -260,10 +252,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
     const handleSubmitRef = useRef(handleSubmit);
     handleSubmitRef.current = handleSubmit;
 
-    const dismissHint = useCallback(() => {
-        localStorage.setItem('nlp_hint_dismissed', 'true');
-        setShowHint(false);
-    }, []);
+    const dismissHint = useCallback(() => {}, []);
     dismissHintRef.current = dismissHint;
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -405,8 +394,8 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setPlaceholderIdx(prev => (prev + 1) % PLACEHOLDERS.length);
-        }, 3500);
+            setPlaceholderIdx(prev => (prev + 1) % NLP_SUGGESTIONS.length);
+        }, SUGGESTION_INTERVAL_MS);
         return () => clearInterval(interval);
     }, []);
 
@@ -543,108 +532,95 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             />
 
             {/* Input bar */}
-            <div className="bg-indigo-50 border-t border-indigo-200 px-4 py-4 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
+            <div className="bg-indigo-50 border-t border-indigo-200 px-3 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
                 <div className="max-w-3xl mx-auto">
-                    <div className="flex items-center gap-2">
+                    {/* Combined input + inline buttons */}
+                    <div className={`flex items-center bg-white rounded-xl border shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-indigo-400 ${
+                        isListening ? 'border-red-300' : 'border-indigo-200'
+                    }`}>
                         <label htmlFor="nlp-event-input" className="sr-only">
                             Describe what you want to do
                         </label>
-                        <div className="relative flex-1">
-                            <input
-                                id="nlp-event-input"
-                                type="text"
-                                value={inputText}
-                                onChange={e => setInputText(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={
-                                    interimText
-                                        ? interimText
-                                        : PLACEHOLDERS[placeholderIdx]
-                                }
-                                className={`w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
-                                    interimText ? 'placeholder-gray-400 italic' : ''
+                        <input
+                            id="nlp-event-input"
+                            type="text"
+                            value={inputText}
+                            onChange={e => setInputText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={
+                                interimText
+                                    ? interimText
+                                    : NLP_SUGGESTIONS[placeholderIdx]
+                            }
+                            className={`flex-1 min-w-0 px-4 py-3 bg-transparent border-none outline-none text-sm sm:text-base truncate ${
+                                interimText ? 'placeholder-gray-400 italic' : 'placeholder-gray-400'
+                            }`}
+                            disabled={isLoading}
+                        />
+                        {/* Inline action buttons */}
+                        <div className="flex items-center gap-0.5 pr-2 shrink-0">
+                            {/* Camera — scan flyer */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isParsingImage || isLoading}
+                                aria-label="Scan a flyer or schedule"
+                                title="Scan a flyer or photo to import events"
+                                className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    isParsingImage
+                                        ? 'text-indigo-500 animate-pulse'
+                                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                                 }`}
-                                disabled={isLoading}
-                            />
+                            >
+                                <Camera size={18} />
+                            </button>
+                            {/* Mic — voice input */}
+                            <button
+                                onClick={() => void toggleListening()}
+                                disabled={isUploading}
+                                aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                                title={isListening ? 'Stop listening' : 'Start voice input (Alt+V)'}
+                                className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    isListening
+                                        ? 'text-red-500 animate-pulse'
+                                        : isUploading
+                                            ? 'text-amber-500'
+                                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                                }`}
+                            >
+                                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                            </button>
+                            {/* Send */}
+                            <button
+                                onClick={() => handleSubmit()}
+                                disabled={isLoading || !inputText.trim()}
+                                aria-label="Send"
+                                title="Send"
+                                className="p-1.5 ml-0.5 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {isLoading
+                                    ? <span className="block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    : <ArrowUp size={18} />
+                                }
+                            </button>
                         </div>
-                        {/* Camera button — opens image picker / camera */}
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isParsingImage || isLoading}
-                            aria-label="Scan a flyer or schedule"
-                            title="Scan a flyer or photo to import events"
-                            className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                isParsingImage
-                                    ? 'bg-indigo-400 text-white animate-pulse'
-                                    : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
-                            }`}
-                        >
-                            <Camera size={18} />
-                        </button>
-                        <button
-                            onClick={() => void toggleListening()}
-                            disabled={isUploading}
-                            aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
-                            title={isListening ? 'Stop listening' : 'Start voice input (Alt+V)'}
-                            className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                isListening
-                                    ? 'bg-red-500 hover:bg-red-600 text-white ring-2 ring-red-400 ring-offset-1 animate-pulse'
-                                    : isUploading
-                                        ? 'bg-amber-400 text-white'
-                                        : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
-                            }`}
-                        >
-                            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                        </button>
-                        <button
-                            onClick={() => handleSubmit()}
-                            disabled={isLoading || !inputText.trim()}
-                            aria-label="Send"
-                            title="Send"
-                            className="p-2 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <ArrowUp size={20} />
-                        </button>
                     </div>
 
-                    {/* Listening / uploading / parsing status labels */}
+                    {/* Status labels */}
                     {isParsingImage && (
-                        <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">
-                            Scanning image…
-                        </p>
+                        <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">Scanning image…</p>
                     )}
                     {isListening && (
-                        <p className="mt-1.5 text-xs text-red-500 animate-pulse">
-                            Listening…
-                        </p>
+                        <p className="mt-1.5 text-xs text-red-500 animate-pulse">Listening…</p>
                     )}
                     {isUploading && (
-                        <p className="mt-1.5 text-xs text-amber-600 animate-pulse">
-                            Transcribing…
-                        </p>
+                        <p className="mt-1.5 text-xs text-amber-600 animate-pulse">Transcribing…</p>
                     )}
 
-                    {/* Auto-dismiss toast */}
+                    {/* Toast */}
                     {toast && (
                         <p className={`mt-1.5 text-xs ${toast.isError ? 'text-red-600' : 'text-green-600'}`}>
                             {toast.isError ? toast.message : `✓ ${toast.message}`}
                         </p>
-                    )}
-
-                    {/* Dismissible hint strip */}
-                    {showHint && !isListening && !isUploading && !toast && (
-                        <div className="mt-2 flex items-center justify-between bg-white/60 border border-indigo-100 rounded-lg px-3 py-1.5">
-                            <p className="text-xs text-indigo-500 truncate pr-2">
-                                {PLACEHOLDERS[1 + (placeholderIdx % (PLACEHOLDERS.length - 1))]}
-                            </p>
-                            <button
-                                onClick={dismissHint}
-                                aria-label="Dismiss hint"
-                                className="shrink-0 text-indigo-300 hover:text-indigo-500 transition-colors"
-                            >
-                                <X size={12} />
-                            </button>
-                        </div>
                     )}
                 </div>
             </div>
