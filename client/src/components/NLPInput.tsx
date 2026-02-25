@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowUp, Mic, MicOff, X, ChevronRight } from 'lucide-react';
+import { ArrowUp, Camera, Mic, MicOff, X, ChevronRight } from 'lucide-react';
 import moment from 'moment';
-import eventService, { Event, NLPCommandResponse } from '../services/eventService';
+import eventService, { Event, NLPCommandResponse, ParsedFlyerEvent } from '../services/eventService';
+import { FamilyMember } from '../services/familyMemberService';
+import FlyerImportSheet from './FlyerImportSheet';
 import { getEventIcon } from '../utils/eventIcons';
+import { getUserTimezone } from '../utils/timezone';
 
 const PLACEHOLDERS = [
     'Add an event, ask a question, or make a change…',
@@ -60,6 +63,8 @@ interface NLPInputProps {
     onEventsChanged: (event?: Event) => void;
     /** Called when user taps an event card — calendar navigates + EventForm opens. */
     onEventSelect: (event: Event) => void;
+    /** Family members used to resolve names extracted from flyer images. */
+    familyMembers?: FamilyMember[];
     className?: string;
 }
 
@@ -100,7 +105,7 @@ const TrayEventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event,
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, className }) => {
+const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, familyMembers = [], className }) => {
     const [inputText, setInputText] = useState('');
     const [interimText, setInterimText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -114,6 +119,21 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
     const [placeholderIdx, setPlaceholderIdx] = useState(0);
     const [showHint, setShowHint] = useState(() => localStorage.getItem('nlp_hint_dismissed') !== 'true');
     const dismissHintRef = useRef<() => void>(() => {});
+
+    // ── Flyer import state ───────────────────────────────────────────────────
+    const [isParsingImage, setIsParsingImage] = useState(false);
+    const [flyerParsedEvents, setFlyerParsedEvents] = useState<ParsedFlyerEvent[]>([]);
+    const [flyerPreviewUrl, setFlyerPreviewUrl] = useState<string | undefined>(undefined);
+    const [isFlyerSheetOpen, setIsFlyerSheetOpen] = useState(false);
+    const [isCreatingFlyerEvents, setIsCreatingFlyerEvents] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Revoke the image object URL when it changes or the component unmounts
+    useEffect(() => {
+        return () => {
+            if (flyerPreviewUrl) URL.revokeObjectURL(flyerPreviewUrl);
+        };
+    }, [flyerPreviewUrl]);
 
     // Tray: shown for query results and disambiguation
     const [tray, setTray] = useState<NLPCommandResponse | null>(null);
@@ -129,6 +149,76 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
         setToast({ message, isError });
         toastTimer.current = setTimeout(() => setToast(null), 4000);
     }, []);
+
+    // ── Flyer handlers ───────────────────────────────────────────────────────
+
+    const handleFlyerSheetClose = useCallback(() => {
+        setIsFlyerSheetOpen(false);
+        setFlyerPreviewUrl(undefined); // triggers useEffect cleanup to revoke the object URL
+        setFlyerParsedEvents([]);
+    }, []);
+
+    const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        // Reset so selecting the same file again re-triggers onChange
+        e.target.value = '';
+
+        const previewUrl = URL.createObjectURL(file);
+        setFlyerPreviewUrl(previewUrl);
+        setIsParsingImage(true);
+        setTray(null);
+        setToast(null);
+
+        try {
+            const { events } = await eventService.parseFromImage(file);
+            setFlyerParsedEvents(events);
+            setIsFlyerSheetOpen(true);
+        } catch (err) {
+            URL.revokeObjectURL(previewUrl);
+            setFlyerPreviewUrl(undefined);
+            fireToast(err instanceof Error ? err.message : 'Failed to parse image', true);
+        } finally {
+            setIsParsingImage(false);
+        }
+    }, [fireToast]);
+
+    const handleFlyerConfirm = useCallback(async (selectedEvents: ParsedFlyerEvent[]) => {
+        setIsCreatingFlyerEvents(true);
+        try {
+            await Promise.all(selectedEvents.map(evt => {
+                // Resolve family member names to IDs using the prop list
+                const familyMemberIds = (evt.familyMemberNames ?? [])
+                    .map(name =>
+                        familyMembers.find(fm => fm.name.toLowerCase() === name.toLowerCase())?.id
+                    )
+                    .filter((id): id is string => !!id);
+
+                return eventService.create({
+                    title: evt.title,
+                    startTime: evt.startTime,
+                    endTime: evt.endTime,
+                    isAllDay: evt.isAllDay,
+                    location: evt.location,
+                    familyMemberIds: familyMemberIds.length > 0 ? familyMemberIds : undefined,
+                });
+            }));
+
+            const count = selectedEvents.length;
+            setIsFlyerSheetOpen(false);
+            setFlyerParsedEvents([]);
+            setFlyerPreviewUrl(undefined); // triggers useEffect cleanup to revoke the object URL
+            fireToast(`Added ${count} event${count === 1 ? '' : 's'}`);
+            onEventsChanged();
+        } catch (err) {
+            // Some events may have been created before the failure — refresh calendar so
+            // they appear, then surface the error.
+            onEventsChanged();
+            fireToast(err instanceof Error ? err.message : 'Some events could not be added', true);
+        } finally {
+            setIsCreatingFlyerEvents(false);
+        }
+    }, [familyMembers, flyerPreviewUrl, fireToast, onEventsChanged]);
 
     // ── Submit ───────────────────────────────────────────────────────────────
 
@@ -431,6 +521,27 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                 </div>
             )}
 
+            {/* Hidden file input for image upload */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleImageSelect}
+                aria-hidden="true"
+            />
+
+            {/* Flyer import confirmation sheet */}
+            <FlyerImportSheet
+                isOpen={isFlyerSheetOpen}
+                onClose={handleFlyerSheetClose}
+                parsedEvents={flyerParsedEvents}
+                familyMembers={familyMembers}
+                onConfirm={handleFlyerConfirm}
+                isCreating={isCreatingFlyerEvents}
+                imagePreviewUrl={flyerPreviewUrl}
+            />
+
             {/* Input bar */}
             <div className="bg-indigo-50 border-t border-indigo-200 px-4 py-4 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
                 <div className="max-w-3xl mx-auto">
@@ -456,6 +567,20 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                                 disabled={isLoading}
                             />
                         </div>
+                        {/* Camera button — opens image picker / camera */}
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isParsingImage || isLoading}
+                            aria-label="Scan a flyer or schedule"
+                            title="Scan a flyer or photo to import events"
+                            className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isParsingImage
+                                    ? 'bg-indigo-400 text-white animate-pulse'
+                                    : 'bg-white hover:bg-indigo-100 text-gray-600 border border-indigo-200'
+                            }`}
+                        >
+                            <Camera size={18} />
+                        </button>
                         <button
                             onClick={() => void toggleListening()}
                             disabled={isUploading}
@@ -482,7 +607,12 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, cla
                         </button>
                     </div>
 
-                    {/* Listening / uploading status label */}
+                    {/* Listening / uploading / parsing status labels */}
+                    {isParsingImage && (
+                        <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">
+                            Scanning image…
+                        </p>
+                    )}
                     {isListening && (
                         <p className="mt-1.5 text-xs text-red-500 animate-pulse">
                             Listening…
