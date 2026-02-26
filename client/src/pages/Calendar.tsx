@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from '../components/Header';
-import DatePicker from '../components/DatePicker';
+import AgendaView from '../components/AgendaView';
+import MonthView from '../components/MonthView';
+import YearView from '../components/YearView';
+import { CalendarView } from '../types/calendar';
 import EventForm from '../components/EventForm';
 import NLPInput from '../components/NLPInput';
 import FamilyMemberFilter from '../components/FamilyMemberFilter';
@@ -9,6 +12,7 @@ import eventService, { Event, EventInput, RecurringScope } from '../services/eve
 import familyMemberService, { FamilyMember } from '../services/familyMemberService';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const CalendarPage: React.FC = () => {
     const { user } = useAuth();
@@ -16,6 +20,13 @@ const CalendarPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [date, setDate] = useState<Date>(new Date());
+    const [view, setView] = useState<CalendarView>('week');
+
+    // Year view needs ≥900px for 28 columns to be readable — redirect narrower screens to week
+    const isNarrow = useMediaQuery('(max-width: 899px)');
+    useEffect(() => {
+        if (isNarrow && view === 'year') setView('week');
+    }, [isNarrow, view]);
     const [newEventDate, setNewEventDate] = useState<Date | null>(null);
     // Event selected from the NLP results tray — navigate + open EventForm
     const [nlpSelectedEvent, setNlpSelectedEvent] = useState<Event | null>(null);
@@ -47,9 +58,13 @@ const CalendarPage: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            // For month view, fetch events for the entire month
-            const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
-            const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+            // Year view fetches the whole calendar year; other views use a 3-month window
+            const startDate = view === 'year'
+                ? new Date(date.getFullYear(), 0, 1)
+                : new Date(date.getFullYear(), date.getMonth() - 1, 1);
+            const endDate = view === 'year'
+                ? new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999)
+                : new Date(date.getFullYear(), date.getMonth() + 2, 0, 23, 59, 59, 999);
 
             const eventsData = await eventService.getAll(startDate, endDate);
             setEvents(eventsData);
@@ -59,7 +74,7 @@ const CalendarPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [date]);
+    }, [date, view]);
 
     useEffect(() => {
         fetchEvents();
@@ -177,16 +192,16 @@ const CalendarPage: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 overflow-auto overflow-x-hidden md:overflow-hidden flex flex-col min-h-0">
                 {loading ? (
-                    <div className="flex justify-center items-center h-full">
+                    <div className="flex justify-center items-center flex-1">
                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
                     </div>
                 ) : (
                     <>
                         {/* Toolbar row: family member filter */}
                         {familyMembers.length > 0 && (
-                            <div className="mb-3">
+                            <div className="flex-shrink-0 px-4 pt-3 pb-2">
                                 <FamilyMemberFilter
                                     members={familyMembers}
                                     selectedIds={selectedMemberIds}
@@ -198,15 +213,39 @@ const CalendarPage: React.FC = () => {
                             </div>
                         )}
 
-                        <div className="h-full bg-white rounded-lg shadow flex">
-                            <DatePicker
-                                events={filteredEvents}
-                                date={date}
-                                onNavigate={handleNavigate}
-                                onEventUpdate={handleEventUpdate}
-                                onEventDelete={handleEventDelete}
-                                onCreateEvent={setNewEventDate}
-                            />
+                        <div className="flex-1 min-h-0 md:p-4">
+                            {view === 'week' && (
+                                <AgendaView
+                                    events={filteredEvents}
+                                    date={date}
+                                    onNavigate={handleNavigate}
+                                    onEventUpdate={handleEventUpdate}
+                                    onEventDelete={handleEventDelete}
+                                    onCreateEvent={setNewEventDate}
+                                    onViewChange={setView}
+                                />
+                            )}
+                            {view === 'month' && (
+                                <MonthView
+                                    events={filteredEvents}
+                                    date={date}
+                                    onNavigate={handleNavigate}
+                                    onEventUpdate={handleEventUpdate}
+                                    onEventDelete={handleEventDelete}
+                                    onCreateEvent={setNewEventDate}
+                                    onViewChange={setView}
+                                />
+                            )}
+                            {view === 'year' && (
+                                <YearView
+                                    events={filteredEvents}
+                                    date={date}
+                                    onNavigate={handleNavigate}
+                                    onViewChange={setView}
+                                    onEventUpdate={handleEventUpdate}
+                                    onEventDelete={handleEventDelete}
+                                />
+                            )}
                         </div>
 
                         {/* New event modal (date cell click) */}
