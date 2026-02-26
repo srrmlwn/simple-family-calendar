@@ -247,13 +247,6 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
-                        <button
-                            onClick={() => onCreateEvent(date)}
-                            className="ml-1 p-1.5 text-blue-500 bg-blue-50/50 hover:bg-blue-50 rounded-lg transition-colors"
-                            aria-label="New event"
-                        >
-                            <Plus className="w-4 h-4" />
-                        </button>
                     </div>
                 </div>
 
