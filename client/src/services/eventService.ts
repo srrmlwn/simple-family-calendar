@@ -62,7 +62,7 @@ export interface ParsedFlyerEvent {
 }
 
 export interface NLPCommandResponse {
-    intent: 'create' | 'update' | 'delete' | 'query' | 'sync';
+    intent: 'create' | 'create_bulk' | 'update' | 'delete' | 'query' | 'sync';
     message: string;
     /** Created or updated event (for create/update) */
     event?: Event;
@@ -74,6 +74,8 @@ export interface NLPCommandResponse {
     candidates?: Event[];
     /** Changes to apply once the user selects a candidate (update only) */
     pendingChanges?: Partial<EventInput>;
+    /** Parsed events returned for create_bulk — awaiting client-side confirmation */
+    parsedEvents?: ParsedFlyerEvent[];
 }
 
 const eventService = {

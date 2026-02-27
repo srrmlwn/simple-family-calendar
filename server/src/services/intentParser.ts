@@ -18,6 +18,16 @@ interface FamilyMemberContext {
 }
 
 // Shape of each intent result
+export interface ParsedBulkEvent {
+    title: string;
+    startTime: Date;
+    endTime: Date;
+    isAllDay: boolean;
+    location?: string;
+    duration: number; // minutes
+    familyMemberNames?: string[];
+}
+
 export interface CreateIntentResult {
     intent: 'create';
     event: {
@@ -31,6 +41,11 @@ export interface CreateIntentResult {
         /** RFC 5545 RRULE string without DTSTART, e.g. 'FREQ=WEEKLY;BYDAY=MO' */
         rrule?: string;
     };
+}
+
+export interface CreateBulkIntentResult {
+    intent: 'create_bulk';
+    events: ParsedBulkEvent[];
 }
 
 export interface UpdateIntentResult {
@@ -61,6 +76,7 @@ export interface QueryIntentResult {
 
 export type IntentResult =
     | CreateIntentResult
+    | CreateBulkIntentResult
     | UpdateIntentResult
     | DeleteIntentResult
     | QueryIntentResult;
@@ -76,6 +92,14 @@ interface LLMRawResult {
         familyMemberNames?: string[];
         rrule?: string;
     };
+    events?: Array<{
+        title: string;
+        startTime: string;
+        endTime: string;
+        isAllDay?: boolean;
+        location?: string;
+        familyMemberNames?: string[];
+    }>;
     changes?: {
         title?: string;
         location?: string;
@@ -134,8 +158,11 @@ Based on the user's message, determine what they want to do and return ONLY a JS
 
 --- RESPONSE FORMATS ---
 
-CREATE a new event:
+CREATE a single new event:
 {"intent":"create","event":{"title":"string","startTime":"ISO UTC","endTime":"ISO UTC","isAllDay":false,"location":"string or omit"${familyMemberCreateFormat},"rrule":"RFC5545 RRULE string or omit if not recurring"}}
+
+CREATE multiple events (user pasted a schedule, newsletter, or list with 2+ distinct events):
+{"intent":"create_bulk","events":[{"title":"string","startTime":"ISO UTC","endTime":"ISO UTC","isAllDay":false,"location":"string or omit"${familyMemberCreateFormat}},...]}
 
 UPDATE an existing event (single match):
 {"intent":"update","eventId":"uuid","changes":{"title":"string (only if changing)","startTime":"ISO UTC (only if changing)","endTime":"ISO UTC (only if changing)","location":"string (only if changing)"${familyMemberCreateFormat}}}
@@ -169,7 +196,8 @@ QUERY — user is asking about events:
    - "monthly" → "FREQ=MONTHLY"
    - "every first Monday of the month" → "FREQ=MONTHLY;BYDAY=1MO"
    - If the user specifies an end date (e.g. "until June 15"), append ";UNTIL=20260615T000000Z" to the rrule.
-   - Omit "rrule" entirely if the event is not recurring.`;
+   - Omit "rrule" entirely if the event is not recurring.
+10. Use create_bulk (not create) when the input contains 2 or more distinct events with different dates, times, or activities — e.g. a schedule, newsletter, or list of upcoming events. Do not use create_bulk for a single event.`;
 
         const userPrompt = `User command: ${text}`;
 
@@ -213,6 +241,26 @@ QUERY — user is asking about events:
                         rrule: typeof evt.rrule === 'string' ? evt.rrule : undefined,
                     },
                 };
+            }
+
+            case 'create_bulk': {
+                const events: ParsedBulkEvent[] = (raw.events ?? []).map(evt => {
+                    const startTime = new Date(evt.startTime);
+                    const endTime = new Date(evt.endTime);
+                    const duration = Math.round((endTime.getTime() - startTime.getTime()) / 60_000);
+                    return {
+                        title: evt.title,
+                        startTime,
+                        endTime,
+                        isAllDay: evt.isAllDay ?? false,
+                        location: evt.location,
+                        duration,
+                        familyMemberNames: Array.isArray(evt.familyMemberNames)
+                            ? evt.familyMemberNames
+                            : undefined,
+                    };
+                });
+                return { intent: 'create_bulk', events };
             }
 
             case 'update': {
