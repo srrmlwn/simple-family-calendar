@@ -202,6 +202,7 @@ const eventService = {
         form.append('timezone', timezone);
         const res = await api.post<{ events: ParsedFlyerEvent[] }>('/api/flyer/parse-image', form, {
             headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 30000,
         });
         return res.data;
     },
@@ -220,7 +221,7 @@ const eventService = {
     nlpCommand: async (text: string): Promise<NLPCommandResponse> => {
         try {
             const timezone = getUserTimezone();
-            const response = await api.post<NLPCommandResponse>('/api/events/nlp', { text, timezone });
+            const response = await api.post<NLPCommandResponse>('/api/events/nlp', { text, timezone }, { timeout: 30000 });
             const data = response.data;
             if (data.event) data.event = parseEventDates(data.event);
             if (data.events) data.events = data.events.map(parseEventDates);
