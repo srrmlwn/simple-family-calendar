@@ -15,6 +15,7 @@ import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import moment from 'moment-timezone';
 import { effectiveUserId } from '../utils/effectiveUserId';
+import { getActiveSession, extractHistory, upsertTurn } from '../services/conversationService';
 
 export class EventController {
     private eventService: EventService;
@@ -506,6 +507,10 @@ export class EventController {
                 }
             }
 
+            // Load conversation session — fast path (no history) or agent path (with history)
+            const session = await getActiveSession(userId, 'web');
+            const history = extractHistory(session);
+
             // Fetch user events from 7 days ago through 90 days ahead as LLM context
             const contextStart = moment().subtract(7, 'days').toDate();
             const contextEnd = moment().add(90, 'days').toDate();
@@ -518,7 +523,11 @@ export class EventController {
             const userFamilyMembers = await fmRepo.find({ where: { userId } });
 
             // Determine intent and extract structured data
-            const result = await this.intentParser.parseIntent(text, timezone, userEvents, userFamilyMembers, { userId, channel: 'web' });
+            const result = await this.intentParser.parseIntent(
+                text, timezone, userEvents, userFamilyMembers,
+                { userId, channel: 'web' },
+                history
+            );
 
             // ── CREATE ──────────────────────────────────────────────────────────
             if (result.intent === 'create') {
@@ -545,11 +554,9 @@ export class EventController {
                 }
 
                 const [enriched] = await this.attachFamilyMembers([saved]);
-                return res.json({
-                    intent: 'create',
-                    message: `Created "${saved.title}"${memberIds.length > 0 ? ` for ${enriched.familyMembers.map(m => m.name).join(', ')}` : ''}`,
-                    event: enriched,
-                });
+                const message = `Created "${saved.title}"${memberIds.length > 0 ? ` for ${enriched.familyMembers.map(m => m.name).join(', ')}` : ''}`;
+                upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
+                return res.json({ intent: 'create', message, event: enriched });
             }
 
             // ── UPDATE ──────────────────────────────────────────────────────────
@@ -557,12 +564,14 @@ export class EventController {
                 // Disambiguation: multiple events match
                 if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
                     const candidates = userEvents.filter(e => result.candidateIds?.includes(e.id));
+                    const message = `Found ${candidates.length} matching events — which one did you mean?`;
+                    upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
                     return res.json({
                         intent: 'update',
                         requiresDisambiguation: true,
                         candidates,
                         pendingChanges: result.changes,
-                        message: `Found ${candidates.length} matching events — which one did you mean?`,
+                        message,
                     });
                 }
 
@@ -594,22 +603,22 @@ export class EventController {
                 }
 
                 const [enriched] = await this.attachFamilyMembers([updated]);
-                return res.json({
-                    intent: 'update',
-                    message: `Updated "${updated.title}"`,
-                    event: enriched,
-                });
+                const message = `Updated "${updated.title}"`;
+                upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
+                return res.json({ intent: 'update', message, event: enriched });
             }
 
             // ── DELETE ──────────────────────────────────────────────────────────
             if (result.intent === 'delete') {
                 if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
                     const candidates = userEvents.filter(e => result.candidateIds?.includes(e.id));
+                    const message = `Found ${candidates.length} matching events — which one did you mean?`;
+                    upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
                     return res.json({
                         intent: 'delete',
                         requiresDisambiguation: true,
                         candidates,
-                        message: `Found ${candidates.length} matching events — which one did you mean?`,
+                        message,
                     });
                 }
 
@@ -624,20 +633,16 @@ export class EventController {
                 }
 
                 await this.eventService.delete(eventId);
-                return res.json({
-                    intent: 'delete',
-                    message: `Deleted "${existing.title}"`,
-                });
+                const message = `Deleted "${existing.title}"`;
+                upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
+                return res.json({ intent: 'delete', message });
             }
 
             // ── QUERY ───────────────────────────────────────────────────────────
             if (result.intent === 'query') {
                 const events = userEvents.filter(e => result.eventIds.includes(e.id));
-                return res.json({
-                    intent: 'query',
-                    message: result.answer,
-                    events,
-                });
+                upsertTurn(userId, 'web', text, result.answer, session?.id).catch(() => {});
+                return res.json({ intent: 'query', message: result.answer, events });
             }
 
             return res.status(400).json({ error: 'Unrecognised intent' });

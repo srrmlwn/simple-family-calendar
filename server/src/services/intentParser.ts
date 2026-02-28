@@ -106,7 +106,8 @@ export class IntentParser {
         timezone: string,
         userEvents: Event[],
         familyMembers: FamilyMemberContext[] = [],
-        logCtx?: { userId?: string; channel?: 'web' | 'whatsapp' }
+        logCtx?: { userId?: string; channel?: 'web' | 'whatsapp' },
+        conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
     ): Promise<IntentResult> {
         const now = moment().tz(timezone);
 
@@ -183,7 +184,10 @@ QUERY — user is asking about events:
                 max_tokens: 1024,
                 temperature: 0.1,
                 system: systemPrompt,
-                messages: [{ role: 'user', content: userPrompt }],
+                messages: [
+                    ...conversationHistory,
+                    { role: 'user', content: userPrompt },
+                ],
             });
         } catch (err) {
             logLLMCall({

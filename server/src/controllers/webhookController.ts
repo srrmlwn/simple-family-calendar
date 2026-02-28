@@ -12,6 +12,7 @@ import { IntentParser } from '../services/intentParser';
 import { validateSignature, normalizePhone, twimlReply } from '../services/twilioService';
 import { CreateIntentResult, UpdateIntentResult, DeleteIntentResult, IntentResult } from '../services/intentParser';
 import { validateOrReject } from 'class-validator';
+import { getActiveSession, extractHistory, upsertTurn } from '../services/conversationService';
 
 // ── In-memory pending confirmations ─────────────────────────────────────────
 // Key: normalized phone number
@@ -89,7 +90,11 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
     // 4. Clear any expired pending entry for this user
     clearExpired(phone);
 
-    // 5. Handle YES/NO for pending confirmation
+    // 5. Load conversation session (provides multi-turn context on the agent path)
+    const session = await getActiveSession(user.id, 'whatsapp');
+    const history = extractHistory(session);
+
+    // 6. Handle YES/NO for pending confirmation
     const pending = pendingConfirmations.get(phone);
     if (pending) {
         const upper = body.toUpperCase();
@@ -108,12 +113,14 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
                 .limit(1)
                 .execute()
                 .catch(() => {});
+            let reply: string;
             try {
-                const reply = await executePendingAction(pending.action, user.id);
-                res.type('text/xml').send(twimlReply(reply));
+                reply = await executePendingAction(pending.action, user.id);
             } catch {
-                res.type('text/xml').send(twimlReply('Sorry, something went wrong. Please try again.'));
+                reply = 'Sorry, something went wrong. Please try again.';
             }
+            upsertTurn(user.id, 'whatsapp', body, reply, session?.id).catch(() => {});
+            res.type('text/xml').send(twimlReply(reply));
             return;
         } else if (upper === 'NO' || upper === 'N') {
             pendingConfirmations.delete(phone);
@@ -130,7 +137,9 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
                 .limit(1)
                 .execute()
                 .catch(() => {});
-            res.type('text/xml').send(twimlReply('Cancelled.'));
+            const reply = 'Cancelled.';
+            upsertTurn(user.id, 'whatsapp', body, reply, session?.id).catch(() => {});
+            res.type('text/xml').send(twimlReply(reply));
             return;
         } else {
             // Treat any other message as a new command; clear the pending entry
@@ -138,7 +147,7 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
         }
     }
 
-    // 6. Fetch user events for NLP context (−7 → +90 days)
+    // 7. Fetch user events for NLP context (−7 → +90 days)
     const contextStart = moment().subtract(7, 'days').toDate();
     const contextEnd = moment().add(90, 'days').toDate();
     const userEvents = await eventService.findByUserIdAndDateRange(
@@ -152,17 +161,24 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
     const fmRepo = AppDataSource.getRepository(FamilyMember);
     const familyMembers = await fmRepo.find({ where: { userId: user.id } });
 
-    // 7. Parse intent
+    // 8. Parse intent — fast path (no history) or agent path (with history)
     let parsed: IntentResult | undefined;
     try {
-        parsed = await intentParser.parseIntent(body, timezone, eventsForContext, familyMembers, { userId: user.id, channel: 'whatsapp' });
+        parsed = await intentParser.parseIntent(
+            body, timezone, eventsForContext, familyMembers,
+            { userId: user.id, channel: 'whatsapp' },
+            history
+        );
     } catch {
-        res.type('text/xml').send(twimlReply("Sorry, I couldn't understand that. Try asking 'What's on my calendar this week?' or 'Add dentist Tuesday at 3pm'."));
+        const errReply = "Sorry, I couldn't understand that. Try asking 'What's on my calendar this week?' or 'Add dentist Tuesday at 3pm'.";
+        upsertTurn(user.id, 'whatsapp', body, errReply, session?.id).catch(() => {});
+        res.type('text/xml').send(twimlReply(errReply));
         return;
     }
 
-    // 8. Route by intent
+    // 9. Route by intent and persist this conversation turn
     const reply = routeIntent(parsed, eventsForContext, phone, timezone);
+    upsertTurn(user.id, 'whatsapp', body, reply, session?.id).catch(() => {});
     res.type('text/xml').send(twimlReply(reply));
 }
 
