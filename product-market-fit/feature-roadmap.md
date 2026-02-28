@@ -4,7 +4,7 @@ _Last updated: 2026-02-28 — **Strategic pivot: conversational agent**_
 
 > **Current focus:** Phase 1 — Agent Foundation. See the PMF case and architecture rationale in [`conversational-first-strategy.md`](./conversational-first-strategy.md).
 >
-> **Sprint status:** LLM telemetry shipped ✅. Conversation memory (multi-turn context router) shipped ✅. Next: LLM tool-use architecture.
+> **Sprint status:** Phase 1 complete ✅. All agent foundation items shipped. Next: Phase 2 — proactive agent.
 
 ---
 
@@ -86,7 +86,7 @@ _Goal: Turn our single-turn bot into a genuine multi-turn conversational agent. 
 
 ---
 
-### 🎯 LLM Tool Use Architecture (Replace Intent Router)
+### ✅ LLM Tool Use Architecture (Replace Intent Router)
 
 **Why:** The current `if (result.intent === 'create')` router is a dead end. It can execute exactly one operation per message. A real agent needs to reason, call multiple tools, ask clarifying questions, and handle complex requests like "clear my Thursday afternoon" or "plan Sasha's week."
 
@@ -103,7 +103,7 @@ _Goal: Turn our single-turn bot into a genuine multi-turn conversational agent. 
 
 ---
 
-### 🎯 Persistent Conversation State (Move Off In-Memory Map)
+### ✅ Persistent Conversation State (Move Off In-Memory Map)
 
 **Why:** The current pending confirmations live in a JavaScript `Map`. Every dyno restart or Heroku sleep cycle wipes them. This is a reliability bug.
 
@@ -113,7 +113,7 @@ _Goal: Turn our single-turn bot into a genuine multi-turn conversational agent. 
 
 ---
 
-### 🎯 Conflict Detection at Every Write
+### ✅ Conflict Detection at Every Write
 
 **Why:** The agent's credibility depends on never creating a conflict silently. A double-booked Saturday is the kind of failure that makes parents stop trusting it.
 
@@ -123,18 +123,6 @@ _Goal: Turn our single-turn bot into a genuine multi-turn conversational agent. 
 - Apply to both WhatsApp bot AND web NLP input
 
 ---
-
-### 🎯 Rich Agent Context (Family Intelligence Layer)
-
-**Why:** An agent that doesn't know your family produces generic responses. An agent that knows Sasha is 3 years old, Dr. Chen is at Ballard Pediatrics, and soccer is always at Magnuson Park produces responses that feel like a real assistant.
-
-**What to build:**
-- System prompt enhancement: on every LLM call, include:
-  - Family members (names, relationships if stored)
-  - The user's timezone (already have this, just needs to flow correctly — see the 6am bug we just fixed)
-  - Recent frequent locations from event history (extracted from past events, summarized)
-  - Any explicit user preferences stored in `user_settings`
-- Start simple: just family members + timezone. Add location inference later.
 
 ---
 
@@ -202,6 +190,16 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 
 ## Phase 3 — Agent Intelligence
 _Goal: The agent gets genuinely smart about your family. Personalization and proactive scheduling. Build after Phase 2 is stable and trusted._
+
+---
+
+### 🎯 Rich Agent Context (Family Intelligence Layer)
+
+**Why:** An agent that doesn't know your family produces generic responses. An agent that knows Sasha is 3 years old, Dr. Chen is at Ballard Pediatrics, and soccer is always at Magnuson Park produces responses that feel like a real assistant.
+
+**What to build:**
+- System prompt enhancement: include family member relationships if stored, recent frequent locations extracted from event history, explicit user preferences from `user_settings`
+- Start simple: just family members + timezone (already included). Add location inference after Phase 2 ships.
 
 ---
 

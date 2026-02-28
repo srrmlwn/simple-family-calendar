@@ -30,4 +30,12 @@ export class ConversationSession {
 
     @Column({ name: 'expires_at', type: 'timestamptz' })
     expiresAt!: Date;
+
+    // Pending tool call awaiting YES/NO confirmation (WhatsApp only)
+    @Column({ name: 'pending_tool_call', type: 'jsonb', nullable: true })
+    pendingToolCall?: {
+        toolName: string;
+        toolInput: Record<string, unknown>;
+        confirmationPrompt: string;
+    };
 }

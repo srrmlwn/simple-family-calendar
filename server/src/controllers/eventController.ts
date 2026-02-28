@@ -16,6 +16,7 @@ import { User } from '../entities/User';
 import moment from 'moment-timezone';
 import { effectiveUserId } from '../utils/effectiveUserId';
 import { getActiveSession, extractHistory, upsertTurn } from '../services/conversationService';
+import { AgentService } from '../services/agentService';
 
 export class EventController {
     private eventService: EventService;
@@ -23,11 +24,14 @@ export class EventController {
     private parser: ReturnType<typeof hybridParser>;
     private intentParser: IntentParser;
 
+    private agentService: AgentService;
+
     constructor() {
         this.eventService = new EventService();
         this.emailService = new EmailService();
         this.parser = hybridParser(process.env.ANTHROPIC_API_KEY || '');
         this.intentParser = new IntentParser(process.env.ANTHROPIC_API_KEY || '');
+        this.agentService = new AgentService(process.env.ANTHROPIC_API_KEY || '');
     }
 
     /**
@@ -507,145 +511,44 @@ export class EventController {
                 }
             }
 
-            // Load conversation session — fast path (no history) or agent path (with history)
+            // Load conversation session (provides multi-turn history)
             const session = await getActiveSession(userId, 'web');
             const history = extractHistory(session);
 
-            // Fetch user events from 7 days ago through 90 days ahead as LLM context
-            const contextStart = moment().subtract(7, 'days').toDate();
-            const contextEnd = moment().add(90, 'days').toDate();
-            const userEvents = await this.eventService.findByUserIdAndDateRange(
-                userId, contextStart, contextEnd, timezone
-            );
-
-            // Fetch family members to provide as NLP context
-            const fmRepo = AppDataSource.getRepository(FamilyMember);
+            // Fetch user events and family members for agent context
+            const contextStart      = moment().subtract(7, 'days').toDate();
+            const contextEnd        = moment().add(90, 'days').toDate();
+            const userEvents        = await this.eventService.findByUserIdAndDateRange(userId, contextStart, contextEnd, timezone);
+            const fmRepo            = AppDataSource.getRepository(FamilyMember);
             const userFamilyMembers = await fmRepo.find({ where: { userId } });
 
-            // Determine intent and extract structured data
-            const result = await this.intentParser.parseIntent(
-                text, timezone, userEvents, userFamilyMembers,
-                { userId, channel: 'web' },
-                history
-            );
+            // Run the agent (handles create/update/delete/query + conflict detection)
+            const agentResult = await this.agentService.run({
+                message: text,
+                userId,
+                timezone,
+                channel: 'web',
+                history,
+                preloadedEvents: userEvents as Event[],
+                familyMembers: userFamilyMembers,
+            });
 
-            // ── CREATE ──────────────────────────────────────────────────────────
-            if (result.intent === 'create') {
-                const event = new Event();
-                event.title = result.event.title;
-                event.startTime = result.event.startTime;
-                event.endTime = result.event.endTime;
-                event.duration = result.event.duration;
-                event.isAllDay = result.event.isAllDay;
-                event.location = result.event.location;
-                event.userId = userId;
-                // Recurring event from NLP
-                if (result.event.rrule) event.rrule = result.event.rrule;
+            const intent  = agentResult.intent ?? 'query';
+            const message = agentResult.reply;
 
-                await validateOrReject(event);
-                const saved = await this.eventService.create(event);
+            // Persist this conversation turn
+            upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
 
-                // Tag family members extracted by NLP
-                const memberIds = this.resolveMemberIds(
-                    result.event.familyMemberNames ?? [], userFamilyMembers
-                );
-                if (memberIds.length > 0) {
-                    await this.saveFamilyMemberTags(saved.id, memberIds, userId);
-                }
-
-                const [enriched] = await this.attachFamilyMembers([saved]);
-                const message = `Created "${saved.title}"${memberIds.length > 0 ? ` for ${enriched.familyMembers.map(m => m.name).join(', ')}` : ''}`;
-                upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
+            // Build the response the client expects
+            if (agentResult.createdEvent) {
+                const [enriched] = await this.attachFamilyMembers([agentResult.createdEvent]);
                 return res.json({ intent: 'create', message, event: enriched });
             }
-
-            // ── UPDATE ──────────────────────────────────────────────────────────
-            if (result.intent === 'update') {
-                // Disambiguation: multiple events match
-                if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
-                    const candidates = userEvents.filter(e => result.candidateIds?.includes(e.id));
-                    const message = `Found ${candidates.length} matching events — which one did you mean?`;
-                    upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
-                    return res.json({
-                        intent: 'update',
-                        requiresDisambiguation: true,
-                        candidates,
-                        pendingChanges: result.changes,
-                        message,
-                    });
-                }
-
-                const eventId = result.eventId ?? result.candidateIds?.[0];
-                if (!eventId) {
-                    return res.status(400).json({ error: 'Could not find a matching event to update' });
-                }
-
-                const existing = await this.eventService.findById(eventId);
-                if (!existing || existing.userId !== userId) {
-                    return res.status(404).json({ error: 'Event not found' });
-                }
-
-                const updates: Partial<Event> = {};
-                if (result.changes.title) updates.title = result.changes.title;
-                if (result.changes.location !== undefined) updates.location = result.changes.location;
-                if (result.changes.startTime) updates.startTime = result.changes.startTime;
-                if (result.changes.endTime) updates.endTime = result.changes.endTime;
-                if (result.changes.duration) updates.duration = result.changes.duration;
-
-                const updated = await this.eventService.update(eventId, updates);
-
-                // Update family member tags if NLP extracted names
-                if (result.changes.familyMemberNames !== undefined) {
-                    const memberIds = this.resolveMemberIds(
-                        result.changes.familyMemberNames, userFamilyMembers
-                    );
-                    await this.saveFamilyMemberTags(eventId, memberIds, userId);
-                }
-
-                const [enriched] = await this.attachFamilyMembers([updated]);
-                const message = `Updated "${updated.title}"`;
-                upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
+            if (agentResult.updatedEvent) {
+                const [enriched] = await this.attachFamilyMembers([agentResult.updatedEvent]);
                 return res.json({ intent: 'update', message, event: enriched });
             }
-
-            // ── DELETE ──────────────────────────────────────────────────────────
-            if (result.intent === 'delete') {
-                if (!result.eventId && result.candidateIds && result.candidateIds.length > 1) {
-                    const candidates = userEvents.filter(e => result.candidateIds?.includes(e.id));
-                    const message = `Found ${candidates.length} matching events — which one did you mean?`;
-                    upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
-                    return res.json({
-                        intent: 'delete',
-                        requiresDisambiguation: true,
-                        candidates,
-                        message,
-                    });
-                }
-
-                const eventId = result.eventId ?? result.candidateIds?.[0];
-                if (!eventId) {
-                    return res.status(400).json({ error: 'Could not find a matching event to delete' });
-                }
-
-                const existing = await this.eventService.findById(eventId);
-                if (!existing || existing.userId !== userId) {
-                    return res.status(404).json({ error: 'Event not found' });
-                }
-
-                await this.eventService.delete(eventId);
-                const message = `Deleted "${existing.title}"`;
-                upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
-                return res.json({ intent: 'delete', message });
-            }
-
-            // ── QUERY ───────────────────────────────────────────────────────────
-            if (result.intent === 'query') {
-                const events = userEvents.filter(e => result.eventIds.includes(e.id));
-                upsertTurn(userId, 'web', text, result.answer, session?.id).catch(() => {});
-                return res.json({ intent: 'query', message: result.answer, events });
-            }
-
-            return res.status(400).json({ error: 'Unrecognised intent' });
+            return res.json({ intent, message });
         } catch (error) {
             console.error('Error handling NLP command:', error);
             return res.status(500).json({

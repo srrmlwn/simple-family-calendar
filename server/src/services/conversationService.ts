@@ -107,3 +107,37 @@ export async function expireSession(sessionId: string): Promise<void> {
     const repo = AppDataSource.getRepository(ConversationSession);
     await repo.update(sessionId, { expiresAt: new Date() });
 }
+
+export interface PendingToolCallData {
+    toolName: string;
+    toolInput: Record<string, unknown>;
+    confirmationPrompt: string;
+}
+
+/**
+ * Stores a pending tool call (awaiting YES/NO) on the session.
+ * Replaces the in-memory pendingConfirmations Map.
+ */
+export async function storePendingToolCall(
+    sessionId: string,
+    pending: PendingToolCallData
+): Promise<void> {
+    await AppDataSource.query(
+        `UPDATE conversation_sessions
+         SET pending_tool_call = $1::jsonb, updated_at = NOW()
+         WHERE id = $2`,
+        [JSON.stringify(pending), sessionId]
+    );
+}
+
+/**
+ * Clears the pending tool call on the session (after YES/NO).
+ */
+export async function clearPendingToolCall(sessionId: string): Promise<void> {
+    await AppDataSource.query(
+        `UPDATE conversation_sessions
+         SET pending_tool_call = NULL, updated_at = NOW()
+         WHERE id = $1`,
+        [sessionId]
+    );
+}
