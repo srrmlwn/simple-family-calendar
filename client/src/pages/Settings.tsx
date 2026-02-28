@@ -4,9 +4,10 @@ import Header from '../components/Header';
 import NotificationPreferences from '../components/NotificationPreferences';
 import FamilyMemberManager from '../components/FamilyMemberManager';
 import FamilyAccessSettings from '../components/FamilyAccessSettings';
-import { Plus, Trash2, Check, X } from 'lucide-react';
+import { Plus, Trash2, Check, X, MessageSquare } from 'lucide-react';
 import api from '../services/api';
 import { getUserTimezone } from '../utils/timezone';
+import phoneService from '../services/phoneService';
 
 interface Recipient {
     id: string;
@@ -27,11 +28,24 @@ const Settings: React.FC = () => {
     const [installPrompt, setInstallPrompt] = useState<any>(null);
     const [showInstallButton, setShowInstallButton] = useState(false);
 
+    // WhatsApp / phone
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [savedPhone, setSavedPhone] = useState<string | null>(null);
+    const [twilioPhoneNumber, setTwilioPhoneNumber] = useState<string | null>(null);
+    const [twilioJoinCode, setTwilioJoinCode] = useState<string | null>(null);
+    const [phoneSaving, setPhoneSaving] = useState(false);
+    const [phoneLinked, setPhoneLinked] = useState(false);
+
     const navigate = useNavigate();
 
-    // Fetch recipients on component mount
+    // Fetch recipients and settings on mount
     useEffect(() => {
         fetchRecipients();
+        api.get('/api/settings').then(res => {
+            setSavedPhone(res.data.phoneNumber ?? null);
+            setTwilioPhoneNumber(res.data.twilioPhoneNumber ?? null);
+            setTwilioJoinCode(res.data.twilioJoinCode ?? null);
+        }).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -195,6 +209,34 @@ const Settings: React.FC = () => {
         }
     };
 
+    const handleSavePhone = async () => {
+        if (!phoneNumber.trim()) return;
+        setPhoneSaving(true);
+        setError(null);
+        try {
+            await phoneService.save(phoneNumber.trim());
+            setSavedPhone(phoneNumber.trim());
+            setPhoneNumber('');
+            setPhoneLinked(true);
+        } catch (err: unknown) {
+            const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Could not save phone number';
+            setError(msg);
+        } finally {
+            setPhoneSaving(false);
+        }
+    };
+
+    const handleRemovePhone = async () => {
+        if (!window.confirm('Remove your WhatsApp number?')) return;
+        try {
+            await phoneService.remove();
+            setSavedPhone(null);
+            setPhoneLinked(false);
+        } catch {
+            setError('Could not remove phone number');
+        }
+    };
+
     const handleInstallClick = async () => {
         if (!installPrompt) return;
 
@@ -268,6 +310,67 @@ const Settings: React.FC = () => {
                 {/* Notification Preferences */}
                 <div className="mb-6">
                     <NotificationPreferences />
+                </div>
+
+                {/* WhatsApp */}
+                <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
+                    <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-green-600" />
+                        <div>
+                            <h2 className="text-lg font-medium">WhatsApp</h2>
+                            <p className="text-sm text-gray-600">Text your calendar — add events, check your schedule, get reminders.</p>
+                        </div>
+                    </div>
+                    <div className="px-6 py-4">
+                        {savedPhone && !phoneLinked ? (
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-800">{savedPhone}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">Linked to your account</p>
+                                </div>
+                                <button
+                                    onClick={handleRemovePhone}
+                                    className="text-sm text-red-500 hover:text-red-700"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        ) : phoneLinked ? (
+                            <div className="space-y-2 text-sm">
+                                <p className="font-medium text-green-700">Phone linked!</p>
+                                {twilioPhoneNumber && (
+                                    <p className="text-gray-700">Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"FamCal"</span> in your contacts.</p>
+                                )}
+                                {twilioJoinCode ? (
+                                    <p className="text-gray-700">Send <span className="font-semibold">{twilioJoinCode}</span> to that number on WhatsApp to activate.</p>
+                                ) : (
+                                    <p className="text-gray-700">Then send any message to that number on WhatsApp to start.</p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="tel"
+                                        placeholder="+12125551234"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSavePhone()}
+                                        disabled={phoneSaving}
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+                                    />
+                                    <button
+                                        onClick={handleSavePhone}
+                                        disabled={phoneSaving || !phoneNumber.trim()}
+                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:bg-green-300"
+                                    >
+                                        {phoneSaving ? 'Saving…' : 'Save'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-400">International format required (e.g. +1 for US/Canada)</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
