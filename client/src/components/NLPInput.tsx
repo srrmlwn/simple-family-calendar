@@ -127,19 +127,25 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         };
     }, [flyerPreviewUrl]);
 
-    // Tray: shown for query results and disambiguation
+    // Tray: shown for query results with event cards and disambiguation
     const [tray, setTray] = useState<NLPCommandResponse | null>(null);
 
-    // Toast: 4s auto-dismiss for mutation confirmations
-    const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Persistent message: last assistant response — cleared on next submit, not on a timer
+    const [persistentMsg, setPersistentMsg] = useState<string | null>(null);
 
-    // ── Toast ────────────────────────────────────────────────────────────────
+    // Error message: auto-dismisses after 6s
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const fireToast = useCallback((message: string, isError = false) => {
-        if (toastTimer.current) clearTimeout(toastTimer.current);
-        setToast({ message, isError });
-        toastTimer.current = setTimeout(() => setToast(null), 4000);
+    // Context pill: last user message, shown when a session is active
+    const [lastUserMsg, setLastUserMsg] = useState<string | null>(null);
+
+    // ── Error display (auto-dismiss) ─────────────────────────────────────────
+
+    const showError = useCallback((message: string) => {
+        if (errorTimer.current) clearTimeout(errorTimer.current);
+        setErrorMsg(message);
+        errorTimer.current = setTimeout(() => setErrorMsg(null), 6000);
     }, []);
 
     // ── Flyer handlers ───────────────────────────────────────────────────────
@@ -160,7 +166,6 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         setFlyerPreviewUrl(previewUrl);
         setIsParsingImage(true);
         setTray(null);
-        setToast(null);
 
         try {
             const { events } = await eventService.parseFromImage(file);
@@ -169,11 +174,11 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         } catch (err) {
             URL.revokeObjectURL(previewUrl);
             setFlyerPreviewUrl(undefined);
-            fireToast(err instanceof Error ? err.message : 'Failed to parse image', true);
+            showError(err instanceof Error ? err.message : 'Failed to parse image');
         } finally {
             setIsParsingImage(false);
         }
-    }, [fireToast]);
+    }, [showError]);
 
     const handleFlyerConfirm = useCallback(async (selectedEvents: ParsedFlyerEvent[]) => {
         setIsCreatingFlyerEvents(true);
@@ -200,17 +205,17 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             setIsFlyerSheetOpen(false);
             setFlyerParsedEvents([]);
             setFlyerPreviewUrl(undefined); // triggers useEffect cleanup to revoke the object URL
-            fireToast(`Added ${count} event${count === 1 ? '' : 's'}`);
+            setPersistentMsg(`Added ${count} event${count === 1 ? '' : 's'}`);
             onEventsChanged();
         } catch (err) {
             // Some events may have been created before the failure — refresh calendar so
             // they appear, then surface the error.
             onEventsChanged();
-            fireToast(err instanceof Error ? err.message : 'Some events could not be added', true);
+            showError(err instanceof Error ? err.message : 'Some events could not be added');
         } finally {
             setIsCreatingFlyerEvents(false);
         }
-    }, [familyMembers, flyerPreviewUrl, fireToast, onEventsChanged]);
+    }, [familyMembers, flyerPreviewUrl, showError, onEventsChanged]);
 
     // ── Submit ───────────────────────────────────────────────────────────────
 
@@ -220,33 +225,38 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
 
         setIsLoading(true);
         setTray(null);
-        setToast(null);
+        setPersistentMsg(null);
+        setErrorMsg(null);
         setInterimText('');
 
         try {
             const result = await eventService.nlpCommand(text);
             setInputText('');
             dismissHintRef.current();
+            setLastUserMsg(text);
 
-            if (result.intent === 'query') {
+            if (result.requiresDisambiguation) {
+                // Disambiguation: show event cards in the tray
                 setTray(result);
-            } else if (result.requiresDisambiguation) {
+            } else if (result.intent === 'query' && (result.events ?? []).length > 0) {
+                // Query with event cards: show in tray
                 setTray(result);
             } else {
-                // Mutation: toast + refresh calendar
-                fireToast(result.message);
+                // Text-only response (clarification, "nothing found", mutation confirm):
+                // show persistently so the user can read and follow up
+                setPersistentMsg(result.message);
                 if (result.intent === 'create' || result.intent === 'update') {
                     onEventsChanged(result.event);
-                } else {
+                } else if (result.intent === 'delete') {
                     onEventsChanged();
                 }
             }
         } catch (err) {
-            fireToast(err instanceof Error ? err.message : 'Failed to process command', true);
+            showError(err instanceof Error ? err.message : 'Failed to process command');
         } finally {
             setIsLoading(false);
         }
-    }, [inputText, onEventsChanged, fireToast]);
+    }, [inputText, onEventsChanged, showError]);
 
     // Stable ref so voice callbacks always call the latest version without re-registering handlers
     const handleSubmitRef = useRef(handleSubmit);
@@ -289,7 +299,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             }
         };
         rec.onerror = () => {
-            fireToast('Voice recognition failed. Please try again.', true);
+            showError('Voice recognition failed. Please try again.');
             setIsListening(false);
             setInterimText('');
         };
@@ -301,7 +311,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         return () => { rec.abort(); };
     // handleSubmitRef is a stable ref — intentionally excluded from deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fireToast]);
+    }, [showError]);
 
     // ── Primary: Whisper via MediaRecorder ───────────────────────────────────
 
@@ -329,10 +339,10 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
                 if (transcript.trim()) {
                     handleSubmitRef.current(transcript.trim());
                 } else {
-                    fireToast('No speech detected. Please try again.', true);
+                    showError('No speech detected. Please try again.');
                 }
             } catch {
-                fireToast('Transcription failed. Please try again.', true);
+                showError('Transcription failed. Please try again.');
             } finally {
                 setIsUploading(false);
             }
@@ -340,7 +350,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
 
         recorder.start();
         setIsListening(true);
-    }, [fireToast]);
+    }, [showError]);
 
     // ── toggleListening: Whisper primary, Web Speech fallback ────────────────
 
@@ -355,7 +365,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         }
 
         setTray(null);
-        setToast(null);
+        setPersistentMsg(null);
         setInterimText('');
 
         // Primary: MediaRecorder + Whisper
@@ -370,12 +380,12 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
 
         // Fallback: Web Speech API (with interim text support)
         if (!recognition) {
-            fireToast('Voice input is not supported in your browser.', true);
+            showError('Voice input is not supported in your browser.');
             return;
         }
         recognition.start();
         setIsListening(true);
-    }, [isListening, recognition, startWhisperRecording, fireToast]);
+    }, [isListening, recognition, startWhisperRecording, showError]);
 
     // ── Alt+V keyboard shortcut ──────────────────────────────────────────────
 
@@ -408,22 +418,22 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             if (tray.intent === 'update' && tray.pendingChanges) {
                 const updated = await eventService.update(candidateId, tray.pendingChanges);
                 setTray(null);
-                fireToast(`Updated "${updated.title}"`);
+                setPersistentMsg(`Updated "${updated.title}"`);
                 onEventsChanged(updated);
             } else if (tray.intent === 'delete') {
                 const candidate = tray.candidates?.find(c => c.id === candidateId);
                 await eventService.delete(candidateId);
                 setTray(null);
-                fireToast(`Deleted "${candidate?.title ?? 'event'}"`);
+                setPersistentMsg(`Deleted "${candidate?.title ?? 'event'}"`);
                 onEventsChanged();
             }
         } catch (err) {
-            fireToast(err instanceof Error ? err.message : 'Action failed', true);
+            showError(err instanceof Error ? err.message : 'Action failed');
             setTray(null);
         } finally {
             setIsLoading(false);
         }
-    }, [tray, onEventsChanged, fireToast]);
+    }, [tray, onEventsChanged, showError]);
 
     // ── Query tray: clicking an event navigates + opens EventForm ────────────
 
@@ -431,6 +441,15 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         setTray(null);
         onEventSelect(event);
     }, [onEventSelect]);
+
+    // ── Clear conversation session ────────────────────────────────────────────
+
+    const handleClearSession = useCallback(async () => {
+        setLastUserMsg(null);
+        setPersistentMsg(null);
+        setTray(null);
+        eventService.clearConversationSession().catch(() => {});
+    }, []);
 
     // ── Tray render ──────────────────────────────────────────────────────────
 
@@ -534,6 +553,22 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             {/* Input bar */}
             <div className="bg-indigo-50 border-t border-indigo-200 px-3 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
                 <div className="max-w-3xl mx-auto">
+
+                    {/* Context pill — shows last user message when session is active */}
+                    {lastUserMsg && (
+                        <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-indigo-100 rounded-lg text-xs text-indigo-700">
+                            <span className="font-medium shrink-0">Continuing:</span>
+                            <span className="flex-1 truncate italic">{lastUserMsg}</span>
+                            <button
+                                onClick={handleClearSession}
+                                aria-label="Clear conversation context"
+                                title="Start a new conversation"
+                                className="shrink-0 ml-1 text-indigo-400 hover:text-indigo-600 transition-colors"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    )}
                     {/* Combined input + inline buttons */}
                     <div className={`flex items-center bg-white rounded-xl border shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-indigo-400 ${
                         isListening ? 'border-red-300' : 'border-indigo-200'
@@ -616,11 +651,16 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
                         <p className="mt-1.5 text-xs text-amber-600 animate-pulse">Transcribing…</p>
                     )}
 
-                    {/* Toast */}
-                    {toast && (
-                        <p className={`mt-1.5 text-xs ${toast.isError ? 'text-red-600' : 'text-green-600'}`}>
-                            {toast.isError ? toast.message : `✓ ${toast.message}`}
+                    {/* Persistent assistant response */}
+                    {persistentMsg && (
+                        <p className="mt-1.5 text-xs text-gray-700 leading-snug">
+                            ✓ {persistentMsg}
                         </p>
+                    )}
+
+                    {/* Error message (auto-dismisses) */}
+                    {errorMsg && (
+                        <p className="mt-1.5 text-xs text-red-600">{errorMsg}</p>
                     )}
                 </div>
             </div>

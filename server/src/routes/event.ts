@@ -15,6 +15,9 @@ router.get('/:id', asyncHandler(eventController.getEventById));
 // NLP command endpoint — full CRUD via natural language (requires auth)
 router.post('/nlp', authenticateJWT, asyncHandler(eventController.handleNLPCommand));
 
+// Clear the active conversation session (lets user start fresh)
+router.delete('/session', authenticateJWT, asyncHandler(eventController.clearConversationSession));
+
 // Create event from natural language text
 router.post('/text', asyncHandler(eventController.createEventFromText));
 

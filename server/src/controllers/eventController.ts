@@ -15,7 +15,7 @@ import { validateOrReject } from 'class-validator';
 import { User } from '../entities/User';
 import moment from 'moment-timezone';
 import { effectiveUserId } from '../utils/effectiveUserId';
-import { getActiveSession, extractHistory, upsertTurn } from '../services/conversationService';
+import { getActiveSession, extractHistory, upsertTurn, expireSession } from '../services/conversationService';
 import { AgentService } from '../services/agentService';
 
 export class EventController {
@@ -555,6 +555,15 @@ export class EventController {
                 error: error instanceof Error ? error.message : 'Failed to process command',
             });
         }
+    };
+
+    /** Immediately expires the user's active web conversation session. */
+    public clearConversationSession = async (req: Request, res: Response): Promise<Response> => {
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = effectiveUserId(req);
+        const session = await getActiveSession(userId, 'web');
+        if (session) await expireSession(session.id).catch(() => {});
+        return res.json({ ok: true });
     };
 
     /**

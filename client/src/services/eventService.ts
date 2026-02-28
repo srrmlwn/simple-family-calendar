@@ -230,6 +230,10 @@ const eventService = {
             throw new Error('Failed to process command');
         }
     },
+
+    clearConversationSession: async (): Promise<void> => {
+        await api.delete('/api/events/session');
+    },
 };
 
 // Helper function to convert date strings to Date objects
