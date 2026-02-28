@@ -3,8 +3,10 @@ import { Router } from 'express';
 import { Request, Response } from 'express';
 import {AppDataSource} from "../data-source";
 import { UserSettings } from '../entities/UserSettings';
+import { User } from '../entities/User';
 import asyncHandler from '../utils/asyncHandler';
 import { effectiveUserId } from '../utils/effectiveUserId';
+import config from '../config';
 
 const router = Router();
 
@@ -33,7 +35,16 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
         settings = await settingsRepository.save(settings);
     }
 
-    return res.json(settings);
+    // Fetch user's phone number from the User entity
+    const userRepo = AppDataSource.getRepository(User);
+    const user = await userRepo.findOne({ where: { id: userId } });
+
+    return res.json({
+        ...settings,
+        phoneNumber: user?.phoneNumber ?? null,
+        twilioPhoneNumber: config.twilio.phoneNumber || null,
+        twilioJoinCode: config.twilio.joinCode || null,
+    });
 }));
 
 const VALID_THEMES = ['light', 'dark'];
@@ -98,6 +109,47 @@ router.put('/', asyncHandler(async (req: Request, res: Response) => {
     const updatedSettings = await settingsRepository.save(settings);
 
     return res.json(updatedSettings);
+}));
+
+// E.164 phone number pattern
+const E164_PATTERN = /^\+[1-9]\d{1,14}$/;
+
+// Link a phone number to the user's account
+router.post('/phone', asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = effectiveUserId(req);
+
+    let { phoneNumber } = req.body as { phoneNumber?: string };
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
+        return res.status(400).json({ error: 'phoneNumber is required' });
+    }
+    // Strip whatsapp: prefix if the client accidentally includes it
+    phoneNumber = phoneNumber.replace(/^whatsapp:/i, '').trim();
+
+    if (!E164_PATTERN.test(phoneNumber)) {
+        return res.status(400).json({ error: 'phoneNumber must be in E.164 format (e.g. +12125551234)' });
+    }
+
+    const userRepo = AppDataSource.getRepository(User);
+
+    // Check uniqueness — another account may already have this number
+    const existing = await userRepo.findOne({ where: { phoneNumber } });
+    if (existing && existing.id !== userId) {
+        return res.status(409).json({ error: 'This phone number is already linked to another account' });
+    }
+
+    await userRepo.update(userId, { phoneNumber });
+    return res.json({ phoneNumber });
+}));
+
+// Unlink the phone number from the user's account
+router.delete('/phone', asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = effectiveUserId(req);
+
+    const userRepo = AppDataSource.getRepository(User);
+    await userRepo.update(userId, { phoneNumber: undefined });
+    return res.json({ success: true });
 }));
 
 // Mark onboarding as complete

@@ -63,7 +63,11 @@ import familyMemberRoutes from './routes/familyMember';
 import voiceRoutes from './routes/voice';
 import flyerRoutes from './routes/flyer';
 import familyAccessRoutes from './routes/familyAccess';
+import webhookRoutes from './routes/webhook';
 import { authenticateJWT } from './middleware/auth';
+
+// Webhook routes — public, authenticated by Twilio signature (no JWT)
+app.use('/api/webhooks', webhookRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', authenticateJWT, eventRoutes);

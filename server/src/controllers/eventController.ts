@@ -477,8 +477,8 @@ export class EventController {
             if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
             const userId = effectiveUserId(req);
 
-            if (!text || typeof text !== 'string' || text.length > 8000) {
-                return res.status(400).json({ error: 'Text must be a non-empty string under 8000 characters' });
+            if (!text || typeof text !== 'string' || text.length > 500) {
+                return res.status(400).json({ error: 'Text must be a non-empty string under 500 characters' });
             }
             if (!timezone) {
                 return res.status(400).json({ error: 'Timezone is required' });
@@ -549,26 +549,6 @@ export class EventController {
                     intent: 'create',
                     message: `Created "${saved.title}"${memberIds.length > 0 ? ` for ${enriched.familyMembers.map(m => m.name).join(', ')}` : ''}`,
                     event: enriched,
-                });
-            }
-
-            // ── CREATE BULK ─────────────────────────────────────────────────────
-            if (result.intent === 'create_bulk') {
-                // Return parsed events to the client for confirmation — no DB writes yet.
-                // The client shows FlyerImportSheet and calls the individual create endpoint
-                // for each event the user confirms.
-                const parsedEvents = result.events.map(evt => ({
-                    title: evt.title,
-                    startTime: evt.startTime.toISOString(),
-                    endTime: evt.endTime.toISOString(),
-                    isAllDay: evt.isAllDay,
-                    location: evt.location,
-                    familyMemberNames: evt.familyMemberNames,
-                }));
-                return res.json({
-                    intent: 'create_bulk',
-                    message: `Found ${parsedEvents.length} events — review and confirm below`,
-                    parsedEvents,
                 });
             }
 

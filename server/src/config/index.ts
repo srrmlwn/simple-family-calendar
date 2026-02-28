@@ -37,5 +37,12 @@ export default {
         user: process.env.EMAIL_USER || '',
         password: process.env.EMAIL_PASSWORD || '',
         senderName: process.env.EMAIL_SENDER_NAME || 'famcal.ai'
+    },
+    twilio: {
+        accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+        authToken: process.env.TWILIO_AUTH_TOKEN || '',
+        phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
+        webhookUrl: process.env.TWILIO_WEBHOOK_URL || '',
+        joinCode: process.env.TWILIO_JOIN_CODE || '',
     }
 };

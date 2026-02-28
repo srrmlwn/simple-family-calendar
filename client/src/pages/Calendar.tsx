@@ -36,12 +36,16 @@ const CalendarPage: React.FC = () => {
     const [filterExpanded, setFilterExpanded] = useState(false);
     // Onboarding overlay
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const [twilioPhoneNumber, setTwilioPhoneNumber] = useState<string | null>(null);
+    const [twilioJoinCode, setTwilioJoinCode] = useState<string | null>(null);
 
     // Check whether this is a first-time user by fetching their settings
     useEffect(() => {
         const checkOnboarding = async () => {
             try {
                 const res = await api.get('/api/settings');
+                setTwilioPhoneNumber(res.data.twilioPhoneNumber ?? null);
+                setTwilioJoinCode(res.data.twilioJoinCode ?? null);
                 if (!res.data.onboardingCompleted) {
                     setShowOnboarding(true);
                 }
@@ -183,6 +187,8 @@ const CalendarPage: React.FC = () => {
                 <OnboardingFlow
                     userName={user?.firstName ?? 'there'}
                     onComplete={() => setShowOnboarding(false)}
+                    twilioPhoneNumber={twilioPhoneNumber}
+                    twilioJoinCode={twilioJoinCode}
                 />
             )}
 

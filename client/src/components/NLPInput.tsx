@@ -228,11 +228,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             setInputText('');
             dismissHintRef.current();
 
-            if (result.intent === 'create_bulk') {
-                // Show confirmation sheet — reuse the flyer import flow (no image preview)
-                setFlyerParsedEvents(result.parsedEvents ?? []);
-                setIsFlyerSheetOpen(true);
-            } else if (result.intent === 'query') {
+            if (result.intent === 'query') {
                 setTray(result);
             } else if (result.requiresDisambiguation) {
                 setTray(result);
