@@ -1,6 +1,7 @@
 import '@anthropic-ai/sdk/shims/node';  // This must be the first import
 import Anthropic from '@anthropic-ai/sdk';
 import moment from 'moment-timezone';
+import { logLLMCall } from './llmLogger';
 
 export interface ParsedEvent {
     title: string;
@@ -60,6 +61,7 @@ Rules:
 
         const prompt = `Parse this event description into the JSON format specified:\n\n${input}`;
 
+        const t0 = Date.now();
         try {
             const message = await this.anthropic.messages.create({
                 model: "claude-sonnet-4-6",
@@ -79,15 +81,23 @@ Rules:
                 throw new Error('No response from Claude');
             }
 
+            logLLMCall({
+                channel: 'web',
+                model: 'claude-sonnet-4-6',
+                promptTokens: message.usage.input_tokens,
+                completionTokens: message.usage.output_tokens,
+                latencyMs: Date.now() - t0,
+            });
+
             // Clean up markdown formatting from the response
             const jsonStr = response.replace(/```json\n?|\n?```/g, '').trim();
             const parsedResponse = JSON.parse(jsonStr);
             console.log('Parsed JSON Response:', JSON.stringify(parsedResponse, null, 2));
-            
+
             // Convert ISO strings to Date objects
             const startTime = new Date(parsedResponse.startTime);
             const endTime = new Date(parsedResponse.endTime);
-            
+
             // Calculate duration in minutes
             const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
@@ -103,6 +113,12 @@ Rules:
 
             return result;
         } catch (error) {
+            logLLMCall({
+                channel: 'web',
+                model: 'claude-sonnet-4-6',
+                latencyMs: Date.now() - t0,
+                error: String(error),
+            });
             console.error('Error in LLM Parser:', error);
             throw new Error('Failed to parse event details');
         }

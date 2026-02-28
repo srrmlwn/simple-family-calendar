@@ -518,7 +518,7 @@ export class EventController {
             const userFamilyMembers = await fmRepo.find({ where: { userId } });
 
             // Determine intent and extract structured data
-            const result = await this.intentParser.parseIntent(text, timezone, userEvents, userFamilyMembers);
+            const result = await this.intentParser.parseIntent(text, timezone, userEvents, userFamilyMembers, { userId, channel: 'web' });
 
             // ── CREATE ──────────────────────────────────────────────────────────
             if (result.intent === 'create') {

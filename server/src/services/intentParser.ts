@@ -2,6 +2,7 @@ import '@anthropic-ai/sdk/shims/node';
 import Anthropic from '@anthropic-ai/sdk';
 import moment from 'moment-timezone';
 import { Event } from '../entities/Event';
+import { logLLMCall } from './llmLogger';
 
 // Compact event shape passed to the LLM as context
 interface EventContext {
@@ -104,7 +105,8 @@ export class IntentParser {
         text: string,
         timezone: string,
         userEvents: Event[],
-        familyMembers: FamilyMemberContext[] = []
+        familyMembers: FamilyMemberContext[] = [],
+        logCtx?: { userId?: string; channel?: 'web' | 'whatsapp' }
     ): Promise<IntentResult> {
         const now = moment().tz(timezone);
 
@@ -173,13 +175,26 @@ QUERY — user is asking about events:
 
         const userPrompt = `User command: ${text}`;
 
-        const message = await this.anthropic.messages.create({
-            model: 'claude-sonnet-4-6',
-            max_tokens: 1024,
-            temperature: 0.1,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }],
-        });
+        const t0 = Date.now();
+        let message: Anthropic.Message;
+        try {
+            message = await this.anthropic.messages.create({
+                model: 'claude-sonnet-4-6',
+                max_tokens: 1024,
+                temperature: 0.1,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: userPrompt }],
+            });
+        } catch (err) {
+            logLLMCall({
+                userId: logCtx?.userId,
+                channel: logCtx?.channel ?? 'web',
+                model: 'claude-sonnet-4-6',
+                latencyMs: Date.now() - t0,
+                error: String(err),
+            });
+            throw err;
+        }
 
         const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '';
         if (!raw) throw new Error('No response from intent parser');
@@ -187,7 +202,18 @@ QUERY — user is asking about events:
         const jsonStr = raw.replace(/^```json\n?|\n?```$/g, '').trim();
         const parsed = JSON.parse(jsonStr) as LLMRawResult;
 
-        return this.normalizeResult(parsed);
+        const result = this.normalizeResult(parsed);
+        logLLMCall({
+            userId: logCtx?.userId,
+            channel: logCtx?.channel ?? 'web',
+            model: 'claude-sonnet-4-6',
+            intent: result.intent,
+            promptTokens: message.usage.input_tokens,
+            completionTokens: message.usage.output_tokens,
+            latencyMs: Date.now() - t0,
+        });
+
+        return result;
     }
 
     /** Convert raw LLM JSON into a typed IntentResult with Date objects. */

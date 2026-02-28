@@ -7,6 +7,7 @@ import { toZonedTime, format } from 'date-fns-tz';
 import { AppDataSource } from '../data-source';
 import { FamilyMember } from '../entities/FamilyMember';
 import { effectiveUserId } from '../utils/effectiveUserId';
+import { logLLMCall } from '../services/llmLogger';
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -80,6 +81,7 @@ Return ONLY a JSON array — no markdown, no explanation. Each element must have
 If no events are found, return an empty array [].
 Return ONLY valid JSON with no extra text.`;
 
+    const t0 = Date.now();
     const message = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
@@ -100,6 +102,14 @@ Return ONLY valid JSON with no extra text.`;
                 },
             ],
         }],
+    });
+    logLLMCall({
+        userId,
+        channel: 'flyer',
+        model: 'claude-sonnet-4-6',
+        promptTokens: message.usage.input_tokens,
+        completionTokens: message.usage.output_tokens,
+        latencyMs: Date.now() - t0,
     });
 
     const raw = (message.content.length > 0 && message.content[0].type === 'text')

@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import OpenAI from 'openai';
 import { toFile } from 'openai';
+import { effectiveUserId } from '../utils/effectiveUserId';
+import { logLLMCall } from '../services/llmLogger';
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB (Whisper API limit)
 
@@ -34,10 +36,17 @@ export const transcribeAudio = async (req: Request, res: Response): Promise<Resp
         type: req.file.mimetype,
     });
 
+    const t0 = Date.now();
     const transcription = await getOpenAI().audio.transcriptions.create({
         file,
         model: 'whisper-1',
         language: 'en',
+    });
+    logLLMCall({
+        userId: effectiveUserId(req),
+        channel: 'voice',
+        model: 'whisper-1',
+        latencyMs: Date.now() - t0,
     });
 
     return res.json({ transcript: transcription.text });

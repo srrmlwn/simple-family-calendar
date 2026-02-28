@@ -6,6 +6,7 @@ import { User } from '../entities/User';
 import { UserSettings } from '../entities/UserSettings';
 import { Event } from '../entities/Event';
 import { FamilyMember } from '../entities/FamilyMember';
+import { LLMCall } from '../entities/LLMCall';
 import { EventService } from '../services/eventService';
 import { IntentParser } from '../services/intentParser';
 import { validateSignature, normalizePhone, twimlReply } from '../services/twilioService';
@@ -94,6 +95,19 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
         const upper = body.toUpperCase();
         if (upper === 'YES' || upper === 'Y') {
             pendingConfirmations.delete(phone);
+            // Fire-and-forget: mark the most recent unconfirmed LLM call as confirmed
+            AppDataSource.getRepository(LLMCall)
+                .createQueryBuilder()
+                .update()
+                .set({ confirmed: true })
+                .where(
+                    "user_id = :userId AND confirmed IS NULL AND created_at > NOW() - INTERVAL '10 minutes'",
+                    { userId: user.id }
+                )
+                .orderBy('created_at', 'DESC')
+                .limit(1)
+                .execute()
+                .catch(() => {});
             try {
                 const reply = await executePendingAction(pending.action, user.id);
                 res.type('text/xml').send(twimlReply(reply));
@@ -103,6 +117,19 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
             return;
         } else if (upper === 'NO' || upper === 'N') {
             pendingConfirmations.delete(phone);
+            // Fire-and-forget: mark the most recent unconfirmed LLM call as rejected
+            AppDataSource.getRepository(LLMCall)
+                .createQueryBuilder()
+                .update()
+                .set({ confirmed: false })
+                .where(
+                    "user_id = :userId AND confirmed IS NULL AND created_at > NOW() - INTERVAL '10 minutes'",
+                    { userId: user.id }
+                )
+                .orderBy('created_at', 'DESC')
+                .limit(1)
+                .execute()
+                .catch(() => {});
             res.type('text/xml').send(twimlReply('Cancelled.'));
             return;
         } else {
@@ -128,7 +155,7 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
     // 7. Parse intent
     let parsed: IntentResult | undefined;
     try {
-        parsed = await intentParser.parseIntent(body, timezone, eventsForContext, familyMembers);
+        parsed = await intentParser.parseIntent(body, timezone, eventsForContext, familyMembers, { userId: user.id, channel: 'whatsapp' });
     } catch {
         res.type('text/xml').send(twimlReply("Sorry, I couldn't understand that. Try asking 'What's on my calendar this week?' or 'Add dentist Tuesday at 3pm'."));
         return;
