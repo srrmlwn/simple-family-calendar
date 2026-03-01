@@ -27,6 +27,7 @@ export interface AgentResult {
     pendingAction?: PendingToolCallData;  // WhatsApp: mutating op awaiting YES/NO
     createdEvent?: Event;
     updatedEvent?: Event;
+    queriedEvents?: Event[];  // Events returned by get_events tool calls (for query intent)
 }
 
 // ─── Tool definitions ─────────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ export class AgentService {
         let detectedIntent: AgentResult['intent'];
         let createdEvent: Event | undefined;
         let updatedEvent: Event | undefined;
+        let queriedEvents: Event[] | undefined;
         let operationCount = 0;
 
         for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
@@ -156,15 +158,13 @@ export class AgentService {
 
             // ── Text response: we're done ─────────────────────────────────
             if (response.stop_reason === 'end_turn') {
-                const reply = toolUseBlocks.length === 0
-                    ? response.content.filter(b => b.type === 'text').map(b => (b as Anthropic.TextBlock).text).join('')
-                    : response.content.filter(b => b.type === 'text').map(b => (b as Anthropic.TextBlock).text).join('');
+                const reply = response.content.filter(b => b.type === 'text').map(b => (b as Anthropic.TextBlock).text).join('');
                 if (operationCount > 1) detectedIntent = 'multi';
-                return { reply: reply || 'Done.', intent: detectedIntent, createdEvent, updatedEvent };
+                return { reply: reply || 'Done.', intent: detectedIntent, createdEvent, updatedEvent, queriedEvents };
             }
 
             if (response.stop_reason !== 'tool_use' || toolUseBlocks.length === 0) {
-                return { reply: 'Done.', intent: detectedIntent, createdEvent, updatedEvent };
+                return { reply: 'Done.', intent: detectedIntent, createdEvent, updatedEvent, queriedEvents };
             }
 
             // ── Tool use: process each block ──────────────────────────────
@@ -192,12 +192,15 @@ export class AgentService {
             const toolResults: Anthropic.ToolResultBlockParam[] = [];
             for (const block of toolUseBlocks) {
                 const toolInput = block.input as Record<string, unknown>;
-                const { output, event } = await this.executeTool(
+                const { output, event, queriedEvents: toolEvents } = await this.executeTool(
                     block.name, toolInput, userId, timezone, familyMembers, channel
                 );
                 if (block.name === 'create_event' && event) { createdEvent = event; operationCount++; }
                 if (block.name === 'update_event' && event) { updatedEvent = event; operationCount++; }
                 if (block.name === 'delete_event') operationCount++;
+                if (block.name === 'get_events' && toolEvents) {
+                    queriedEvents = queriedEvents ? [...queriedEvents, ...toolEvents] : toolEvents;
+                }
                 if (callIntent && !detectedIntent) detectedIntent = callIntent as AgentResult['intent'];
                 else if (detectedIntent && detectedIntent !== callIntent) detectedIntent = 'multi';
                 toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: output });
@@ -207,7 +210,7 @@ export class AgentService {
         }
 
         if (operationCount > 1) detectedIntent = 'multi';
-        return { reply: 'Done.', intent: detectedIntent, createdEvent, updatedEvent };
+        return { reply: 'Done.', intent: detectedIntent, createdEvent, updatedEvent, queriedEvents };
     }
 
     // ── Execute a confirmed pending action (WhatsApp YES path) ───────────────
@@ -234,7 +237,7 @@ export class AgentService {
         timezone: string,
         familyMembers: FamilyMember[],
         channel: 'web' | 'whatsapp'
-    ): Promise<{ output: string; event?: Event }> {
+    ): Promise<{ output: string; event?: Event; queriedEvents?: Event[] }> {
 
         if (toolName === 'get_events') {
             const startDate = new Date(`${toolInput.start_date as string}T00:00:00`);
@@ -245,7 +248,7 @@ export class AgentService {
                 const start = moment(e.startTime).tz(timezone).format('ddd MMM D [at] h:mm A');
                 return `• [${e.id}] ${e.title} — ${start}${e.location ? ` @ ${e.location}` : ''}`;
             });
-            return { output: lines.join('\n') };
+            return { output: lines.join('\n'), queriedEvents: events };
         }
 
         if (toolName === 'create_event') {
@@ -450,12 +453,13 @@ Use your tools to help the user manage their calendar.
 
 Guidelines:
 1. For create/update/delete, call the appropriate tool. Do not ask for confirmation yourself — the system handles that.
-2. For queries, answer from the event context above. Call get_events only for date ranges outside the context.
-3. If a request references a specific event but multiple candidates match, call get_events to list them and ask the user to clarify.
-4. Use conversation history to resolve references like "move it", "reschedule that", "the dentist next week".
-5. All times you receive are UTC. When displaying times back, convert to the user's timezone (${timezone}).
-6. Be brief and conversational. No markdown formatting in responses.
-7. If the user asks to see their calendar visually, view it in an app, or open the calendar, send them to famcal.ai — include a deep link with the relevant date when helpful, e.g. https://famcal.ai/?date=${now.format('YYYY-MM-DD')} for today or https://famcal.ai/?date=YYYY-MM-DD for a specific date. They will need to log in if not already.`;
+2. For queries asking to show/list events for a time period (e.g. "what's on next week", "show my events for Tuesday", "what do I have this weekend"), always call get_events for that date range — even if it falls within the preloaded context. This is required so the app can display interactive event cards. After the tool returns, give a brief conversational summary; do not repeat every detail since the events will be shown as cards.
+3. For simple questions about a specific event (e.g. "when is my dentist?"), answer from the event context above without calling get_events.
+4. If a request references a specific event but multiple candidates match, call get_events to list them and ask the user to clarify.
+5. Use conversation history to resolve references like "move it", "reschedule that", "the dentist next week".
+6. All times you receive are UTC. When displaying times back, convert to the user's timezone (${timezone}).
+7. Be brief and conversational. No markdown formatting in responses.
+8. If the user asks to see their calendar visually, view it in an app, or open the calendar, send them to famcal.ai — include a deep link with the relevant date when helpful, e.g. https://famcal.ai/?date=${now.format('YYYY-MM-DD')} for today or https://famcal.ai/?date=YYYY-MM-DD for a specific date. They will need to log in if not already.`;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

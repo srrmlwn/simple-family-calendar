@@ -548,6 +548,10 @@ export class EventController {
                 const [enriched] = await this.attachFamilyMembers([agentResult.updatedEvent]);
                 return res.json({ intent: 'update', message, event: enriched });
             }
+            if (agentResult.queriedEvents && agentResult.queriedEvents.length > 0) {
+                const enriched = await this.attachFamilyMembers(agentResult.queriedEvents);
+                return res.json({ intent: 'query', message, events: enriched });
+            }
             return res.json({ intent, message });
         } catch (error) {
             console.error('Error handling NLP command:', error);
