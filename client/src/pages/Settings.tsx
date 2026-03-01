@@ -262,6 +262,12 @@ const Settings: React.FC = () => {
             <Header />
 
             <div className="max-w-4xl mx-auto p-6 w-full">
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mb-4 transition-colors"
+                >
+                    ← Back to Calendar
+                </button>
                 <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
                 {error && (
@@ -285,16 +291,10 @@ const Settings: React.FC = () => {
                         </p>
                     </div>
                     <div className="px-6 py-4">
-                        <div className="flex items-center">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Current Timezone</label>
-                                <input
-                                    type="text"
-                                    value={timezone}
-                                    className="w-full p-2 border border-gray-300 rounded bg-gray-50"
-                                    disabled
-                                />
-                            </div>
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Current Timezone</label>
+                            <p className="text-sm text-gray-900">{timezone.replace(/_/g, ' ')}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{timezone}</p>
                         </div>
                     </div>
                 </div>

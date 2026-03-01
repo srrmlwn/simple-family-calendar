@@ -74,13 +74,15 @@ const StepFooter: React.FC<{
     onSkip: () => void;
     saving?: boolean;
     skipLabel?: string;
-}> = ({ onBack, onContinue, onSkip, saving, skipLabel }) => (
+    isFirst?: boolean;
+}> = ({ onBack, onContinue, onSkip, saving, skipLabel, isFirst }) => (
     <div className="flex items-center justify-between pt-2">
         <button
             type="button"
             onClick={onBack}
             data-testid="onboarding-back"
             className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            style={{ visibility: isFirst ? 'hidden' : undefined }}
         >
             Back
         </button>
@@ -394,7 +396,8 @@ const WhatsAppStep: React.FC<{
 const TryItStep: React.FC<{
     onFinish: () => void;
     onBack: () => void;
-}> = ({ onFinish, onBack }) => {
+    isFirst?: boolean;
+}> = ({ onFinish, onBack, isFirst }) => {
     const [input, setInput] = useState('Add dentist appointment on Thursday at 10am');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
@@ -485,11 +488,15 @@ const TryItStep: React.FC<{
                     onClick={onBack}
                     data-testid="onboarding-back"
                     className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                    style={{ visibility: isFirst ? 'hidden' : undefined }}
                 >
                     Back
                 </button>
                 <PrimaryButton onClick={onFinish} data-testid="onboarding-finish">
-                    {status === 'success' ? 'Go to my calendar' : 'Skip, go to calendar'}{' '}
+                    {isFirst
+                        ? (status === 'success' ? 'Continue' : 'Skip for now')
+                        : (status === 'success' ? 'Go to my calendar' : 'Skip, go to calendar')
+                    }{' '}
                     <ArrowRight className="w-4 h-4" />
                 </PrimaryButton>
             </div>
@@ -530,19 +537,19 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete, t
     const renderStep = () => {
         switch (step) {
             case 0:
-                return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
+                return <TryItStep onFinish={goNext} onBack={goBack} isFirst />;
             case 1:
+                return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
+            case 2:
                 return (
                     <WhatsAppStep
-                        onNext={goNext}
+                        onNext={markComplete}
                         onBack={goBack}
-                        onSkip={goNext}
+                        onSkip={markComplete}
                         twilioPhoneNumber={twilioPhoneNumber}
                         twilioJoinCode={twilioJoinCode}
                     />
                 );
-            case 2:
-                return <TryItStep onFinish={markComplete} onBack={goBack} />;
             default:
                 return null;
         }

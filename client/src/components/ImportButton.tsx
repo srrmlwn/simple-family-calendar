@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, ChevronDown } from 'lucide-react';
+import { CalendarPlus, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 
 interface ImportButtonProps {
@@ -145,7 +145,7 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete, compact =
                     {isWorking ? (
                         <span className="h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                     ) : (
-                        <Download size={compact ? 20 : 14} />
+                        <CalendarPlus size={compact ? 20 : 14} />
                     )}
                     {!compact && <span>Import</span>}
                     {!compact && <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />}

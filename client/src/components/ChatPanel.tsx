@@ -253,7 +253,7 @@ const EmptyState: React.FC = () => (
         <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center mb-3">
             <span className="text-2xl">🗓️</span>
         </div>
-        <p className="text-sm font-medium text-gray-700 mb-1">Calendar AI</p>
+        <p className="text-sm font-medium text-gray-700 mb-1">Your AI calendar</p>
         <p className="text-xs text-gray-400 leading-relaxed">
             Add events, search your schedule, or ask questions in plain English.
         </p>
@@ -734,7 +734,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
                 <div className="w-[340px] border-l border-gray-200 bg-white flex flex-col h-full shrink-0">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-                        <span className="text-sm font-semibold text-gray-700">Calendar AI</span>
+                        <span className="text-sm font-semibold text-gray-700">Ask famcal.ai</span>
                         {messages.length > 0 && (
                             <button
                                 onClick={handleClearSession}

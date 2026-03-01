@@ -177,7 +177,9 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                                             <AgendaEventCard key={evt.id} event={evt} onClick={handleEventClick} />
                                         ))}
                                         {dayEvts.length === 0 && (
-                                            <p className="text-xs text-gray-400 py-2">Nothing scheduled</p>
+                                            <p className="text-xs text-gray-400 py-2">
+                                                {isToday ? 'Nothing scheduled — tap below to add' : 'Nothing scheduled'}
+                                            </p>
                                         )}
                                     </div>
                                 </div>
@@ -251,7 +253,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                 </div>
 
                 {/* 7 day columns */}
-                <div className="flex-1 flex overflow-hidden min-h-0">
+                <div className="flex-1 flex overflow-hidden min-h-0 relative">
                     {weekDays.map(day => {
                         const dayKey = moment(day).format('YYYY-MM-DD');
                         const dayEvts = eventsByDate.get(dayKey) ?? [];
@@ -333,6 +335,13 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                             </div>
                         );
                     })}
+                    {events.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <p className="text-sm text-gray-400">
+                                Nothing on this week — type in the chat to add events →
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
