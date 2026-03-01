@@ -44,7 +44,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
 
     // All hooks called unconditionally before any conditional return
     const isMobile = useMediaQuery('(max-width: 767px)');
-    const isCompact = useMediaQuery('(max-width: 1099px)');
+    const isCompact = useMediaQuery('(max-width: 1279px)');
 
     // Keep "now" marker current every minute
     useEffect(() => {
@@ -282,7 +282,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                                     onClick={() => onNavigate(day)}
                                 >
                                     <div className="flex flex-col">
-                                        <span className={`text-[10px] font-bold tracking-widest uppercase ${isToday ? 'text-blue-500' : 'text-gray-400'}`}>
+                                        <span className={`text-xs font-bold tracking-widest uppercase ${isToday ? 'text-blue-500' : 'text-gray-400'}`}>
                                             {moment(day).format('ddd')}
                                         </span>
                                         <span className={`text-xl font-bold leading-tight ${

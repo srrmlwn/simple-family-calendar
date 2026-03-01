@@ -29,7 +29,7 @@ const AgendaEventCard: React.FC<AgendaEventCardProps> = ({ event, onClick, compa
                 <span className={`font-bold text-blue-600 leading-tight ${compact ? 'text-xs' : 'text-sm'}`}>
                     {moment(event.startTime).format('h:mm')}
                 </span>
-                <span className="text-[10px] text-gray-400 leading-tight">
+                <span className="text-xs text-gray-400 leading-tight">
                     {moment(event.startTime).format('A')}
                 </span>
             </div>
@@ -56,7 +56,7 @@ const AgendaEventCard: React.FC<AgendaEventCardProps> = ({ event, onClick, compa
                     </div>
                 )}
                 {compact && event.location && (
-                    <div className="mt-0.5 text-[10px] text-gray-400 truncate">{event.location}</div>
+                    <div className="mt-0.5 text-xs text-gray-400 truncate">{event.location}</div>
                 )}
             </div>
 
