@@ -6,7 +6,7 @@ import MonthView from '../components/MonthView';
 import YearView from '../components/YearView';
 import { CalendarView } from '../types/calendar';
 import EventForm from '../components/EventForm';
-import NLPInput from '../components/NLPInput';
+import ChatPanel from '../components/ChatPanel';
 import FamilyMemberFilter from '../components/FamilyMemberFilter';
 import OnboardingFlow from '../components/OnboardingFlow';
 import eventService, { Event, EventInput, RecurringScope } from '../services/eventService';
@@ -211,112 +211,116 @@ const CalendarPage: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto overflow-x-hidden md:overflow-hidden flex flex-col min-h-0">
-                {loading ? (
-                    <div className="flex justify-center items-center flex-1">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-                    </div>
-                ) : (
-                    <>
-                        {/* Toolbar row: family member filter */}
-                        {familyMembers.length > 0 && (
-                            <div className="flex-shrink-0 px-4 pt-3 pb-2">
-                                <FamilyMemberFilter
-                                    members={familyMembers}
-                                    selectedIds={selectedMemberIds}
-                                    onToggle={handleMemberToggle}
-                                    onSelectAll={() => setSelectedMemberIds([])}
-                                    isExpanded={filterExpanded}
-                                    onToggleExpand={() => setFilterExpanded(v => !v)}
-                                />
-                            </div>
-                        )}
-
-                        <div className="flex-1 min-h-0 md:p-4">
-                            {view === 'week' && (
-                                <AgendaView
-                                    events={filteredEvents}
-                                    date={date}
-                                    onNavigate={handleNavigate}
-                                    onEventUpdate={handleEventUpdate}
-                                    onEventDelete={handleEventDelete}
-                                    onCreateEvent={setNewEventDate}
-                                    onViewChange={setView}
-                                />
-                            )}
-                            {view === 'month' && (
-                                <MonthView
-                                    events={filteredEvents}
-                                    date={date}
-                                    onNavigate={handleNavigate}
-                                    onEventUpdate={handleEventUpdate}
-                                    onEventDelete={handleEventDelete}
-                                    onCreateEvent={setNewEventDate}
-                                    onViewChange={setView}
-                                />
-                            )}
-                            {view === 'year' && (
-                                <YearView
-                                    events={filteredEvents}
-                                    date={date}
-                                    onNavigate={handleNavigate}
-                                    onViewChange={setView}
-                                    onEventUpdate={handleEventUpdate}
-                                    onEventDelete={handleEventDelete}
-                                />
-                            )}
+            <div className="flex-1 flex min-h-0 overflow-hidden">
+                {/* Main calendar column */}
+                <div className="flex-1 overflow-auto overflow-x-hidden lg:overflow-hidden flex flex-col min-h-0">
+                    {loading ? (
+                        <div className="flex justify-center items-center flex-1">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
                         </div>
-
-                        {/* New event modal (date cell click) */}
-                        {newEventDate && (
-                            <div
-                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-                                onClick={(e) => { if (e.target === e.currentTarget) setNewEventDate(null); }}
-                            >
-                                <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-                                    <EventForm
-                                        initialDate={newEventDate}
-                                        onSubmit={async (eventData) => {
-                                            await handleEventSave(eventData);
-                                            setNewEventDate(null);
-                                        }}
-                                        onCancel={() => setNewEventDate(null)}
+                    ) : (
+                        <>
+                            {/* Toolbar row: family member filter */}
+                            {familyMembers.length > 0 && (
+                                <div className="flex-shrink-0 px-4 pt-3 pb-2">
+                                    <FamilyMemberFilter
+                                        members={familyMembers}
+                                        selectedIds={selectedMemberIds}
+                                        onToggle={handleMemberToggle}
+                                        onSelectAll={() => setSelectedMemberIds([])}
+                                        isExpanded={filterExpanded}
+                                        onToggleExpand={() => setFilterExpanded(v => !v)}
                                     />
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Edit event modal (NLP tray event click) */}
-                        {nlpSelectedEvent && (
-                            <div
-                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-                                onClick={(e) => { if (e.target === e.currentTarget) setNlpSelectedEvent(null); }}
-                            >
-                                <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-                                    <EventForm
-                                        event={nlpSelectedEvent}
-                                        onSubmit={async (eventData) => {
-                                            await handleEventUpdate(nlpSelectedEvent.id, eventData);
-                                            setNlpSelectedEvent(null);
-                                        }}
-                                        onDelete={async (options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => {
-                                            await handleEventDelete(nlpSelectedEvent.id, options);
-                                            setNlpSelectedEvent(null);
-                                        }}
-                                        onCancel={() => setNlpSelectedEvent(null)}
+                            <div className="flex-1 min-h-0 md:p-4">
+                                {view === 'week' && (
+                                    <AgendaView
+                                        events={filteredEvents}
+                                        date={date}
+                                        onNavigate={handleNavigate}
+                                        onEventUpdate={handleEventUpdate}
+                                        onEventDelete={handleEventDelete}
+                                        onCreateEvent={setNewEventDate}
+                                        onViewChange={setView}
                                     />
-                                </div>
+                                )}
+                                {view === 'month' && (
+                                    <MonthView
+                                        events={filteredEvents}
+                                        date={date}
+                                        onNavigate={handleNavigate}
+                                        onEventUpdate={handleEventUpdate}
+                                        onEventDelete={handleEventDelete}
+                                        onCreateEvent={setNewEventDate}
+                                        onViewChange={setView}
+                                    />
+                                )}
+                                {view === 'year' && (
+                                    <YearView
+                                        events={filteredEvents}
+                                        date={date}
+                                        onNavigate={handleNavigate}
+                                        onViewChange={setView}
+                                        onEventUpdate={handleEventUpdate}
+                                        onEventDelete={handleEventDelete}
+                                    />
+                                )}
                             </div>
-                        )}
-                    </>
-                )}
+
+                            {/* New event modal (date cell click) */}
+                            {newEventDate && (
+                                <div
+                                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                                    onClick={(e) => { if (e.target === e.currentTarget) setNewEventDate(null); }}
+                                >
+                                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                                        <EventForm
+                                            initialDate={newEventDate}
+                                            onSubmit={async (eventData) => {
+                                                await handleEventSave(eventData);
+                                                setNewEventDate(null);
+                                            }}
+                                            onCancel={() => setNewEventDate(null)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Edit event modal (NLP tray event click) */}
+                            {nlpSelectedEvent && (
+                                <div
+                                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                                    onClick={(e) => { if (e.target === e.currentTarget) setNlpSelectedEvent(null); }}
+                                >
+                                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                                        <EventForm
+                                            event={nlpSelectedEvent}
+                                            onSubmit={async (eventData) => {
+                                                await handleEventUpdate(nlpSelectedEvent.id, eventData);
+                                                setNlpSelectedEvent(null);
+                                            }}
+                                            onDelete={async (options?: { recurringScope?: RecurringScope; occurrenceDate?: string }) => {
+                                                await handleEventDelete(nlpSelectedEvent.id, options);
+                                                setNlpSelectedEvent(null);
+                                            }}
+                                            onCancel={() => setNlpSelectedEvent(null)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Chat panel — sidebar on desktop, vaul drawer on mobile */}
+                <ChatPanel
+                    onEventsChanged={handleNLPEventsChanged}
+                    onEventSelect={handleNLPEventSelect}
+                    familyMembers={familyMembers}
+                />
             </div>
-
-            <NLPInput
-                onEventsChanged={handleNLPEventsChanged}
-                onEventSelect={handleNLPEventSelect}
-                familyMembers={familyMembers}
-            />
         </div>
     );
 };
