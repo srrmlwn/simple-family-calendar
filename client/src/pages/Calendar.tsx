@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import AgendaView from '../components/AgendaView';
 import MonthView from '../components/MonthView';
@@ -16,10 +17,22 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const CalendarPage: React.FC = () => {
     const { user } = useAuth();
+    const [searchParams] = useSearchParams();
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [date, setDate] = useState<Date>(new Date());
+
+    // Honour ?date=YYYY-MM-DD deep links (e.g. from WhatsApp bot)
+    const initialDate = useMemo(() => {
+        const param = searchParams.get('date');
+        if (param) {
+            const parsed = new Date(param + 'T12:00:00'); // noon avoids DST-edge midnight issues
+            if (!isNaN(parsed.getTime())) return parsed;
+        }
+        return new Date();
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const [date, setDate] = useState<Date>(initialDate);
     const [view, setView] = useState<CalendarView>('week');
 
     // Year view needs ≥900px for 28 columns to be readable — redirect narrower screens to week

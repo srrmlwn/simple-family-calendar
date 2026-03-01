@@ -454,7 +454,8 @@ Guidelines:
 3. If a request references a specific event but multiple candidates match, call get_events to list them and ask the user to clarify.
 4. Use conversation history to resolve references like "move it", "reschedule that", "the dentist next week".
 5. All times you receive are UTC. When displaying times back, convert to the user's timezone (${timezone}).
-6. Be brief and conversational. No markdown formatting in responses.`;
+6. Be brief and conversational. No markdown formatting in responses.
+7. If the user asks to see their calendar visually, view it in an app, or open the calendar, send them to famcal.ai — include a deep link with the relevant date when helpful, e.g. https://famcal.ai/?date=${now.format('YYYY-MM-DD')} for today or https://famcal.ai/?date=YYYY-MM-DD for a specific date. They will need to log in if not already.`;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
