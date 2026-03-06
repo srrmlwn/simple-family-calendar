@@ -192,7 +192,7 @@ const eventService = {
         }
     },
 
-    // Upload an image to the server and return extracted calendar events
+    // Upload an image to the server and return extracted calendar events (legacy)
     parseFromImage: async (file: File): Promise<{ events: ParsedFlyerEvent[] }> => {
         const timezone = getUserTimezone();
         const form = new FormData();
@@ -200,7 +200,20 @@ const eventService = {
         form.append('timezone', timezone);
         const res = await api.post<{ events: ParsedFlyerEvent[] }>('/api/flyer/parse-image', form, {
             headers: { 'Content-Type': 'multipart/form-data' },
-            timeout: 30000,
+            timeout: 60000,
+        });
+        return res.data;
+    },
+
+    // Upload any supported document (image, PDF, DOCX) and return extracted calendar events
+    parseFromDocument: async (file: File): Promise<{ events: ParsedFlyerEvent[] }> => {
+        const timezone = getUserTimezone();
+        const form = new FormData();
+        form.append('document', file, file.name);
+        form.append('timezone', timezone);
+        const res = await api.post<{ events: ParsedFlyerEvent[] }>('/api/flyer/parse-document', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 60000,
         });
         return res.data;
     },

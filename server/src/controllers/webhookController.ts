@@ -9,17 +9,109 @@ import { FamilyMember } from '../entities/FamilyMember';
 import { LLMCall } from '../entities/LLMCall';
 import { EventService } from '../services/eventService';
 import { AgentService } from '../services/agentService';
-import { validateSignature, normalizePhone, twimlReply } from '../services/twilioService';
+import { validateSignature, normalizePhone, twimlReply, downloadTwilioMedia } from '../services/twilioService';
+import { extractEventsFromBuffer, FlyerEvent } from './flyerController';
 import {
     getActiveSession,
     extractHistory,
     upsertTurn,
     storePendingToolCall,
     clearPendingToolCall,
+    createSession,
 } from '../services/conversationService';
 
 const eventService = new EventService();
 const agentSvc = new AgentService(process.env.ANTHROPIC_API_KEY || '');
+
+// MIME types we accept from WhatsApp media
+const SUPPORTED_WHATSAPP_MEDIA_TYPES = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+// ── Format events into a human-readable WhatsApp summary ─────────────────────
+
+function formatEventsForWhatsApp(events: FlyerEvent[], timezone: string): string {
+    return events
+        .map((e, i) => {
+            const start = moment(e.startTime).tz(timezone);
+            const dateStr = e.isAllDay
+                ? start.format('ddd, MMM D')
+                : start.format('ddd, MMM D [at] h:mm A');
+            const loc = e.location ? ` @ ${e.location}` : '';
+            const members = e.familyMemberNames?.length ? ` (${e.familyMemberNames.join(', ')})` : '';
+            return `${i + 1}. ${e.title} – ${dateStr}${loc}${members}`;
+        })
+        .join('\n');
+}
+
+// ── Handle an inbound media attachment ───────────────────────────────────────
+
+async function handleMediaAttachment(
+    mediaUrl: string,
+    mediaContentType: string,
+    user: User,
+    timezone: string,
+    familyMembers: FamilyMember[],
+    sessionId: string | undefined
+): Promise<void | string> {
+    // Unsupported type
+    if (!SUPPORTED_WHATSAPP_MEDIA_TYPES.has(mediaContentType)) {
+        if (mediaContentType === 'application/msword') {
+            return 'Old Word format (.doc) is not supported. Please save the file as .docx and send it again.';
+        }
+        return 'Sorry, I can only read images, PDFs, and Word documents (.docx). Please send one of those file types.';
+    }
+
+    let buffer: Buffer;
+    try {
+        buffer = await downloadTwilioMedia(mediaUrl);
+    } catch {
+        return "Sorry, I couldn't download your file. Please try again.";
+    }
+
+    const familyMemberNames = familyMembers.map(m => m.name);
+    let events: FlyerEvent[];
+    try {
+        events = await extractEventsFromBuffer(buffer, mediaContentType, familyMemberNames, timezone, user.id);
+    } catch {
+        return "Sorry, I couldn't read that file. Try sending a clearer image or a different file.";
+    }
+
+    if (events.length === 0) {
+        return "No events found in that document. Try a clearer image or a different file.";
+    }
+
+    // Build confirmation prompt
+    const eventList = formatEventsForWhatsApp(events, timezone);
+    const plural = events.length === 1 ? 'event' : 'events';
+    const confirmPrompt =
+        `Found ${events.length} ${plural}:\n\n${eventList}\n\n` +
+        `Reply YES to add all to your calendar, or NO to cancel.`;
+
+    // Store as pending batch creation
+    const sid = sessionId ?? (await createSession(user.id, 'whatsapp')).id;
+    await storePendingToolCall(sid, {
+        toolName: 'create_events_batch',
+        toolInput: {
+            events: events.map(e => ({
+                title: e.title,
+                start_time: e.startTime,
+                end_time: e.endTime,
+                is_all_day: e.isAllDay,
+                location: e.location,
+                family_member_names: e.familyMemberNames,
+            })),
+        },
+        confirmationPrompt: confirmPrompt,
+    });
+
+    return confirmPrompt;
+}
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 
@@ -30,8 +122,10 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
         return;
     }
 
-    const rawFrom: string = (req.body as Record<string, string>).From ?? '';
-    const body: string    = ((req.body as Record<string, string>).Body ?? '').trim();
+    const rawBody = req.body as Record<string, string>;
+    const rawFrom: string = rawBody.From ?? '';
+    const body: string    = (rawBody.Body ?? '').trim();
+    const numMedia        = parseInt(rawBody.NumMedia ?? '0', 10);
     const phone = normalizePhone(rawFrom);
 
     // 2. Look up user by phone number
@@ -106,17 +200,45 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
         }
     }
 
-    // 6. Fetch user events for agent context (−7 → +90 days)
+    // 6. Handle media attachment (images, PDF, DOCX)
+    if (numMedia > 0) {
+        const mediaUrl         = rawBody.MediaUrl0 ?? '';
+        const mediaContentType = rawBody.MediaContentType0 ?? '';
+
+        if (!mediaUrl) {
+            res.type('text/xml').send(twimlReply("Sorry, I couldn't access the attachment. Please try again."));
+            return;
+        }
+
+        // Warn if they sent multiple files (we only process the first)
+        const multipleNote = numMedia > 1
+            ? `\n\n(Note: I can only process one attachment at a time. I'll look at the first one.)`
+            : '';
+
+        const fmRepo        = AppDataSource.getRepository(FamilyMember);
+        const familyMembers = await fmRepo.find({ where: { userId: user.id } });
+
+        const reply = await handleMediaAttachment(
+            mediaUrl, mediaContentType, user, timezone, familyMembers, session?.id
+        );
+
+        const finalReply = typeof reply === 'string' ? reply + multipleNote : 'Something went wrong. Please try again.';
+        upsertTurn(user.id, 'whatsapp', `[attachment: ${mediaContentType}]`, finalReply, session?.id).catch(() => {});
+        res.type('text/xml').send(twimlReply(finalReply));
+        return;
+    }
+
+    // 7. Text-only message: fetch user events for agent context (−7 → +90 days)
     const contextStart = moment().subtract(7, 'days').toDate();
     const contextEnd   = moment().add(90, 'days').toDate();
     const userEvents   = await eventService.findByUserIdAndDateRange(user.id, contextStart, contextEnd, timezone);
     const eventsForContext = userEvents as Event[];
 
-    // 7. Fetch family members
+    // 8. Fetch family members
     const fmRepo        = AppDataSource.getRepository(FamilyMember);
     const familyMembers = await fmRepo.find({ where: { userId: user.id } });
 
-    // 8. Run agent
+    // 9. Run agent
     let result;
     try {
         result = await agentSvc.run({
@@ -135,18 +257,16 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
         return;
     }
 
-    // 9. If a mutating op needs confirmation: store pending in DB, send prompt
+    // 10. If a mutating op needs confirmation: store pending in DB, send prompt
     if (result.pendingAction) {
-        const sid = session?.id ?? (await import('../services/conversationService')
-            .then(m => m.createSession(user.id, 'whatsapp'))).id;
+        const sid = session?.id ?? (await createSession(user.id, 'whatsapp')).id;
         await storePendingToolCall(sid, result.pendingAction).catch(() => {});
-        // Persist the user message (assistant message is the confirmation prompt)
         upsertTurn(user.id, 'whatsapp', body, result.reply, session?.id ?? sid).catch(() => {});
         res.type('text/xml').send(twimlReply(result.reply));
         return;
     }
 
-    // 10. Regular response: persist turn, send reply
+    // 11. Regular response: persist turn, send reply
     upsertTurn(user.id, 'whatsapp', body, result.reply, session?.id).catch(() => {});
     res.type('text/xml').send(twimlReply(result.reply));
 }
