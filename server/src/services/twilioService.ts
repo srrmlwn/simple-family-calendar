@@ -40,3 +40,35 @@ export function twimlReply(message: string): string {
     resp.message(message);
     return resp.toString();
 }
+
+/**
+ * Download a Twilio media URL as a Buffer.
+ * Twilio requires HTTP Basic auth (AccountSid:AuthToken) to fetch media.
+ */
+export async function downloadTwilioMedia(url: string): Promise<Buffer> {
+    const { accountSid, authToken } = config.twilio;
+    const credentials = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const https = require('https') as typeof import('https');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const http  = require('http')  as typeof import('http');
+
+    return new Promise((resolve, reject) => {
+        const lib = url.startsWith('https') ? https : http;
+        lib.get(url, { headers: { Authorization: `Basic ${credentials}` } }, (res) => {
+            if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                downloadTwilioMedia(res.headers.location).then(resolve).catch(reject);
+                return;
+            }
+            if (res.statusCode !== 200) {
+                reject(new Error(`Failed to download media: HTTP ${res.statusCode ?? 'unknown'}`));
+                return;
+            }
+            const chunks: Buffer[] = [];
+            res.on('data', (chunk: Buffer) => chunks.push(chunk));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+            res.on('error', reject);
+        }).on('error', reject);
+    });
+}

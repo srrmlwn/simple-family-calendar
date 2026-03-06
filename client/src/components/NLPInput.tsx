@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowUp, Camera, Mic, MicOff, X, ChevronRight } from 'lucide-react';
+import { ArrowUp, Paperclip, Mic, MicOff, X, ChevronRight } from 'lucide-react';
 import moment from 'moment';
 import eventService, { Event, NLPCommandResponse, ParsedFlyerEvent } from '../services/eventService';
 import { FamilyMember } from '../services/familyMemberService';
@@ -156,25 +156,29 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
         setFlyerParsedEvents([]);
     }, []);
 
-    const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         // Reset so selecting the same file again re-triggers onChange
         e.target.value = '';
 
-        const previewUrl = URL.createObjectURL(file);
+        // Only set a preview URL for images (PDFs/DOCX can't be shown as img src)
+        const isImage = file.type.startsWith('image/');
+        const previewUrl = isImage ? URL.createObjectURL(file) : undefined;
         setFlyerPreviewUrl(previewUrl);
         setIsParsingImage(true);
         setTray(null);
 
         try {
-            const { events } = await eventService.parseFromImage(file);
+            const { events } = await eventService.parseFromDocument(file);
             setFlyerParsedEvents(events);
             setIsFlyerSheetOpen(true);
         } catch (err) {
-            URL.revokeObjectURL(previewUrl);
-            setFlyerPreviewUrl(undefined);
-            showError(err instanceof Error ? err.message : 'Failed to parse image');
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+                setFlyerPreviewUrl(undefined);
+            }
+            showError(err instanceof Error ? err.message : 'Failed to parse file');
         } finally {
             setIsParsingImage(false);
         }
@@ -529,13 +533,13 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
                 </div>
             )}
 
-            {/* Hidden file input for image upload */}
+            {/* Hidden file input — images, PDF, DOCX */}
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
+                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 className="hidden"
-                onChange={handleImageSelect}
+                onChange={handleFileSelect}
                 aria-hidden="true"
             />
 
@@ -594,19 +598,19 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
                         />
                         {/* Inline action buttons */}
                         <div className="flex items-center gap-0.5 pr-2 shrink-0">
-                            {/* Camera — scan flyer */}
+                            {/* Attach — images, PDF, or Word doc */}
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isParsingImage || isLoading}
-                                aria-label="Scan a flyer or schedule"
-                                title="Scan a flyer or photo to import events"
+                                aria-label="Attach a file to import events"
+                                title="Attach an image, PDF, or Word doc to import events"
                                 className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                     isParsingImage
                                         ? 'text-indigo-500 animate-pulse'
                                         : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                                 }`}
                             >
-                                <Camera size={18} />
+                                <Paperclip size={18} />
                             </button>
                             {/* Mic — voice input */}
                             <button
@@ -642,7 +646,7 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
 
                     {/* Status labels */}
                     {isParsingImage && (
-                        <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">Scanning image…</p>
+                        <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">Reading file…</p>
                     )}
                     {isListening && (
                         <p className="mt-1.5 text-xs text-red-500 animate-pulse">Listening…</p>

@@ -222,10 +222,66 @@ export class AgentService {
         familyMembers: FamilyMember[]
     ): Promise<string> {
         const { toolName, toolInput } = pending;
+
+        // Batch creation from attachment parsing (WhatsApp media)
+        if (toolName === 'create_events_batch') {
+            return this.executeBatchCreate(toolInput, userId, familyMembers);
+        }
+
         const { output } = await this.executeTool(toolName, toolInput, userId, timezone, familyMembers, 'whatsapp');
         // Strip any conflict warning from the execution output — user already confirmed
         const base = output.split('\n')[0];
         return `Done! ${base}`;
+    }
+
+    // ── Batch-create events from attachment parsing ───────────────────────────
+
+    private async executeBatchCreate(
+        toolInput: Record<string, unknown>,
+        userId: string,
+        familyMembers: FamilyMember[]
+    ): Promise<string> {
+        interface BatchEvent {
+            title: string;
+            start_time: string;
+            end_time: string;
+            is_all_day: boolean;
+            location?: string;
+            family_member_names?: string[];
+        }
+        const events = (toolInput.events as BatchEvent[]) ?? [];
+        if (events.length === 0) return 'No events to add.';
+
+        let created = 0;
+        for (const e of events) {
+            try {
+                const startTime = new Date(e.start_time);
+                const endTime   = new Date(e.end_time);
+                const duration  = Math.round((endTime.getTime() - startTime.getTime()) / 60_000);
+
+                const event       = new Event();
+                event.title       = e.title;
+                event.startTime   = startTime;
+                event.endTime     = endTime;
+                event.duration    = duration;
+                event.isAllDay    = e.is_all_day ?? false;
+                event.location    = e.location;
+                event.userId      = userId;
+
+                const saved = await this.eventService.create(event);
+
+                const memberNames = e.family_member_names ?? [];
+                if (memberNames.length > 0) {
+                    const memberIds = this.resolveMemberIds(memberNames, familyMembers);
+                    await this.saveFamilyMemberTags(saved.id, memberIds, userId);
+                }
+                created++;
+            } catch {
+                // Continue creating remaining events even if one fails
+            }
+        }
+
+        return `Added ${created} event${created === 1 ? '' : 's'} to your calendar!`;
     }
 
     // ── Execute a single tool ────────────────────────────────────────────────
