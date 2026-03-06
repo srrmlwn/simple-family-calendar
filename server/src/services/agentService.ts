@@ -15,7 +15,7 @@ export interface AgentInput {
     message: string;
     userId: string;
     timezone: string;
-    channel: 'web' | 'whatsapp';
+    channel: 'web' | 'whatsapp' | 'email';
     history: Array<{ role: 'user' | 'assistant'; content: string }>;
     preloadedEvents: Event[];
     familyMembers: FamilyMember[];
@@ -221,6 +221,16 @@ export class AgentService {
         timezone: string,
         familyMembers: FamilyMember[]
     ): Promise<string> {
+        // Batch ops path (email ingest — multiple events confirmed at once)
+        if (pending.batchOps && pending.batchOps.length > 0) {
+            for (const op of pending.batchOps) {
+                await this.executeTool(op.toolName, op.toolInput, userId, timezone, familyMembers, 'email');
+            }
+            const n = pending.batchOps.length;
+            return `Done! Added ${n} event${n === 1 ? '' : 's'} to your calendar. View it at https://famcal.ai`;
+        }
+
+        // Single op path (WhatsApp)
         const { toolName, toolInput } = pending;
         const { output } = await this.executeTool(toolName, toolInput, userId, timezone, familyMembers, 'whatsapp');
         // Strip any conflict warning from the execution output — user already confirmed
@@ -236,7 +246,7 @@ export class AgentService {
         userId: string,
         timezone: string,
         familyMembers: FamilyMember[],
-        channel: 'web' | 'whatsapp'
+        channel: 'web' | 'whatsapp' | 'email'
     ): Promise<{ output: string; event?: Event; queriedEvents?: Event[] }> {
 
         if (toolName === 'get_events') {
