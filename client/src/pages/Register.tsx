@@ -56,11 +56,7 @@ const Register: React.FC = () => {
                 return;
             }
 
-            console.log("Registering user - " + firstName + ", " + lastName);
-
             await register(firstName, lastName, email, password);
-
-            console.log("Successfully registered user - " + firstName + ", " + lastName);
 
             // Redirect after successful registration
             navigate('/');

@@ -50,7 +50,6 @@ export class AuthService {
         lastName: string;
         token: string;
     }> {
-        console.log("Registering user - " + JSON.stringify(user));
         checkEmailAllowed(user.email);
 
         const userRepository = AppDataSource.getRepository(User);

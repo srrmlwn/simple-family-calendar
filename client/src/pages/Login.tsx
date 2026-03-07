@@ -40,6 +40,9 @@ const Login: React.FC = () => {
   });
   const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [betaBannerDismissed, setBetaBannerDismissed] = useState(
+    () => localStorage.getItem('betaBannerDismissed') === 'true'
+  );
 
   // Check for auth error/info message on component mount
   useEffect(() => {
@@ -171,16 +174,28 @@ const Login: React.FC = () => {
       </div>
 
       {/* Private beta banner */}
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-center">
-          <p className="text-sm font-medium text-amber-800">
-            famcal.ai is in private beta
-          </p>
-          <p className="mt-0.5 text-xs text-amber-700">
-            Sign-in is currently limited to invited testers. Working on something great — stay tuned.
-          </p>
+      {!betaBannerDismissed && (
+        <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="relative rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-center">
+            <button
+              onClick={() => {
+                localStorage.setItem('betaBannerDismissed', 'true');
+                setBetaBannerDismissed(true);
+              }}
+              className="absolute top-2 right-2 text-amber-500 hover:text-amber-700 p-0.5"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+            <p className="text-sm font-medium text-amber-800">
+              famcal.ai is in private beta
+            </p>
+            <p className="mt-0.5 text-xs text-amber-700">
+              Sign-in is currently limited to invited testers. Working on something great — stay tuned.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-xl sm:px-10 border border-gray-100">
