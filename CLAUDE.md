@@ -139,15 +139,16 @@ REACT_APP_GOOGLE_CLIENT_ID=...
 
 ## Active Feature Docs
 
-Design specs and feature notes live in `/features/`:
-- `natural-language-interaction.md` — NLP interface spec
-- `notifications.md` — daily digest spec
-- `simplified-event-details.md` — bottom sheet event form spec
-- `natural-language-interaction-task-list.md` — NLP implementation tasks
+Active (unshipped) feature specs in `/features/`:
+- `operational-excellence.md` — observability, uptime, error tracking
+- `whatsapp-sms-bot.md` — WhatsApp/SMS bot (Phase 2, spec written, code removed)
+- `attachment-parsing.md` — parse events from PDF/DOCX/images (in development)
 
-Product strategy notes live in `/product-market-fit/`:
+Product strategy notes in `/product-market-fit/`:
 - `competitive-analysis.md` — market landscape and positioning
 - `feature-roadmap.md` — prioritized feature backlog
+- `ux-notes.md` — UX observations, open issues, NLP-first vision
+- `beta-launch-checklist.md` — pre-launch checklist (29/33 done)
 
 ---
 
@@ -351,7 +352,7 @@ tests/
 | `npm run security:scan` | Fast grep-based security scan on changed files |
 | `npm run verify` | Full pipeline: type-check → lint → unit → E2E → security scan |
 
-_Note: Some of these scripts need to be wired up in `package.json` — see setup tasks in `security/security-review-2026-02-21.md`._
+_Note: Some of these scripts need to be wired up in `package.json`._
 
 ---
 
