@@ -99,43 +99,93 @@ New names generated based on themes: **simplify + AI + family happiness**
 
 ---
 
+---
+
+## Session 3 — Deep Research: simplical.ai (March 2026)
+
+**Proposed name:** "simpli" + "cal" = simplify + calendar → **simplical.ai**
+
+### Verdict: PROCEED WITH CAUTION ⚠️
+
+No competing product named "Simplical" exists anywhere. Domain and social handles appear available. But the "Simpli-" prefix is a crowded trademark neighborhood — get attorney clearance before committing.
+
+| Signal | Finding |
+|---|---|
+| Competing product | None found — App Store, Play, Product Hunt, Crunchbase all clear |
+| simplical.ai domain | No indexed content — likely unregistered |
+| simplical.com/io/co/net | All appear unregistered |
+| @simplical (X/Instagram/TikTok) | No active accounts found |
+| USPTO exact match | No "SIMPLICAL" or "SIMPLI-CAL" trademark found |
+
+**Trademark risk:** SIMPLICAM (ArcSoft/SimpliSafe, Class 9) is phonetically very close — `SIM-pli-kam` vs `SIM-pli-kul`, same syllable count, one phoneme apart. USPTO application would likely receive an office action. SIMPLISAFE (22+ active Class 9 registrations, litigation history) is the 800-lb gorilla of the "Simpli-" prefix space.
+
+---
+
+## Session 4 — Deep Research: simplycal.ai (March 2026)
+
+**Proposed name:** "simply" + "cal" = simply + calendar → **simplycal.ai**
+**Domain:** simplycal.ai confirmed available by user.
+
+### Verdict: PROCEED WITH CAUTION ⚠️ (same risk level as simplical.ai, with one extra concern)
+
+| Signal | Finding |
+|---|---|
+| simplycal.ai domain | Confirmed available (user verified) |
+| simplycal.com/io/co/net | No indexed content — appear unregistered; verify via WHOIS |
+| simplycal.de | **ACTIVE** — owned by ORGA-SOFT (German calibration software). No US rights found. |
+| @simplycal (X/TikTok) | No active accounts found |
+| @simplycal (Instagram) | SimplyCal Candles (small artisan brand) active — exact handle needs direct verification |
+| USPTO exact match | No "SIMPLYCAL" or "SIMPLY CAL" trademark found |
+
+**The extra concern — SimpleCal iOS app:**
+An actively maintained iOS calendar app called **SimpleCal** (by Yohei Fujikawa) has 14,000+ ratings, 4.72 stars, last updated Oct 2025. It is phonetically nearly identical to "SimplyCal" and in the exact same product category. No USPTO registration found yet, but consumer confusion risk is real at launch, and if Fujikawa ever files, it could conflict. This risk doesn't exist for SIMPLICAL.
+
+**Trademark risk (same as simplical.ai):**
+SIMPLICAM and SIMPLISAFE are the same concerns. The "SIMPLI-" vs "SIMPLY-" distinction is negligible — USPTO treats them as equivalent. Both names face the same likely office action; the practical trademark risk between them is nearly identical.
+
+**SIMPLYCAL vs SIMPLICAL — conclusion:**
+Roughly equal trademark friction, but SIMPLYCAL adds the SimpleCal iOS app conflict in the same product category. SIMPLICAL has the edge here.
+
+---
+
 ## Top Candidates Summary
 
-Ranked by overall fit against naming criteria:
+Ranked by overall fit (product clarity × brand warmth × trademark cleanliness):
 
 | Rank | Name | Why |
 |---|---|---|
-| 1 | **smilecal.ai** | Smile + calendar = instantly clear what it is. Warm, happy, AI-native. Clean. |
-| 2 | **famglow.ai** | Family + glow. Warm, positive, no competitor conflicts found. |
-| 3 | **brightfam.ai** | Bright + family. Clear, optimistic, available. |
-| 4 | **fambeam.ai** | Beaming smile + family. Upbeat, short, memorable. |
-| 5 | **gleefam.ai** | Glee + family. Joyful, musical energy — could be very memorable. |
-| 6 | **joivita.ai** | Joy + life (Latin). Rich meaning, distinctive, rolls off the tongue. |
-| 7 | **zevive.ai** | Distinctive and energetic — best if you want something that doesn't sound like a calendar app |
+| 1 | **smilecal.ai** | Smile + calendar. Instantly clear, warm, AI-native. **Cleanest trademark path of any candidate.** No known conflicts. |
+| 2 | **simplical.ai** | Simpli + cal = simplify your calendar. Clever, modern. No competing product. Trademark needs attorney clearance (SIMPLICAM risk). |
+| 3 | **simplycal.ai** | Simply + cal. Natural English, domain available. Same trademark risk as simplical, plus SimpleCal iOS app in same category. |
+| 4 | **famglow.ai** | Family + glow. Warm, poetic, no conflicts. |
+| 5 | **brightfam.ai** | Bright + family. Clear, optimistic, available. |
+| 6 | **fambeam.ai** | Beaming smile + family. Upbeat, short, memorable. |
+| 7 | **gleefam.ai** | Glee + family. Joyful energy — very memorable. |
+| 8 | **joivita.ai** | Joy + vita (life in Latin). Rich meaning, distinctive. |
+| 9 | **zevive.ai** | Most distinctive/energetic — best if you want something that doesn't sound like a calendar app. |
 
 ---
 
 ## Recommendation
 
-**smilecal.ai** is the strongest candidate right now:
-- Communicates the product (calendar) directly
-- Signals positive emotion (smile) — the promise of family happiness
-- .ai TLD signals AI-native
-- No competing product found
-- Easy to say, spell, and remember
+**Two paths:**
 
-**famglow.ai** is the best runner-up if you want something less literal and more brand-poetic.
+**Path A — move fast, skip attorney fees:** Go with **smilecal.ai**. Cleanest trademark profile of any candidate researched. Smile + calendar = instantly clear. Warm, happy, AI-native. No competing products found anywhere.
+
+**Path B — stronger brand, pay for clearance:** Go with **simplical.ai** (preferred over simplycal due to no iOS app conflict). "Simpli + cal" is clever and the product promise is baked into the name. Budget ~$500–800 for an attorney clearance opinion on the SIMPLICAM/SIMPLISAFE proximity before committing.
 
 ---
 
 ## Next Steps
 
-- [ ] Verify top 3 domains on a registrar (Namecheap / GoDaddy) — web indexing ≠ registered
-- [ ] Trademark search for top candidates (USPTO TESS for US; EUIPO for EU)
-- [ ] Check social handle availability (@smilecal, @famglow, etc.) on X/Instagram
+- [ ] WHOIS check: simplycal.com, simplical.com — register .com alongside .ai to prevent squatters
+- [ ] Direct USPTO TESS search: SIMPLYCAL, SIMPLICAL, SMILECAL (live marks, Classes 9 & 42)
+- [ ] Confirm SimpleCal (Yohei Fujikawa) has no pending USPTO application — highest gap in research
+- [ ] Check @simplycal handle directly on Instagram (SimplyCal Candles may occupy it)
+- [ ] If choosing simplical/simplycal: get attorney clearance opinion (~$500–800) on SIMPLICAM risk
 - [ ] Gut-check with a few target users (parents) — which name makes them smile?
-- [ ] Decision: pick one and register domain + social handles before announcing
+- [ ] Decision: register domain + social handles before announcing publicly
 
 ---
 
-*Last updated: 2026-03-07*
+*Last updated: 2026-03-07 — simplical.ai (Session 3) and simplycal.ai (Session 4) research added*
