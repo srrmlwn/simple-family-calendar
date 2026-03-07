@@ -128,6 +128,15 @@ export class AuthService {
     }
 
     /**
+     * Delete a user account and all associated data.
+     * Relies on ON DELETE CASCADE constraints for events, recipients, settings, etc.
+     */
+    public async deleteAccount(userId: string): Promise<void> {
+        const userRepository = AppDataSource.getRepository(User);
+        await userRepository.delete(userId);
+    }
+
+    /**
      * Get user by ID
      */
     public async getUserById(id: string): Promise<User | null> {

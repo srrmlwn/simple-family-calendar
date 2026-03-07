@@ -43,5 +43,6 @@ router.get('/google/callback',
 
 // Protected routes
 router.get('/me', authenticateJWT, asyncHandler(authController.getCurrentUser));
+router.delete('/account', authenticateJWT, asyncHandler(authController.deleteAccount));
 
 export default router;

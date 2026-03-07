@@ -293,7 +293,13 @@ const Settings: React.FC = () => {
                     <div className="px-6 py-4">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Current Timezone</label>
-                            <p className="text-sm text-gray-900">{timezone.replace(/_/g, ' ')}</p>
+                            <p className="text-sm text-gray-900">{(() => {
+                                try {
+                                    return Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'long' })
+                                        .formatToParts(new Date())
+                                        .find(p => p.type === 'timeZoneName')?.value ?? timezone;
+                                } catch { return timezone.replace(/_/g, ' '); }
+                            })()}</p>
                             <p className="text-xs text-gray-400 mt-0.5">{timezone}</p>
                         </div>
                     </div>
@@ -569,6 +575,47 @@ const Settings: React.FC = () => {
                             <h3 className="font-medium text-lg">Android</h3>
                             <p className="text-gray-600">Open in Chrome and tap the menu (three dots) &gt; "Add to Home screen".</p>
                         </div>
+                    </div>
+                </div>
+
+                {/* Danger Zone: Delete Account */}
+                <div className="bg-white shadow rounded-lg overflow-hidden mb-6 border border-red-100">
+                    <div className="px-6 py-4 border-b border-red-100">
+                        <h2 className="text-lg font-medium text-red-700">Danger Zone</h2>
+                        <p className="text-sm text-gray-600">Permanently delete your account and all your data. This cannot be undone.</p>
+                    </div>
+                    <div className="px-6 py-4">
+                        <button
+                            onClick={async () => {
+                                if (!window.confirm('Are you sure you want to delete your account? All your events, family members, and settings will be permanently deleted.')) return;
+                                try {
+                                    await api.delete('/api/auth/account');
+                                    localStorage.removeItem('user');
+                                    navigate('/login');
+                                } catch {
+                                    setError('Failed to delete account. Please try again.');
+                                }
+                            }}
+                            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                            Delete my account
+                        </button>
+                    </div>
+                </div>
+
+                {/* Feedback */}
+                <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <h2 className="text-lg font-medium">Beta Feedback</h2>
+                        <p className="text-sm text-gray-600">Found a bug or have a suggestion? We'd love to hear from you.</p>
+                    </div>
+                    <div className="px-6 py-4">
+                        <a
+                            href="mailto:sriram@famcal.ai?subject=famcal.ai%20beta%20feedback"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                            Send feedback
+                        </a>
                     </div>
                 </div>
 

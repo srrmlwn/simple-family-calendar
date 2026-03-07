@@ -1,5 +1,14 @@
 // src/app.ts
 import 'reflect-metadata';
+// Sentry must be initialized before any other imports
+import * as Sentry from '@sentry/node';
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV || 'development',
+        tracesSampleRate: 0.1,
+    });
+}
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -90,6 +99,11 @@ if (config.server.nodeEnv === 'staging' || config.server.nodeEnv === 'production
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../../client/build/index.html'));
     });
+}
+
+// Sentry error handler (must be before other error handlers)
+if (process.env.SENTRY_DSN) {
+    Sentry.setupExpressErrorHandler(app);
 }
 
 // Error handling middleware

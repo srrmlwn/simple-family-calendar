@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@sentry/node": "^10.42.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/multer": "^2.0.0",
     "@types/node-cron": "^3.0.11",

@@ -156,6 +156,32 @@ export class AuthController {
     };
 
     /**
+     * Delete account — removes the authenticated user and all associated data via FK cascade.
+     * Clears the auth cookie after deletion.
+     */
+    public deleteAccount = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                res.status(401).json({ error: 'Not authenticated' });
+                return;
+            }
+
+            await this.authService.deleteAccount(userId);
+
+            res.clearCookie(COOKIE_NAME, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
+            res.json({ message: 'Account deleted' });
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            res.status(500).json({ error: 'Failed to delete account' });
+        }
+    };
+
+    /**
      * Forgot password — always returns 200 to avoid email enumeration.
      * TODO: generate a reset token, store it hashed, and email the link via EmailService.
      */

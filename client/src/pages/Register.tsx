@@ -210,6 +210,13 @@ const Register: React.FC = () => {
                                 </Link>
                             </p>
                         </div>
+
+                        <p className="text-center text-xs text-gray-400">
+                            By signing up, you agree to our{' '}
+                            <Link to="/terms" className="underline hover:text-gray-600">Terms of Service</Link>
+                            {' '}and{' '}
+                            <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>.
+                        </p>
                     </form>
                 </div>
             </div>

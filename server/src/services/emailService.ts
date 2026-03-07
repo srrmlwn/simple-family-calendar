@@ -24,6 +24,8 @@ export class EmailService {
                 user: process.env.EMAIL_USER || '',
                 pass: process.env.EMAIL_PASSWORD || '',
             },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
         });
 
         // Verify SMTP connection configuration
@@ -39,8 +41,8 @@ export class EmailService {
      */
     private generateICalendar(event: Event, sender: EmailSender, method: ICalCalendarMethod = ICalCalendarMethod.REQUEST): ICalCalendar {
         const calendar = ical({
-            name: 'Simple Family Calendar',
-            prodId: '//SimpleFamilyCalendar//Calendar//EN',
+            name: 'famcal.ai',
+            prodId: '//famcal.ai//Calendar//EN',
             method,
         });
 
@@ -260,7 +262,7 @@ export class EmailService {
           ${calendarLinks}
           
           <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-            This invitation was sent from Simple Family Calendar.
+            This invitation was sent from famcal.ai.
           </p>
         </div>
       </div>
