@@ -17,6 +17,7 @@ import moment from 'moment-timezone';
 import { effectiveUserId } from '../utils/effectiveUserId';
 import { getActiveSession, extractHistory, upsertTurn, expireSession } from '../services/conversationService';
 import { AgentService } from '../services/agentService';
+import { checkPromptInjection } from '../utils/promptGuard';
 
 export class EventController {
     private eventService: EventService;
@@ -489,9 +490,22 @@ export class EventController {
                 return res.status(400).json({ error: 'Timezone is required' });
             }
 
+            // ── PROMPT INJECTION GUARD ────────────────────────────────────────
+            const guard = checkPromptInjection(text);
+            if (guard.verdict === 'block') {
+                console.warn('[promptGuard] blocked input', { userId, reason: guard.reason });
+                return res.status(400).json({ error: 'Invalid input.' });
+            }
+            if (guard.verdict === 'flag') {
+                console.warn('[promptGuard] suspicious input flagged', { userId, reason: guard.reason });
+                // Log but allow through — blast radius is limited to the user's own calendar.
+            }
+            // Use the normalised text downstream (strips zero-width chars etc.)
+            const safeText = guard.sanitized;
+
             // ── SYNC ─────────────────────────────────────────────────────────
             // Detect Google Calendar sync intent via keywords — no LLM call needed
-            const isSyncRequest = /google\s+calendar|sync.*google|import.*google|refresh.*google|google.*(sync|import|refresh)|gcal/i.test(text);
+            const isSyncRequest = /google\s+calendar|sync.*google|import.*google|refresh.*google|google.*(sync|import|refresh)|gcal/i.test(safeText);
             if (isSyncRequest) {
                 try {
                     const result = await googleCalendarService.importEvents(userId);
@@ -524,7 +538,7 @@ export class EventController {
 
             // Run the agent (handles create/update/delete/query + conflict detection)
             const agentResult = await this.agentService.run({
-                message: text,
+                message: safeText,
                 userId,
                 timezone,
                 channel: 'web',
@@ -537,7 +551,7 @@ export class EventController {
             const message = agentResult.reply;
 
             // Persist this conversation turn
-            upsertTurn(userId, 'web', text, message, session?.id).catch(() => {});
+            upsertTurn(userId, 'web', safeText, message, session?.id).catch(() => {});
 
             // Build the response the client expects
             if (agentResult.createdEvent) {
