@@ -291,7 +291,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // ── Mobile drawer snap state ─────────────────────────────────────────────
-    const [snap, setSnap] = useState<number | string>(120);
+    const [snap, setSnap] = useState<number | string>('120px');
     const handleSnapChange = useCallback((s: number | string | null) => {
         if (s !== null) setSnap(s);
     }, []);
@@ -402,7 +402,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
 
         // Auto-expand mobile drawer
         if (!isDesktop) {
-            setSnap('60%');
+            setSnap(0.6);
         }
 
         try {
@@ -486,7 +486,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
 
     const handleClearSession = useCallback(async () => {
         setMessages([]);
-        setSnap(120);
+        setSnap('120px');
         eventService.clearConversationSession().catch(() => {});
     }, []);
 
@@ -771,7 +771,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
                 <Drawer.Root
                     open={true}
                     modal={false}
-                    snapPoints={[120, '60%']}
+                    snapPoints={['120px', 0.6]}
                     activeSnapPoint={snap}
                     setActiveSnapPoint={handleSnapChange}
                 >
@@ -784,7 +784,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
                             <div className="mx-auto mt-2 mb-1 w-10 h-1 rounded-full bg-gray-300 shrink-0" />
 
                             {/* Thread — only visible when expanded */}
-                            {snap === '60%' && (
+                            {snap === 0.6 && (
                                 <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
                                     {messages.length === 0 ? (
                                         <EmptyState />
