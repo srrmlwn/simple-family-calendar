@@ -107,7 +107,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
     if (isMobile) {
         return (
             <>
-                <div className="flex flex-col">
+                <div className="flex flex-col pb-[120px]">
                     {/* Mobile header — month label + view switcher */}
                     <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
                         <span className="text-sm font-semibold text-gray-700">
