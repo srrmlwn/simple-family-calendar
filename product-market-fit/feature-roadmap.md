@@ -1,6 +1,6 @@
 # Feature Roadmap
 
-_Last updated: 2026-02-28 — **Strategic pivot: conversational agent**_
+_Last updated: 2026-03-10 — **Email ingest + WhatsApp outbound code-complete in worktree**_
 
 > **Current focus:** Phase 1 — Agent Foundation. See the PMF case and architecture rationale in [`conversational-first-strategy.md`](./conversational-first-strategy.md).
 >
@@ -131,6 +131,54 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 
 ---
 
+### 🚧 WhatsApp / SMS Bot — Text or WhatsApp to add events
+
+**Status:** Code complete in worktree (`worktree-peppy-sleeping-rocket`). Inbound handler (`webhookController.ts`) already in main. Outbound `sendWhatsAppMessage()` added in worktree. Ready to merge.
+
+**Why:** Parents are already in WhatsApp. Texting "Emma has soccer Saturday at 9am" to kinroo.ai's number and getting a confirmation back — without opening an app — is a genuinely different product from every form-based calendar. This is the primary input channel for mobile-native families.
+
+**What's built:**
+- Inbound Twilio webhook: receives SMS/WhatsApp, routes to agent, returns TwiML reply
+- Two-phase confirmation for mutations (create/update/delete): user texts → agent proposes → user replies YES/NO
+- Immediate reply for queries ("what's this week?")
+- Disambiguation for ambiguous requests ("cancel soccer" when there are 2 soccer events)
+- Unlinked phone fallback: sends Settings link if phone not connected to an account
+- Outbound `sendWhatsAppMessage()` for proactive messages (used by email ingest confirmations)
+
+**Merge checklist:**
+- [ ] Merge `worktree-peppy-sleeping-rocket` into main
+- [ ] Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` in Heroku config
+- [ ] Enable WhatsApp Sandbox or register WhatsApp Business number in Twilio console
+- [ ] Add phone number field to Settings UI (already specced in `whatsapp-sms-bot.md`)
+- [ ] Expose Twilio number in onboarding ("Save this number as 'kinroo.ai' in your contacts")
+
+---
+
+### 🚧 Email Ingest — Forward any email to add@kinroo.ai
+
+**Status:** Code complete in worktree (`worktree-peppy-sleeping-rocket`). Spec in `features/email-ingest.md`. Ready to merge alongside WhatsApp.
+
+**Why:** The killer feature for parents. Forward the school's soccer schedule PDF to add@kinroo.ai. Get a WhatsApp ping 10 seconds later: "Found 8 soccer games. Add them all? YES/NO". Zero new behavior required — forwarding is something every parent already knows how to do.
+
+**What's built:**
+- `POST /api/email/inbound` webhook handler (SendGrid Inbound Parse)
+- `emailIngestService`: extracts content from plain text, HTML, PDFs (`pdf-parse`), images (Claude vision), `.ics` files
+- User identification by `From` address → `users.email` lookup
+- Batch confirmation: stores all extracted events as a single pending action, YES adds all
+- Deduplication: flags events already on the calendar in the confirmation message
+- Confirmation routing: WhatsApp if phone linked, email reply otherwise
+- Unknown sender gets a "sign up" reply; no-events emails get a helpful error
+- SendGrid webhook signature verification; rate limiting by sender
+
+**Merge checklist:**
+- [ ] Merge `worktree-peppy-sleeping-rocket` into main
+- [ ] Set `SENDGRID_INBOUND_WEBHOOK_SECRET` and `INBOUND_EMAIL_ADDRESS=add@kinroo.ai` in Heroku config
+- [ ] Configure SendGrid Inbound Parse: MX record `add.kinroo.ai → mx.sendgrid.net`, webhook URL `https://kinroo.ai/api/email/inbound`
+- [ ] Register `add@kinroo.ai` mailbox (or alias) in DNS
+- [ ] Surface in onboarding: "Forward any email to add@kinroo.ai"
+
+---
+
 ### 🎯 Morning Briefing via WhatsApp
 
 **Why:** The most valuable message of the day. "Here's what today looks like" delivered to your phone before the chaos starts. No other calendar does this on WhatsApp.
@@ -203,15 +251,13 @@ _Goal: The agent gets genuinely smart about your family. Personalization and pro
 
 ---
 
-### 💡 Forward-and-Forget
+### ✅ Forward-and-Forget (Email channel — shipped in worktree)
 
-**Why:** The killer feature. Parents already forward schedule updates from group chats — "Practice moved to Saturday 10am at Magnuson" — and have to manually re-enter them. The agent should handle this automatically.
+**Why:** The killer feature. Parents already forward schedule emails and PDFs. Now they can forward directly to add@kinroo.ai. See Phase 2 "Email Ingest" for full details.
 
-**What to build:**
-- No change needed in the WhatsApp bot — forwarded messages are just natural language
-- The agent needs to handle the disambiguation gracefully: recognize when a message is more likely a forwarded update than a direct command
-- Key heuristic: if the message contains a name, a place, and a time but doesn't read like a command ("Coach Mike said..."), treat it as a forwarded notice and extract the event details
-- Respond: "I see a schedule change — Practice Saturday 10am at Magnuson. Add it? YES/NO"
+**Still to build (WhatsApp channel):**
+- Forwarded WhatsApp messages are already natural language — no code change needed for the agent to handle them
+- Heuristic to detect forwarded context vs. direct commands: if a message contains a name, a place, and a time but reads like a third-party notice ("Coach Mike said practice moved to Saturday 10am"), extract the event and respond: "I see a schedule change — Practice Saturday 10am at Magnuson. Add it? YES/NO"
 
 ---
 

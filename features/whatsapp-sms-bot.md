@@ -1,6 +1,6 @@
 # Feature Spec: WhatsApp / SMS Bot Integration
 
-_Status: 💡 Future — spec written, code removed. Implement when ready._
+_Status: 🚧 Code complete in worktree (`worktree-peppy-sleeping-rocket`), ready to merge. Outbound `sendWhatsAppMessage()` added in same worktree alongside email ingest._
 
 ---
 

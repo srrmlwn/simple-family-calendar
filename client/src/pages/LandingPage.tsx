@@ -482,6 +482,107 @@ const LandingPage: React.FC = () => (
       </div>
     </section>
 
+    {/* CHANNELS SECTION */}
+    <section style={{ background: '#fff', borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
+      <div style={{ maxWidth: 1120, margin: '0 auto', padding: '72px 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 38px)', fontWeight: 900, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+            Add events without opening the app
+          </h2>
+          <p style={{ fontSize: 16, color: MUTED, margin: 0, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
+            kinroo.ai works wherever you already are. Text it, WhatsApp it, or forward an email — it all lands on your calendar.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          {/* WhatsApp / SMS */}
+          <div style={{ flex: '1 1 280px', borderRadius: 16, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+            <div style={{ background: '#F0FDF4', padding: '24px 24px 20px', borderBottom: `1px solid #DCFCE7` }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
+              <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Text or WhatsApp</div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: MUTED }}>
+                Save kinroo.ai's number in your contacts. Text it like you'd text anyone — no app, no login.
+              </div>
+            </div>
+            <div style={{ padding: '16px 20px', background: '#fff' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ background: '#25D366', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 11px', borderRadius: '12px 12px 3px 12px', maxWidth: '85%' }}>
+                    Soccer moved to Saturday 10am at Magnuson
+                  </div>
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#F3F4F6', padding: '7px 11px', borderRadius: '3px 12px 12px 12px', maxWidth: '88%' }}>
+                  <span style={{ color: '#22C55E', fontSize: 11, marginTop: 1, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 12, color: '#374151' }}>Got it — Soccer Practice moved to Sat 10:00 AM at Magnuson Park. Added!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Email forward */}
+          <div style={{ flex: '1 1 280px', borderRadius: 16, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+            <div style={{ background: '#EFF6FF', padding: '24px 24px 20px', borderBottom: `1px solid #DBEAFE` }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📧</div>
+              <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Forward any email</div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: MUTED }}>
+                Forward a school schedule, coach email, or PDF flyer to <strong style={{ color: DARK }}>add@kinroo.ai</strong> — events extracted automatically.
+              </div>
+            </div>
+            <div style={{ padding: '16px 20px', background: '#fff' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {/* Forwarded email indicator */}
+                <div style={{ background: '#F8FAFC', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: MUTED, marginBottom: 3, fontWeight: 700 }}>FORWARDED TO add@kinroo.ai</div>
+                  <div style={{ fontSize: 11, color: DARK, fontWeight: 600 }}>⚽ Spring Soccer Season Schedule (PDF)</div>
+                  <div style={{ fontSize: 10, color: MUTED }}>8 games, Mar–Jun</div>
+                </div>
+                {/* Reply */}
+                <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#F3F4F6', padding: '7px 10px', borderRadius: 8, maxWidth: '95%' }}>
+                  <span style={{ color: '#22C55E', fontSize: 11, marginTop: 1, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 11, color: '#374151' }}>Found 8 soccer games. Reply YES to add all, NO to skip.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* In-app chat */}
+          <div style={{ flex: '1 1 280px', borderRadius: 16, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+            <div style={{ background: '#EEF2FF', padding: '24px 24px 20px', borderBottom: `1px solid #E0E7FF` }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>💻</div>
+              <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Chat in the app</div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: MUTED }}>
+                On desktop or mobile, the AI chat is always one tap away alongside your calendar.
+              </div>
+            </div>
+            <div style={{ padding: '16px 20px', background: '#fff' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ background: '#6366F1', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 11px', borderRadius: '12px 12px 3px 12px', maxWidth: '85%' }}>
+                    Jake's dentist Monday at 3pm
+                  </div>
+                </div>
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#F3F4F6', padding: '7px 11px', borderRadius: '3px 12px 12px 12px', marginBottom: 6 }}>
+                    <span style={{ color: '#22C55E', fontSize: 11, marginTop: 1, flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: 12, color: '#374151' }}>Added Dentist Appointment for Jake on Monday!</span>
+                  </div>
+                  {/* Mini event card */}
+                  <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                    <div style={{ width: 4, background: '#F87171', flexShrink: 0 }} />
+                    <div style={{ padding: '7px 10px', background: '#FEF2F2' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: DARK }}>Dentist Appointment</div>
+                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>Mon · 3:00 PM · 1h</div>
+                      <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, background: 'rgba(255,255,255,0.7)', border: '1px solid #E5E7EB', borderRadius: 20, padding: '1px 7px', color: '#374151', fontWeight: 600 }}>Jake</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     {/* APP MOCKUP */}
     <section style={{ background: 'linear-gradient(160deg, #EEF2FF 0%, #F0F0FF 100%)', borderTop: '1px solid #E0DCFF', borderBottom: '1px solid #E0DCFF' }}>
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '72px 24px' }}>
