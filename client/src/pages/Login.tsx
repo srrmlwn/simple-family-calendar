@@ -107,7 +107,7 @@ const Login: React.FC = () => {
       console.log('Login successful, redirecting...');
 
       // Redirect after successful login
-      navigate('/');
+      navigate('/calendar');
     } catch (err) {
       // Log detailed error information
       console.error('Login error details:', {

@@ -53,7 +53,7 @@ const AcceptInvite: React.FC = () => {
             setStatus('done');
             // Force a fresh login to get a new JWT with managingFamilyId
             setTimeout(() => {
-                navigate('/');
+                navigate('/calendar');
                 window.location.reload();
             }, 2500);
         } catch (err: unknown) {

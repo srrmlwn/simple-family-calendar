@@ -117,7 +117,7 @@ const LoginPage: React.FC = () => {
 
       // Simulate a delay before redirect
       setTimeout(() => {
-        navigate('/');
+        navigate('/calendar');
       }, 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';

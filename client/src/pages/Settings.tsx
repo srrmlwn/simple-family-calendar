@@ -263,7 +263,7 @@ const Settings: React.FC = () => {
 
             <div className="max-w-4xl mx-auto p-6 w-full">
                 <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/calendar')}
                     className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mb-4 transition-colors"
                 >
                     ← Back to Calendar
@@ -621,7 +621,7 @@ const Settings: React.FC = () => {
 
                 <div className="mt-6 flex justify-end">
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/calendar')}
                         className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded mr-2"
                     >
                         Back to Calendar

@@ -59,7 +59,7 @@ const Register: React.FC = () => {
             await register(firstName, lastName, email, password);
 
             // Redirect after successful registration
-            navigate('/');
+            navigate('/calendar');
         } catch (err) {
             // Auth context will handle setting the error message
             console.error('Registration error:', err);
