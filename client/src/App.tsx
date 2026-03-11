@@ -2,10 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Calendar from './pages/Calendar';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
-import ForgotPassword from './pages/ForgotPassword';
 import AcceptInvite from './pages/AcceptInvite';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
@@ -21,7 +19,7 @@ const HomeRoute: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500" />
             </div>
         );
     }
@@ -40,8 +38,6 @@ const App: React.FC = () => {
                 <Routes>
                     <Route path="/" element={<HomeRoute />} />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/register" element={<Register />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/accept-invite" element={<AcceptInvite />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />

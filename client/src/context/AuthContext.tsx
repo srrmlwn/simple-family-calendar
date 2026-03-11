@@ -16,8 +16,6 @@ interface User {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: () => void;
   handleAuthCallback: () => Promise<void>;
   logout: () => void;
@@ -28,8 +26,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
-  login: async () => {},
-  register: async () => {},
   loginWithGoogle: () => {},
   handleAuthCallback: async () => {},
   logout: () => {},
@@ -43,8 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // On mount, try to restore session from the httpOnly cookie by fetching /me.
-  // If the cookie is absent or expired the request will 401 and we stay logged out.
+  // On mount, restore session from localStorage (actual auth via httpOnly cookie).
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -57,16 +52,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  // Handle successful authentication
   const handleAuthSuccess = useCallback((authUser: User) => {
     setUser(authUser);
-    // Store non-sensitive user display data in localStorage for fast UI restore on reload.
-    // The actual auth token stays in the httpOnly cookie — localStorage holds no secrets.
     localStorage.setItem('user', JSON.stringify(authUser));
     navigate('/', { replace: true });
   }, [navigate]);
 
-  // Login with Google — redirect to server OAuth endpoint
+  // Redirect to Google OAuth
   const loginWithGoogle = () => {
     try {
       setLoading(true);
@@ -78,8 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Handle Google OAuth redirect callback.
-  // The httpOnly cookie has already been set by the server; just fetch /me.
+  // Handle Google OAuth redirect callback — cookie already set server-side, just fetch /me.
   const handleAuthCallback = async () => {
     try {
       setLoading(true);
@@ -87,14 +78,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { user: authUser } = await authService.handleGoogleCallback();
 
-      // If there's a pending invite token (from accept-invite flow), accept it now.
-      // After accepting, force a fresh login so the new JWT includes managingFamilyId.
+      // If there's a pending invite token, accept it now.
       const pendingToken = localStorage.getItem('pendingInviteToken');
       if (pendingToken) {
         localStorage.removeItem('pendingInviteToken');
         try {
           await api.post('/api/family/invite/accept', { token: pendingToken });
-          // Log out so the next login issues a JWT with managingFamilyId
           await authService.logout();
           navigate('/login', {
             replace: true,
@@ -102,72 +91,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           return;
         } catch {
-          // Accept failed — still log in normally as the user's own account
+          // Accept failed — log in normally
         }
       }
 
       handleAuthSuccess(authUser);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete authentication');
-      navigate('/login', {
-        state: { error: 'Authentication failed. Please try again.' },
-      });
+      navigate('/login', { state: { error: 'Authentication failed. Please try again.' } });
     } finally {
       setLoading(false);
     }
   };
 
-  // Login with email/password
-  const login = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const { user: authUser } = await authService.login(email, password);
-      handleAuthSuccess(authUser);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login');
-      throw err; // re-throw so LoginPage can display the error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Register new user
-  const register = async (firstName: string, lastName: string, email: string, password: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const { user: authUser } = await authService.register(firstName, lastName, email, password);
-      handleAuthSuccess(authUser);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Logout user — clear cookie server-side and wipe client state
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    authService.logout(); // best-effort; don't await
+    authService.logout();
     navigate('/login', { replace: true });
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated: !!user,
-        user,
-        login,
-        register,
-        loginWithGoogle,
-        handleAuthCallback,
-        logout,
-        loading,
-        error,
-      }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated: !!user, user, loginWithGoogle, handleAuthCallback, logout, loading, error }}>
       {children}
     </AuthContext.Provider>
   );
