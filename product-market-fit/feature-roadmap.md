@@ -61,22 +61,20 @@ _These must be done before inviting any beta users. No new features until this l
 - [ ] **Delete `LoginPage.tsx` and `/login-test` route** — dead code, two login pages is confusing and a security surface
 - [ ] **Remove all `console.log` calls from client** — 58 total; `Login.tsx` logs user email, `api.ts` logs every request/response, `GoogleLogin.tsx` has 8 log statements. None should reach production.
 - [ ] **Merge Email Recipients into Family Members** — same concept from user perspective; Family Member gets an optional email field; one UI, one concept, no confusion
-- [ ] **Cut digest stats/logs from Notification Preferences** — show toggle + time only; the send counts and log rows are developer data, not user settings
+- [ ] **Remove daily digest entirely** — the WhatsApp morning briefing (Phase 2) is a strictly better version of the same idea; running both creates two notification systems; `DigestService` and `SchedulerService` can be deleted; Notification Preferences section in Settings goes away entirely
+- [ ] **Remove Installation Help section from Settings entirely** — PWA install prompt fires automatically when the browser is ready; no manual instructions needed
 - [ ] **Cut exception dates from recurrence form** — "this occurrence vs. series" scope is sufficient for beta; exception date picker adds complexity and edge cases
 - [ ] **Remove Timezone as a Settings section** — read-only display is not a setting; if needed, surface as one line in profile context
 - [ ] **Remove "Beta Feedback" section from Settings** — replace with `hello@kinroo.ai` link in footer and/or header profile menu
-- [ ] **Simplify Installation Help** — remove the four browser-specific instruction blocks; keep only the conditional "Install App" button when `beforeinstallprompt` fires
-- [ ] **Hide Year view** — non-standard horizontal format confuses users; remove the tab until it's redesigned as a proper 12-month grid
 - [ ] **Fix onboarding step 3 (WhatsApp)** — Twilio not configured in production yet; replace step 3 with email-forward intro ("Forward any email to add@kinroo.ai") or collapse to 2-step onboarding
 - [ ] **Audit `bg-blue-600` → `bg-indigo-600`** — brand is indigo; blue and indigo are used interchangeably throughout; standardise to indigo-600 as the single primary action colour
 - [ ] **Unify Settings section heading typography** — currently alternates between `text-lg font-medium` and `text-xl font-semibold`; pick one
 
-### Settings page target structure (4 sections, down from 8)
+### Settings page target structure (3 sections, down from 8)
 | Section | Contents |
 |---|---|
 | **Family** | Family members (name + colour + optional email) · Co-manager invite |
-| **Notifications** | Daily digest toggle + send time |
-| **Connect** | WhatsApp phone number · Install App button (conditional) |
+| **Connect** | WhatsApp phone number |
 | **Account** | Delete account |
 
 ### Infrastructure (must configure before launch)
@@ -214,15 +212,18 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 
 ---
 
-### 🎯 Morning Briefing via WhatsApp
+### 🎯 Morning Briefing — WhatsApp / SMS / email / in-app
 
-**Why:** The most valuable message of the day. "Here's what today looks like" delivered to your phone before the chaos starts. No other calendar does this on WhatsApp.
+**Why:** The most valuable message of the day. "Here's what today looks like" before the chaos starts. This fully replaces the old daily digest email — same idea, every channel, done properly.
+
+**Replaces:** `DigestService` + `SchedulerService` (to be deleted). The email digest was a batch workaround; this is the real thing.
 
 **What to build:**
-- Opt-in (onboarding or Settings toggle), configurable send time (default 7:30am in user's timezone)
-- Message format: short, conversational narrative — not a list dump. "Good morning! Today: Sasha school pickup at 3pm, soccer at Magnuson at 4:30. Dinner reservation at Cafe Juanita at 7pm. Busy one — want me to set a reminder for anything?"
-- The LLM writes the narrative, not a template. This is a legitimate use of the existing IntentParser infrastructure repurposed for outbound.
-- Delivery via Twilio WhatsApp (already set up)
+- Opt-in per channel: WhatsApp, SMS, email, or in-app push. User picks which channel(s) they want.
+- Configurable send time (default 7:30am in user's timezone)
+- Message format: short, conversational narrative — not a list dump. "Good morning! Today: Sasha school pickup at 3pm, soccer at Magnuson at 4:30. Dinner at Cafe Juanita at 7pm. Busy one."
+- LLM writes the narrative, not a template
+- WhatsApp delivery via Twilio (already wired). Email via existing SMTP. In-app via push notification (future). SMS via Twilio SMS.
 
 ---
 
@@ -356,13 +357,14 @@ _Goal: The agent gets genuinely smart about your family. Personalization and pro
 
 | Feature | Status | Reason |
 |---|---|---|
-| Year view | ❌ Hidden for beta | Non-standard horizontal format (like GitHub contribution graph) confuses users. Re-evaluate as proper 12-month grid post-beta. |
+| Daily digest (DigestService) | ❌ Cut | Replaced by WhatsApp/SMS/email/in-app morning briefing (Phase 2). Two notification systems is worse than one good one. `DigestService` + `SchedulerService` to be deleted. |
+| Notification Preferences section in Settings | ❌ Removed | Goes away with the digest. Morning briefing opt-in lives in onboarding/Connect settings. |
+| Installation Help section in Settings | ❌ Removed | PWA install prompt is automatic. Browser instruction manual is noise. |
+| Year view | ✅ Kept (Skylight use case) | Horizontal week grid is intentional for wide landscape displays (like Skylight family calendar). Not a bug, a feature. |
 | Recurrence exception dates | ❌ Cut for beta | Edge case complexity; "this occurrence vs. series" scope is sufficient. Revisit if users request it. |
-| Digest stats/logs in Settings | ❌ Removed from UI | Developer-level data. Not user-facing. |
 | Timezone section in Settings | ❌ Removed from UI | Read-only info is not a setting. |
 | Email Recipients (separate from Family Members) | ❌ Merged | Exposed internal data model to users. Family Members gets an optional email field instead. |
 | `LoginPage.tsx` / `/login-test` | ❌ Deleted | Dead code, duplicate login page, security surface. |
-| Installation Help instruction blocks | ❌ Replaced | Verbose browser-specific manual replaced with single conditional Install App button. |
 | Beta Feedback settings section | ❌ Removed | Mailto link doesn't need a named section; lives in footer. |
 | Ambient Family Dashboard ("TV Mode") | ❌ Deprioritized | Passive display feature, doesn't advance the agent vision. Revisit post-Phase 2. |
 | Chore & Task Lists | ❌ Deprioritized | Scope creep. We win on the agent, not on matching Cozi feature-for-feature. |
