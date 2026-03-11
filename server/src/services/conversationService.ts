@@ -112,6 +112,8 @@ export interface PendingToolCallData {
     toolName: string;
     toolInput: Record<string, unknown>;
     confirmationPrompt: string;
+    // Batch ops for email ingest (multiple events confirmed in one YES/NO)
+    batchOps?: Array<{ toolName: string; toolInput: Record<string, unknown> }>;
 }
 
 /**

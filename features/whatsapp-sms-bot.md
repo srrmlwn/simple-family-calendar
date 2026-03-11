@@ -1,6 +1,6 @@
 # Feature Spec: WhatsApp / SMS Bot Integration
 
-_Status: 🚧 Code complete in worktree (`worktree-peppy-sleeping-rocket`), ready to merge. Outbound `sendWhatsAppMessage()` added in same worktree alongside email ingest._
+_Status: ✅ Merged into main. Pending Twilio console + Heroku config to activate in production._
 
 ---
 

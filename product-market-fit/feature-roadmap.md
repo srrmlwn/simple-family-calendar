@@ -131,9 +131,9 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 
 ---
 
-### 🚧 WhatsApp / SMS Bot — Text or WhatsApp to add events
+### ✅ WhatsApp / SMS Bot — Text or WhatsApp to add events
 
-**Status:** Code complete in worktree (`worktree-peppy-sleeping-rocket`). Inbound handler (`webhookController.ts`) already in main. Outbound `sendWhatsAppMessage()` added in worktree. Ready to merge.
+**Status:** Merged into main. Inbound handler (`webhookController.ts`) + outbound `sendWhatsAppMessage()` both in main. Pending Heroku config and Twilio console setup before it works in production.
 
 **Why:** Parents are already in WhatsApp. Texting "Emma has soccer Saturday at 9am" to kinroo.ai's number and getting a confirmation back — without opening an app — is a genuinely different product from every form-based calendar. This is the primary input channel for mobile-native families.
 
@@ -154,9 +154,9 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 
 ---
 
-### 🚧 Email Ingest — Forward any email to add@kinroo.ai
+### ✅ Email Ingest — Forward any email to add@kinroo.ai
 
-**Status:** Code complete in worktree (`worktree-peppy-sleeping-rocket`). Spec in `features/email-ingest.md`. Ready to merge alongside WhatsApp.
+**Status:** Merged into main. `emailIngestController`, `emailIngestService`, `/api/email/inbound` route all in main. Pending SendGrid + DNS setup before it works in production.
 
 **Why:** The killer feature for parents. Forward the school's soccer schedule PDF to add@kinroo.ai. Get a WhatsApp ping 10 seconds later: "Found 8 soccer games. Add them all? YES/NO". Zero new behavior required — forwarding is something every parent already knows how to do.
 
