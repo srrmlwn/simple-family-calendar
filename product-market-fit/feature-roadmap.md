@@ -1,10 +1,10 @@
 # Feature Roadmap
 
-_Last updated: 2026-03-10 — **Email ingest + WhatsApp outbound code-complete in worktree**_
+_Last updated: 2026-03-10 — **Beta launch gate: UI simplification sprint**_
 
-> **Current focus:** Phase 1 — Agent Foundation. See the PMF case and architecture rationale in [`conversational-first-strategy.md`](./conversational-first-strategy.md).
+> **Current focus:** Beta launch prep — simplify and polish. Email ingest + WhatsApp merged. See cleanup checklist below before inviting any beta users.
 >
-> **Sprint status:** Phase 1 complete ✅. All agent foundation items shipped. Next: Phase 2 — proactive agent.
+> **Sprint status:** Phase 1 ✅. WhatsApp + Email Ingest ✅ (merged, pending infra config). Now: beta polish sprint before opening access.
 
 ---
 
@@ -49,6 +49,41 @@ A single-turn interaction costs one LLM call. A multi-turn conversation with his
 
 **The visual calendar is still essential.**
 Don't abandon it in pursuit of the conversational vision. Parents need to see the week at a glance — a chat interface doesn't replace that visual spatial view. The right division: **conversation is for doing, the calendar is for seeing**. The agent handles all creates/updates/queries via conversation. The calendar grid is the verification layer that shows parents the result and makes them trust the agent.
+
+---
+
+---
+
+## Beta Launch Gate — Polish & Simplification Sprint
+_These must be done before inviting any beta users. No new features until this list is clear._
+
+### UI Cleanup (must fix)
+- [ ] **Delete `LoginPage.tsx` and `/login-test` route** — dead code, two login pages is confusing and a security surface
+- [ ] **Remove all `console.log` calls from client** — 58 total; `Login.tsx` logs user email, `api.ts` logs every request/response, `GoogleLogin.tsx` has 8 log statements. None should reach production.
+- [ ] **Merge Email Recipients into Family Members** — same concept from user perspective; Family Member gets an optional email field; one UI, one concept, no confusion
+- [ ] **Cut digest stats/logs from Notification Preferences** — show toggle + time only; the send counts and log rows are developer data, not user settings
+- [ ] **Cut exception dates from recurrence form** — "this occurrence vs. series" scope is sufficient for beta; exception date picker adds complexity and edge cases
+- [ ] **Remove Timezone as a Settings section** — read-only display is not a setting; if needed, surface as one line in profile context
+- [ ] **Remove "Beta Feedback" section from Settings** — replace with `hello@kinroo.ai` link in footer and/or header profile menu
+- [ ] **Simplify Installation Help** — remove the four browser-specific instruction blocks; keep only the conditional "Install App" button when `beforeinstallprompt` fires
+- [ ] **Hide Year view** — non-standard horizontal format confuses users; remove the tab until it's redesigned as a proper 12-month grid
+- [ ] **Fix onboarding step 3 (WhatsApp)** — Twilio not configured in production yet; replace step 3 with email-forward intro ("Forward any email to add@kinroo.ai") or collapse to 2-step onboarding
+- [ ] **Audit `bg-blue-600` → `bg-indigo-600`** — brand is indigo; blue and indigo are used interchangeably throughout; standardise to indigo-600 as the single primary action colour
+- [ ] **Unify Settings section heading typography** — currently alternates between `text-lg font-medium` and `text-xl font-semibold`; pick one
+
+### Settings page target structure (4 sections, down from 8)
+| Section | Contents |
+|---|---|
+| **Family** | Family members (name + colour + optional email) · Co-manager invite |
+| **Notifications** | Daily digest toggle + send time |
+| **Connect** | WhatsApp phone number · Install App button (conditional) |
+| **Account** | Delete account |
+
+### Infrastructure (must configure before launch)
+- [ ] Set `SENTRY_DSN` in Heroku config vars
+- [ ] Set up UptimeRobot on `https://kinroo.ai/api/health`
+- [ ] Twilio: set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, enable WhatsApp Business in Twilio console
+- [ ] SendGrid: add MX record `add.kinroo.ai → mx.sendgrid.net`, configure Inbound Parse webhook, set `SENDGRID_INBOUND_WEBHOOK_SECRET`
 
 ---
 
@@ -319,14 +354,20 @@ _Goal: The agent gets genuinely smart about your family. Personalization and pro
 
 ## Deprioritized / Cut
 
-These were in the previous roadmap. Honest assessment of why they move down:
-
 | Feature | Status | Reason |
 |---|---|---|
-| Ambient Family Dashboard ("TV Mode") | ❌ Deprioritized | Good idea but it's a passive display feature — doesn't advance the agent vision. Revisit post-Phase 2. |
-| Chore & Task Lists | ❌ Deprioritized | Scope creep. Cozi has this. We win on the agent, not on matching Cozi feature-for-feature. |
-| 2-Way Google Calendar Sync | ❌ Deprioritized | 1-way import is sufficient for adoption. 2-way sync is a reliability and conflict-resolution investment that only matters at higher retention. |
-| Browser Extension | ❌ Cut | Another input channel. We have enough input channels. Depth over breadth. |
+| Year view | ❌ Hidden for beta | Non-standard horizontal format (like GitHub contribution graph) confuses users. Re-evaluate as proper 12-month grid post-beta. |
+| Recurrence exception dates | ❌ Cut for beta | Edge case complexity; "this occurrence vs. series" scope is sufficient. Revisit if users request it. |
+| Digest stats/logs in Settings | ❌ Removed from UI | Developer-level data. Not user-facing. |
+| Timezone section in Settings | ❌ Removed from UI | Read-only info is not a setting. |
+| Email Recipients (separate from Family Members) | ❌ Merged | Exposed internal data model to users. Family Members gets an optional email field instead. |
+| `LoginPage.tsx` / `/login-test` | ❌ Deleted | Dead code, duplicate login page, security surface. |
+| Installation Help instruction blocks | ❌ Replaced | Verbose browser-specific manual replaced with single conditional Install App button. |
+| Beta Feedback settings section | ❌ Removed | Mailto link doesn't need a named section; lives in footer. |
+| Ambient Family Dashboard ("TV Mode") | ❌ Deprioritized | Passive display feature, doesn't advance the agent vision. Revisit post-Phase 2. |
+| Chore & Task Lists | ❌ Deprioritized | Scope creep. We win on the agent, not on matching Cozi feature-for-feature. |
+| 2-Way Google Calendar Sync | ❌ Deprioritized | 1-way import sufficient for adoption. 2-way sync only matters at higher retention. |
+| Browser Extension | ❌ Cut | Enough input channels already. Depth over breadth. |
 | School/Sports League Integrations | 💡 Keep in backlog | High value, but requires partnerships. Not now. |
 | Voice Input Whisper Upgrade | 💡 Keep in backlog | Basic voice is fine. WhatsApp voice messages as an input channel are more interesting — forward a voice message, agent transcribes and parses it. |
 
