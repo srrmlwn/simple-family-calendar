@@ -48,7 +48,6 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
     };
 
     const handleImageError = () => {
-        console.log('[Header] Profile image failed to load, falling back to initials');
         setProfileImageError(true);
     };
 

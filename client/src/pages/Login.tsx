@@ -84,7 +84,6 @@ const Login: React.FC = () => {
 
     try {
       setSubmitError(null);
-      console.log('Attempting login with email:', formData.email);
 
       if (!formData.email.trim()) {
         setSubmitError({
@@ -102,21 +101,11 @@ const Login: React.FC = () => {
         return;
       }
 
-      console.log('Calling login function...');
       await login(formData.email, formData.password);
-      console.log('Login successful, redirecting...');
 
       // Redirect after successful login
       navigate('/calendar');
     } catch (err) {
-      // Log detailed error information
-      console.error('Login error details:', {
-        error: err,
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined
-      });
-      
-      // Auth context will handle setting the error message
       if (err instanceof Error) {
         if (err.message.includes('Network Error')) {
           setSubmitError({
@@ -276,7 +265,7 @@ const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>

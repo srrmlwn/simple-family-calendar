@@ -15,7 +15,6 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleCredentialResponse = useCallback((response: GoogleCredentialResponse) => {
-    console.log('Received Google credential response'); // security-scan-ignore: no credential value logged
     setIsLoading(true);
     setError(null);
 
@@ -26,13 +25,10 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
 
       // The response contains a credential with an ID token
       const idToken = response.credential;
-      console.log('Processing Google login token...'); // security-scan-ignore: no token value logged
 
       // Call the onLoginSuccess callback if provided
       if (onLoginSuccess) {
         onLoginSuccess(idToken);
-      } else {
-        console.warn('No onLoginSuccess callback provided');
       }
     } catch (err) {
       console.error('Error handling Google credential:', err);
@@ -52,7 +48,6 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
     }
 
     try {
-      console.log('Initializing Google Sign-In...');
       // Initialize the Google Identity Services
       google.accounts.id.initialize({
         client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
@@ -65,7 +60,6 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
         flow: 'implicit'
       });
 
-      console.log('Rendering Google Sign-In button...');
       // Render the Google Sign-In button
       const buttonContainer = document.getElementById('google-signin-button');
       if (buttonContainer) {
@@ -81,7 +75,6 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
             width: 250
           }
         );
-        console.log('Google Sign-In button rendered successfully');
       } else {
         console.error('Button container not found');
         setError('Failed to initialize Google Sign-In button.');
@@ -97,19 +90,16 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onLoginSuccess }) => {
     const loadGoogleScript = () => {
       // Check if the script is already loaded
       if (document.querySelector('script#google-oauth')) {
-        console.log('Google OAuth script already loaded');
         initializeGoogleLogin();
         return;
       }
 
-      console.log('Loading Google OAuth script...');
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.id = 'google-oauth';
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        console.log('Google OAuth script loaded successfully');
         initializeGoogleLogin();
       };
       script.onerror = (error) => {

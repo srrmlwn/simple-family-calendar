@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Calendar from './pages/Calendar';
 import Login from './pages/Login';
-import LoginPage from './pages/LoginPage';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
@@ -41,7 +40,6 @@ const App: React.FC = () => {
                 <Routes>
                     <Route path="/" element={<HomeRoute />} />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/login-test" element={<LoginPage />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />

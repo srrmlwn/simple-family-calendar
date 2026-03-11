@@ -1,10 +1,10 @@
 # Feature Roadmap
 
-_Last updated: 2026-03-10 — **Beta launch gate: UI simplification sprint**_
+_Last updated: 2026-03-11 — **Beta launch gate: UI simplification sprint in progress**_
 
-> **Current focus:** Beta launch prep — simplify and polish. Email ingest + WhatsApp merged. See cleanup checklist below before inviting any beta users.
+> **Current focus:** Beta launch prep — simplify and polish. Email ingest + WhatsApp merged. UI sprint underway. See cleanup checklist below before inviting any beta users.
 >
-> **Sprint status:** Phase 1 ✅. WhatsApp + Email Ingest ✅ (merged, pending infra config). Now: beta polish sprint before opening access.
+> **Sprint status:** Phase 1 ✅. WhatsApp + Email Ingest ✅ (merged, pending infra config). UI polish sprint 🚧 in progress (digest deleted, Settings restructured, console.logs removed).
 
 ---
 
@@ -58,17 +58,17 @@ Don't abandon it in pursuit of the conversational vision. Parents need to see th
 _These must be done before inviting any beta users. No new features until this list is clear._
 
 ### UI Cleanup (must fix)
-- [ ] **Delete `LoginPage.tsx` and `/login-test` route** — dead code, two login pages is confusing and a security surface
-- [ ] **Remove all `console.log` calls from client** — 58 total; `Login.tsx` logs user email, `api.ts` logs every request/response, `GoogleLogin.tsx` has 8 log statements. None should reach production.
+- [x] **Delete `LoginPage.tsx` and `/login-test` route** ✅ — dead code removed
+- [x] **Remove all `console.log` calls from client** ✅ — Login.tsx, api.ts, GoogleLogin.tsx, Header.tsx, InstallPrompt.tsx, PrivateRoute.tsx, eventService.ts all cleaned
 - [ ] **Merge Email Recipients into Family Members** — same concept from user perspective; Family Member gets an optional email field; one UI, one concept, no confusion
-- [ ] **Remove daily digest entirely** — the WhatsApp morning briefing (Phase 2) is a strictly better version of the same idea; running both creates two notification systems; `DigestService` and `SchedulerService` can be deleted; Notification Preferences section in Settings goes away entirely
-- [ ] **Remove Installation Help section from Settings entirely** — PWA install prompt fires automatically when the browser is ready; no manual instructions needed
+- [x] **Remove daily digest entirely** ✅ — `DigestService`, `SchedulerService`, `notificationRoutes`, `notificationController` deleted; Notification Preferences removed from Settings
+- [x] **Remove Installation Help section from Settings entirely** ✅ — Settings rewritten to 3 sections; manual browser instructions gone
 - [ ] **Cut exception dates from recurrence form** — "this occurrence vs. series" scope is sufficient for beta; exception date picker adds complexity and edge cases
-- [ ] **Remove Timezone as a Settings section** — read-only display is not a setting; if needed, surface as one line in profile context
-- [ ] **Remove "Beta Feedback" section from Settings** — replace with `hello@kinroo.ai` link in footer and/or header profile menu
-- [ ] **Fix onboarding step 3 (WhatsApp)** — Twilio not configured in production yet; replace step 3 with email-forward intro ("Forward any email to add@kinroo.ai") or collapse to 2-step onboarding
-- [ ] **Audit `bg-blue-600` → `bg-indigo-600`** — brand is indigo; blue and indigo are used interchangeably throughout; standardise to indigo-600 as the single primary action colour
-- [ ] **Unify Settings section heading typography** — currently alternates between `text-lg font-medium` and `text-xl font-semibold`; pick one
+- [x] **Remove Timezone as a Settings section** ✅ — gone in Settings rewrite
+- [x] **Remove "Beta Feedback" section from Settings** ✅ — replaced with `hello@kinroo.ai` link in footer of Settings page
+- [x] **Fix onboarding step 3 (WhatsApp)** ✅ — replaced with Connect step: email forward (add@kinroo.ai) primary, WhatsApp "coming soon"
+- [x] **Audit `bg-blue-600` → `bg-indigo-600`** ✅ — Login, Register, ForgotPassword, RecurrenceScopeDialog buttons updated to indigo
+- [x] **Unify Settings section heading typography** ✅ — Settings rewritten with consistent section label style (`text-xs font-semibold uppercase tracking-wider`)
 
 ### Settings page target structure (3 sections, down from 8)
 | Section | Contents |
@@ -179,7 +179,7 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 - Outbound `sendWhatsAppMessage()` for proactive messages (used by email ingest confirmations)
 
 **Merge checklist:**
-- [ ] Merge `worktree-peppy-sleeping-rocket` into main
+- [x] Merge `worktree-peppy-sleeping-rocket` into main ✅ 2026-03-11
 - [ ] Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` in Heroku config
 - [ ] Enable WhatsApp Sandbox or register WhatsApp Business number in Twilio console
 - [ ] Add phone number field to Settings UI (already specced in `whatsapp-sms-bot.md`)
@@ -204,7 +204,7 @@ _Goal: The agent reaches out, not just responds. This is what separates a tool f
 - SendGrid webhook signature verification; rate limiting by sender
 
 **Merge checklist:**
-- [ ] Merge `worktree-peppy-sleeping-rocket` into main
+- [x] Merge `worktree-peppy-sleeping-rocket` into main ✅ 2026-03-11
 - [ ] Set `SENDGRID_INBOUND_WEBHOOK_SECRET` and `INBOUND_EMAIL_ADDRESS=add@kinroo.ai` in Heroku config
 - [ ] Configure SendGrid Inbound Parse: MX record `add.kinroo.ai → mx.sendgrid.net`, webhook URL `https://kinroo.ai/api/email/inbound`
 - [ ] Register `add@kinroo.ai` mailbox (or alias) in DNS

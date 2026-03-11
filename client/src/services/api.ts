@@ -3,8 +3,6 @@ import axios, { AxiosResponse, AxiosError } from 'axios';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const ENV = process.env.REACT_APP_ENV || 'development';
 
-const isDev = process.env.NODE_ENV !== 'production';
-
 // Create axios instance with withCredentials so the httpOnly auth cookie
 // is automatically included in every request.
 const api = axios.create({
@@ -16,33 +14,10 @@ const api = axios.create({
     timeout: ENV === 'production' ? 5000 : 10000,
 });
 
-// Add request interceptor for dev logging only
-api.interceptors.request.use(
-    (config) => {
-        if (isDev) {
-            console.log("API Request:", { url: config.url, method: config.method });
-        }
-        return config;
-    },
-    (error: AxiosError) => {
-        console.error('API Request Error:', error);
-        return Promise.reject(error);
-    }
-);
-
 // Add response interceptor to handle errors
 api.interceptors.response.use(
-    (response: AxiosResponse) => {
-        if (isDev) {
-            console.log("API Response:", { status: response.status, url: response.config.url });
-        }
-        return response;
-    },
+    (response: AxiosResponse) => response,
     (error: AxiosError) => {
-        if (isDev) {
-            console.error('API Response Error:', error.response?.data || error);
-        }
-
         // Handle 401 Unauthorized — clear any stale client state and redirect to login
         if (error.response?.status === 401) {
             localStorage.removeItem('user');

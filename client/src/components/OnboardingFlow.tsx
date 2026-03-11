@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ArrowRight, Wand, Check, Users, MessageSquare } from 'lucide-react';
+import { X, ArrowRight, Wand, Check, Users, MessageSquare, Mail } from 'lucide-react';
 import api from '../services/api';
 import eventService from '../services/eventService';
 import familyMemberService from '../services/familyMemberService';
-import phoneService from '../services/phoneService';
 
 const STORAGE_KEY = 'onboarding_step';
 const TOTAL_STEPS = 3;
@@ -17,8 +16,6 @@ const MEMBER_COLORS = [
 interface OnboardingFlowProps {
     userName: string;
     onComplete: () => void;
-    twilioPhoneNumber?: string | null;
-    twilioJoinCode?: string | null;
 }
 
 // ── Step indicator ───────────────────────────────────────────────────────────
@@ -231,162 +228,56 @@ const FamilyMembersStep: React.FC<{
     );
 };
 
-// ── Step 1: WhatsApp setup ────────────────────────────────────────────────────
+// ── Step 1: Connect (email + WhatsApp) ───────────────────────────────────────
 
-const WhatsAppStep: React.FC<{
+const ConnectStep: React.FC<{
     onNext: () => void;
     onBack: () => void;
     onSkip: () => void;
-    twilioPhoneNumber?: string | null;
-    twilioJoinCode?: string | null;
-}> = ({ onNext, onBack, onSkip, twilioPhoneNumber, twilioJoinCode }) => {
-    const [phone, setPhone] = useState('');
-    const [saving, setSaving] = useState(false);
-    const [linked, setLinked] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleSave = async () => {
-        if (!phone.trim()) {
-            setError('Please enter a phone number');
-            return;
-        }
-        setSaving(true);
-        setError(null);
-        try {
-            await phoneService.save(phone.trim());
-            setLinked(true);
-        } catch (err: unknown) {
-            const msg =
-                err instanceof Error ? err.message :
-                (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Could not save phone number. Try again.';
-            setError(msg);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleSave();
-        }
-    };
-
-    // Build the WhatsApp deep link if we have the Twilio number + join code
-    const waNumber = twilioPhoneNumber?.replace(/\D/g, '');
-    const waLink = waNumber && twilioJoinCode
-        ? `https://wa.me/${waNumber}?text=${encodeURIComponent(twilioJoinCode)}`
-        : null;
-
+}> = ({ onNext, onBack, onSkip }) => {
     return (
-        <div className="flex flex-col" data-testid="onboarding-step-whatsapp">
+        <div className="flex flex-col" data-testid="onboarding-step-connect">
             <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-indigo-500" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900">Get updates on WhatsApp</h2>
-                    <p className="text-sm text-gray-500">Text your calendar — add events, check your schedule, get reminders.</p>
+                    <h2 className="text-lg font-bold text-gray-900">Add events without opening the app</h2>
+                    <p className="text-sm text-gray-500">kinroo.ai works where you already communicate.</p>
                 </div>
             </div>
 
-            {!linked ? (
-                <>
-                    {error && (
-                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-                            {error}
+            <div className="space-y-3 mb-6">
+                {/* Email forward */}
+                <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+                    <Mail className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-semibold text-gray-800">Forward any email</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                            Got a sports schedule or school notice? Forward it to{' '}
+                            <span className="font-medium text-indigo-600">add@kinroo.ai</span> and we'll add the events automatically.
                         </p>
-                    )}
-                    <div className="mb-5">
-                        <input
-                            type="tel"
-                            placeholder="+12125551234"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            disabled={saving}
-                            data-testid="onboarding-phone-input"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 mb-2"
-                        />
-                        <p className="text-xs text-gray-400 ml-1">Enter your number in international format (e.g. +1 for US/Canada)</p>
                     </div>
-                    <div className="flex items-center justify-between pt-2">
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            data-testid="onboarding-back"
-                            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                            Back
-                        </button>
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={onSkip}
-                                data-testid="onboarding-skip-step"
-                                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                Skip for now
-                            </button>
-                            <PrimaryButton
-                                onClick={handleSave}
-                                loading={saving}
-                                disabled={!phone.trim()}
-                                data-testid="onboarding-phone-save"
-                            >
-                                Save
-                            </PrimaryButton>
-                        </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-100 rounded-xl">
+                    <MessageSquare className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-semibold text-gray-800">WhatsApp & SMS <span className="ml-1 text-xs font-normal text-gray-400">coming soon</span></p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                            Link your phone in Settings → Connect to text events directly to kinroo.ai.
+                        </p>
                     </div>
-                </>
-            ) : (
-                <>
-                    <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3" data-testid="onboarding-phone-linked">
-                        <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                        <div className="space-y-2 text-sm">
-                            <p className="font-medium text-green-800">Phone linked!</p>
-                            {twilioPhoneNumber && (
-                                <p className="text-green-700">
-                                    Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"kinroo.ai"</span> in your contacts.
-                                </p>
-                            )}
-                            {twilioJoinCode ? (
-                                <p className="text-green-700">
-                                    Then send <span className="font-semibold">{twilioJoinCode}</span> to that number on WhatsApp to activate.
-                                    {waLink && (
-                                        <>
-                                            {' '}
-                                            <a
-                                                href={waLink}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="underline font-medium"
-                                            >
-                                                Open WhatsApp
-                                            </a>
-                                        </>
-                                    )}
-                                </p>
-                            ) : (
-                                <p className="text-green-700">Then send any message to that number on WhatsApp to start.</p>
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            data-testid="onboarding-back"
-                            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                            Back
-                        </button>
-                        <PrimaryButton onClick={onNext} data-testid="onboarding-continue">
-                            Continue <ArrowRight className="w-4 h-4" />
-                        </PrimaryButton>
-                    </div>
-                </>
-            )}
+                </div>
+            </div>
+
+            <StepFooter
+                onBack={onBack}
+                onContinue={onNext}
+                onSkip={onSkip}
+                skipLabel="Got it, skip"
+            />
         </div>
     );
 };
@@ -506,7 +397,7 @@ const TryItStep: React.FC<{
 
 // ── Main orchestrator ────────────────────────────────────────────────────────
 
-const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete, twilioPhoneNumber, twilioJoinCode }) => {
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete }) => {
     const [step, setStep] = useState<number>(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         const parsed = saved ? parseInt(saved, 10) : 0;
@@ -542,12 +433,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete, t
                 return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
             case 2:
                 return (
-                    <WhatsAppStep
+                    <ConnectStep
                         onNext={markComplete}
                         onBack={goBack}
                         onSkip={markComplete}
-                        twilioPhoneNumber={twilioPhoneNumber}
-                        twilioJoinCode={twilioJoinCode}
                     />
                 );
             default:

@@ -20,7 +20,6 @@ import { securityHeaders } from './middleware/security';
 import { apiLimiter } from './middleware/rateLimiter';
 import config from './config';
 import passport from './config/passport';
-import { schedulerService } from './services/SchedulerService';
 
 // Initialize express app
 const app = express();
@@ -66,7 +65,6 @@ import authRoutes from './routes/auth';
 import eventRoutes from './routes/event';
 import recipientRoutes from './routes/recipient';
 import settingsRoutes from './routes/settings';
-import notificationRoutes from './routes/notificationRoutes';
 import googleCalendarRoutes from './routes/googleCalendar';
 import familyMemberRoutes from './routes/familyMember';
 import voiceRoutes from './routes/voice';
@@ -85,7 +83,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', authenticateJWT, eventRoutes);
 app.use('/api/recipients', authenticateJWT, recipientRoutes);
 app.use('/api/settings', authenticateJWT, settingsRoutes);
-app.use('/api/notifications', notificationRoutes);
 app.use('/api/family-members', authenticateJWT, familyMemberRoutes);
 // Google Calendar routes — /callback is public (Google redirect), others are JWT-protected inline
 app.use('/api/google-calendar', googleCalendarRoutes);
@@ -116,7 +113,6 @@ app.use(errorHandler);
 AppDataSource.initialize()
     .then(() => {
         console.log('Data Source has been initialized!');
-        schedulerService.start(); // Start the scheduler
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

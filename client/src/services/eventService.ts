@@ -82,7 +82,6 @@ const eventService = {
         try {
             const timezone = getUserTimezone();
             const response = await api.post<Event>('/api/events/parse', { text, timezone });
-            console.log('Parsed event:', JSON.stringify(response.data, null, 2));
             const parsedEvent = parseEventDates(response.data);
             return parsedEvent;
         } catch (error) {
@@ -128,9 +127,6 @@ const eventService = {
             const response = await api.get<Event[]>('/api/events', { params });
             return response.data.map(parseEventDates);
         } catch (error) {
-            if (error instanceof Error) {
-                console.error(error.message);
-            }
             throw new Error('Failed to fetch events');
         }
     },
@@ -153,7 +149,6 @@ const eventService = {
         try {
             const timezone = getUserTimezone();
             const response = await api.post<Event>('/api/events', { ...eventData, timezone });
-            console.log('Event created:', JSON.stringify(response.data, null, 2));
             return parseEventDates(response.data);
         } catch (error) {
             if (error instanceof Error) {
