@@ -515,7 +515,7 @@ Guidelines:
 5. Use conversation history to resolve references like "move it", "reschedule that", "the dentist next week".
 6. All times you receive are UTC. When displaying times back, convert to the user's timezone (${timezone}).
 7. Be brief and conversational. No markdown formatting in responses.
-8. If the user asks to see their calendar visually, view it in an app, or open the calendar, send them to famcal.ai — include a deep link with the relevant date when helpful, e.g. https://famcal.ai/?date=${now.format('YYYY-MM-DD')} for today or https://famcal.ai/?date=YYYY-MM-DD for a specific date. They will need to log in if not already.`;
+8. If the user asks to see their calendar visually, view it in an app, or open the calendar, send them to kinroo.ai — include a deep link with the relevant date when helpful, e.g. https://kinroo.ai/?date=${now.format('YYYY-MM-DD')} for today or https://kinroo.ai/?date=YYYY-MM-DD for a specific date. They will need to log in if not already.`;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

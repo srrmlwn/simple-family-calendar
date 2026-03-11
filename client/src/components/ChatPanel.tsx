@@ -734,7 +734,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
                 <div className="w-[340px] border-l border-gray-200 bg-white flex flex-col h-full shrink-0">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-                        <span className="text-sm font-semibold text-gray-700">Ask famcal.ai</span>
+                        <span className="text-sm font-semibold text-gray-700">Ask kinroo.ai</span>
                         {messages.length > 0 && (
                             <button
                                 onClick={handleClearSession}

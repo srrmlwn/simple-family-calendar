@@ -167,7 +167,7 @@ Set up one alert rule in Sentry: **"Email me when error volume spikes > 10 error
 **1f. Set up UptimeRobot**
 
 1. Sign up at uptimerobot.com (free)
-2. Add monitor: HTTP(S), URL `https://famcal.ai/api/health`, interval 5 minutes
+2. Add monitor: HTTP(S), URL `https://kinroo.ai/api/health`, interval 5 minutes
 3. Alert contact: your email + phone SMS
 4. This catches full outages — Heroku dyno crashes, deployment failures, DNS issues
 
@@ -288,7 +288,7 @@ This is optional complexity — don't build it until you've been burned by an An
 - [ ] Every SMTP send is logged with success/failure
 - [ ] Every Google Calendar API call is logged
 - [ ] Sentry receives errors from unhandled exceptions in production
-- [ ] UptimeRobot sends an alert within 10 minutes of `famcal.ai` going down
+- [ ] UptimeRobot sends an alert within 10 minutes of `kinroo.ai` going down
 - [ ] `OPENAI_API_KEY` env var renamed to `ANTHROPIC_API_KEY` everywhere
 
 **Phase 2:**

@@ -1,6 +1,6 @@
-# famcal.ai
+# kinroo.ai
 
-**Live:** https://famcal.ai
+**Live:** https://kinroo.ai
 
 A family calendar that understands plain English. Create events by describing them, get daily digests, and keep the whole family on the same page.
 
@@ -41,8 +41,8 @@ See `CLAUDE.md` for full architecture and development notes.
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/famcal-ai.git
-cd famcal-ai
+git clone https://github.com/yourusername/kinroo-ai.git
+cd kinroo-ai
 npm install
 ```
 

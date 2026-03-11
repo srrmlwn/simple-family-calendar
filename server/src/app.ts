@@ -28,7 +28,7 @@ const PORT = config.server.port;
 
 // Middleware
 const allowedOrigins = [
-    'https://famcal.ai',
+    'https://kinroo.ai',
     'https://simple-family-calendar-8282627220c3.herokuapp.com',
     ...(config.server.nodeEnv !== 'production' ? ['http://localhost:3000'] : [])
 ];

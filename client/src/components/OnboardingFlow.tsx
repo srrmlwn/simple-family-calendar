@@ -347,7 +347,7 @@ const WhatsAppStep: React.FC<{
                             <p className="font-medium text-green-800">Phone linked!</p>
                             {twilioPhoneNumber && (
                                 <p className="text-green-700">
-                                    Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"FamCal"</span> in your contacts.
+                                    Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"kinroo.ai"</span> in your contacts.
                                 </p>
                             )}
                             {twilioJoinCode ? (
@@ -433,7 +433,7 @@ const TryItStep: React.FC<{
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-900">Try it out</h2>
-                    <p className="text-sm text-gray-500">famcal.ai understands plain English. Give it a try.</p>
+                    <p className="text-sm text-gray-500">kinroo.ai understands plain English. Give it a try.</p>
                 </div>
             </div>
 

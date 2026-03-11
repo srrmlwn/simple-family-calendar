@@ -41,8 +41,8 @@ export class EmailService {
      */
     private generateICalendar(event: Event, sender: EmailSender, method: ICalCalendarMethod = ICalCalendarMethod.REQUEST): ICalCalendar {
         const calendar = ical({
-            name: 'famcal.ai',
-            prodId: '//famcal.ai//Calendar//EN',
+            name: 'kinroo.ai',
+            prodId: '//kinroo.ai//Calendar//EN',
             method,
         });
 
@@ -262,7 +262,7 @@ export class EmailService {
           ${calendarLinks}
           
           <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-            This invitation was sent from famcal.ai.
+            This invitation was sent from kinroo.ai.
           </p>
         </div>
       </div>
@@ -280,7 +280,7 @@ export class EmailService {
     }): Promise<void> {
         await this.transporter.sendMail({
             from: {
-                name: 'famcal.ai',
+                name: 'kinroo.ai',
                 address: process.env.EMAIL_USER || ''
             },
             ...options

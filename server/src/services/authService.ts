@@ -14,7 +14,7 @@ import { randomBytes } from 'crypto';
  * that is not on the ALLOWED_EMAILS allowlist.
  */
 export class AccessDeniedError extends Error {
-    constructor(message = 'famcal.ai is currently in private beta. Your email is not on the access list.') {
+    constructor(message = 'kinroo.ai is currently in private beta. Your email is not on the access list.') {
         super(message);
         this.name = 'AccessDeniedError';
     }

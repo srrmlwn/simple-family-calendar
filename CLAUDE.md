@@ -1,4 +1,4 @@
-# CLAUDE.md — famcal.ai
+# CLAUDE.md — kinroo.ai
 
 This file gives Claude Code context about the project. Read it before making changes.
 
@@ -6,7 +6,7 @@ This file gives Claude Code context about the project. Read it before making cha
 
 ## What This Project Is
 
-**famcal.ai** is an AI-native family calendar. The core bet: natural language is the primary interface, not a bolt-on feature. It's live at https://famcal.ai.
+**kinroo.ai** is an AI-native family calendar. The core bet: natural language is the primary interface, not a bolt-on feature. It's live at https://kinroo.ai.
 
 Target user: parents managing a household with kids — sports, school, appointments, family logistics. The app treats family members as first-class entities (not just calendar owners).
 

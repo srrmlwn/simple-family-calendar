@@ -345,7 +345,7 @@ const Settings: React.FC = () => {
                             <div className="space-y-2 text-sm">
                                 <p className="font-medium text-green-700">Phone linked!</p>
                                 {twilioPhoneNumber && (
-                                    <p className="text-gray-700">Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"FamCal"</span> in your contacts.</p>
+                                    <p className="text-gray-700">Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"kinroo.ai"</span> in your contacts.</p>
                                 )}
                                 {twilioJoinCode ? (
                                     <p className="text-gray-700">Send <span className="font-semibold">{twilioJoinCode}</span> to that number on WhatsApp to activate.</p>
@@ -546,7 +546,7 @@ const Settings: React.FC = () => {
                 {showInstallButton && (
                     <div className="bg-white rounded-lg shadow p-6 mb-6">
                         <h2 className="text-xl font-semibold mb-4">Install App</h2>
-                        <p className="mb-4">Install famcal.ai on your device for quick access and offline use.</p>
+                        <p className="mb-4">Install kinroo.ai on your device for quick access and offline use.</p>
                         <button
                             onClick={handleInstallClick}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -611,7 +611,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="px-6 py-4">
                         <a
-                            href="mailto:sriram@famcal.ai?subject=famcal.ai%20beta%20feedback"
+                            href="mailto:hello@kinroo.ai?subject=kinroo.ai%20beta%20feedback"
                             className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
                         >
                             Send feedback

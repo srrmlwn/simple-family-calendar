@@ -28,7 +28,7 @@ JWT is set as an httpOnly, Secure, SameSite=Lax cookie in the OAuth callback and
 ---
 
 ### 3. Security: Fix CORS wildcard ✅
-CORS locked to `['https://famcal.ai', 'https://simple-family-calendar-8282627220c3.herokuapp.com']` + `localhost:3000` in dev. `credentials: true` set.
+CORS locked to `['https://kinroo.ai', 'https://simple-family-calendar-8282627220c3.herokuapp.com']` + `localhost:3000` in dev. `credentials: true` set.
 
 ---
 
@@ -43,7 +43,7 @@ Privacy Policy (`/privacy`) and Terms of Service (`/terms`) pages added. Links a
 ---
 
 ### 6. Remove the internal name "Simple Family Calendar" from the product ✅
-Fixed in `emailService.ts`: iCal calendar name changed to "famcal.ai", email footer updated to "famcal.ai". No occurrences remain in client code.
+Fixed in `emailService.ts`: iCal calendar name changed to "kinroo.ai", email footer updated to "kinroo.ai". No occurrences remain in client code.
 
 ---
 
@@ -67,7 +67,7 @@ NLP input capped at 500 characters in `eventController.ts` for all three NLP end
 ---
 
 ### 10. UX: Restyle the Register page to match Login ✅
-Register page has logo, brand gradient title "famcal.ai", Nunito font, and tagline matching Login.
+Register page has logo, brand gradient title "kinroo.ai", Nunito font, and tagline matching Login.
 
 ---
 
@@ -77,7 +77,7 @@ Register page has logo, brand gradient title "famcal.ai", Nunito font, and tagli
 ---
 
 ### 12. Ops: Set up uptime monitoring ⏭️
-**Action required:** Sign up for UptimeRobot (free), add monitor on `https://famcal.ai/api/health`, configure email + SMS alerts. 5-minute setup.
+**Action required:** Sign up for UptimeRobot (free), add monitor on `https://kinroo.ai/api/health`, configure email + SMS alerts. 5-minute setup.
 
 ---
 
@@ -149,7 +149,7 @@ All Anthropic SDK usages reference `ANTHROPIC_API_KEY`.
 **Action required:**
 - Verify `ALLOWED_EMAILS` is populated on Heroku with beta users' emails
 - Test login with a non-allowlisted email → confirm 403 with clear message
-- The error message says "famcal.ai is currently in private beta. Your email is not on the access list."
+- The error message says "kinroo.ai is currently in private beta. Your email is not on the access list."
 
 ---
 
@@ -159,7 +159,7 @@ All Anthropic SDK usages reference `ANTHROPIC_API_KEY`.
 ---
 
 ### 27. Feedback: Set up a beta feedback channel ✅
-"Send feedback" mailto link in Settings → Beta Feedback section. Pre-fills subject "famcal.ai beta feedback".
+"Send feedback" mailto link in Settings → Beta Feedback section. Pre-fills subject "kinroo.ai beta feedback".
 
 ---
 
@@ -190,13 +190,13 @@ Post-beta. Track Anthropic, SMTP, and Google Calendar call durations in a `track
 - [ ] No credentials hardcoded (`grep -r "sk-ant-api03\|GOCSPX-" server/src/ client/src/` returns nothing)
 - [x] `server/.env` is in `.gitignore` (verified — never been committed)
 - [x] JWT flows through httpOnly cookie, not localStorage
-- [x] CORS locked to `famcal.ai` + `localhost:3000`
+- [x] CORS locked to `kinroo.ai` + `localhost:3000`
 - [x] Passwords are not logged anywhere
 - [x] Privacy Policy and Terms of Service pages are live and linked from Login
 - [x] "Simple Family Calendar" string does not appear in the app UI
 - [ ] NLP input works on a real mobile device and iPad (manual test)
 - [x] Register page has logo and brand styling
-- [ ] UptimeRobot is monitoring `famcal.ai/api/health` (manual setup)
+- [ ] UptimeRobot is monitoring `kinroo.ai/api/health` (manual setup)
 - [ ] `SENTRY_DSN` set in Heroku config vars (Sentry code is live, just needs DSN)
 - [ ] `ALLOWED_EMAILS` set in Heroku config vars with beta users' emails
 - [ ] A test account can log in, create an event via NLP, and receive a daily digest email

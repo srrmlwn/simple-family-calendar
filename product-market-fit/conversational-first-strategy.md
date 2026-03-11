@@ -146,7 +146,7 @@ A WhatsApp message each morning (configurable time, opt-in) summarizing the day:
 
 ## The Right Way to Think About the Architecture
 
-The cleanest mental model: **famcal.ai is a database with a conversational interface, not a chatbot with a database.**
+The cleanest mental model: **kinroo.ai is a database with a conversational interface, not a chatbot with a database.**
 
 The database — events, family members, user settings, conversation history — is the source of truth. The conversational interfaces (WhatsApp, web input) are read/write terminals into that database, mediated by an LLM that understands natural language and family context. The LLM's job is translation and reasoning, not storage.
 

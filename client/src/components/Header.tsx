@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
                         <img
                             className="h-8 w-auto"
                             src="/landing_page_logo_1024x1024.png"
-                            alt="FamCal Logo"
+                            alt="kinroo.ai Logo"
                         />
                         <h1 
                             className={`${isMobile ? 'text-lg' : 'text-xl'} font-extrabold text-gray-900`}
@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
                                 fontWeight: 800
                             }}
                         >
-                            famcal.ai
+                            kinroo.ai
                         </h1>
                     </div>
 

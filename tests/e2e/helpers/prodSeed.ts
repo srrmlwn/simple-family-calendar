@@ -10,7 +10,7 @@
 
 import { execFileSync } from 'child_process';
 
-const BASE_URL = process.env.SMOKE_BASE_URL || 'https://famcal.ai';
+const BASE_URL = process.env.SMOKE_BASE_URL || 'https://kinroo.ai';
 const HEROKU_APP = process.env.HEROKU_APP || 'simple-family-calendar-8282627220c3';
 
 export interface SmokeUser {
@@ -26,7 +26,7 @@ export interface SmokeUser {
  */
 export async function createSmokeUser(): Promise<SmokeUser> {
   const timestamp = Date.now();
-  const email = `smoke-${timestamp}@famcal-test.invalid`;
+  const email = `smoke-${timestamp}@kinroo-test.invalid`;
   const password = `Smoke${timestamp}!`;
 
   // Register
@@ -68,7 +68,7 @@ export function teardownSmokeUsers(): void {
     execFileSync('heroku', [
       'pg:psql',
       '--app', HEROKU_APP,
-      '-c', "DELETE FROM users WHERE email LIKE 'smoke-%@famcal-test.invalid'",
+      '-c', "DELETE FROM users WHERE email LIKE 'smoke-%@kinroo-test.invalid'",
     ], { stdio: 'pipe' });
   } catch (err) {
     // Non-fatal: log and continue so test teardown doesn't mask actual failures

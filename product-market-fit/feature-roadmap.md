@@ -10,7 +10,7 @@ _Last updated: 2026-02-28 — **Strategic pivot: conversational agent**_
 
 ## The Strategic Bet
 
-**famcal.ai is no longer a calendar with NLP bolted on. It is a family calendar agent that happens to have a visual calendar view.**
+**kinroo.ai is no longer a calendar with NLP bolted on. It is a family calendar agent that happens to have a visual calendar view.**
 
 The distinction matters. A calendar app requires behavior change — open the app, navigate, fill in a form. An agent works within the behavior parents already have: messaging. Parents already talk about their schedules in WhatsApp. They already forward soccer schedules and school notices to each other. The agent intercepts that existing behavior and turns it into a managed calendar, without asking parents to change how they communicate.
 
@@ -251,7 +251,7 @@ _Goal: The agent gets genuinely smart about your family. Personalization and pro
 
 ### 💡 Per-Member iCal Feed URLs
 
-**Why:** The second parent who insists on staying in Google Calendar. A live iCal feed lets them subscribe from any calendar app without switching. The agent populates famcal.ai; Google Calendar reflects it automatically.
+**Why:** The second parent who insists on staying in Google Calendar. A live iCal feed lets them subscribe from any calendar app without switching. The agent populates kinroo.ai; Google Calendar reflects it automatically.
 
 **What to build:**
 - Settings → each family member has a "Subscribe" button that copies a secret iCal URL (`/api/feed/<secret>/member/<id>.ics`)

@@ -6,7 +6,7 @@ const PrivacyPolicy: React.FC = () => {
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-3xl mx-auto px-4 py-12">
                 <div className="mb-6">
-                    <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">← Back to famcal.ai</Link>
+                    <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">← Back to kinroo.ai</Link>
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
                 <p className="text-sm text-gray-500 mb-8">Last updated: March 7, 2026</p>
@@ -15,7 +15,7 @@ const PrivacyPolicy: React.FC = () => {
 
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">1. What we collect</h2>
-                        <p className="text-gray-700">When you use famcal.ai, we collect:</p>
+                        <p className="text-gray-700">When you use kinroo.ai, we collect:</p>
                         <ul className="list-disc pl-6 mt-2 space-y-1 text-gray-700">
                             <li><strong>Account information:</strong> your name, email address, and (optionally) a Google profile photo via OAuth.</li>
                             <li><strong>Calendar data:</strong> event titles, dates, times, locations, and descriptions that you create.</li>
@@ -72,7 +72,7 @@ const PrivacyPolicy: React.FC = () => {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Children's data</h2>
                         <p className="text-gray-700">
-                            famcal.ai is not directed at children under 13. You may add family members (including children's names)
+                            kinroo.ai is not directed at children under 13. You may add family members (including children's names)
                             as calendar tags, but we only store their names — not any other personal information about them.
                         </p>
                     </section>
@@ -81,7 +81,7 @@ const PrivacyPolicy: React.FC = () => {
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Contact</h2>
                         <p className="text-gray-700">
                             Questions about this policy? Email us at{' '}
-                            <a href="mailto:sriram@famcal.ai" className="text-blue-600 hover:underline">sriram@famcal.ai</a>.
+                            <a href="mailto:hello@kinroo.ai" className="text-blue-600 hover:underline">hello@kinroo.ai</a>.
                         </p>
                     </section>
                 </div>

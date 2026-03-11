@@ -135,8 +135,8 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
     if (!user) {
         res.type('text/xml').send(
             twimlReply(
-                "Hi! I'm your famcal.ai assistant, but this number isn't linked to an account yet. " +
-                "Log in at famcal.ai, go to Settings, and add your phone number to get started."
+                "Hi! I'm your kinroo.ai assistant, but this number isn't linked to an account yet. " +
+                "Log in at kinroo.ai, go to Settings, and add your phone number to get started."
             )
         );
         return;

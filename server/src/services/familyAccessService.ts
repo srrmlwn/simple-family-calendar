@@ -59,7 +59,7 @@ export class FamilyAccessService {
         const saved = await inviteRepo.save(invite);
 
         // Send invite email
-        const clientUrl = process.env.CLIENT_URL || 'https://famcal.ai';
+        const clientUrl = process.env.CLIENT_URL || 'https://kinroo.ai';
         const acceptUrl = `${clientUrl}/accept-invite?token=${token}`;
         const ownerName = `${owner.firstName} ${owner.lastName}`.trim() || owner.email;
 
@@ -69,7 +69,7 @@ export class FamilyAccessService {
             text: [
                 `Hi,`,
                 ``,
-                `${ownerName} has invited you to co-manage their family calendar on famcal.ai.`,
+                `${ownerName} has invited you to co-manage their family calendar on kinroo.ai.`,
                 ``,
                 `As a co-manager, you'll have full access to view and add events, manage family members, and stay in sync.`,
                 ``,
@@ -85,7 +85,7 @@ export class FamilyAccessService {
   <div style="padding: 30px; border: 1px solid #e5e7eb;">
     <p style="font-size: 16px; color: #374151;">Hi,</p>
     <p style="font-size: 16px; color: #374151;">
-      <strong>${escapeHtml(ownerName)}</strong> has invited you to co-manage their family calendar on <strong>famcal.ai</strong>.
+      <strong>${escapeHtml(ownerName)}</strong> has invited you to co-manage their family calendar on <strong>kinroo.ai</strong>.
     </p>
     <p style="font-size: 16px; color: #374151;">
       As a co-manager, you'll have full access to view and add events, manage family members, and stay in sync.

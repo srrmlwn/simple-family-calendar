@@ -67,7 +67,7 @@ const Login: React.FC = () => {
     if (urlError === 'access_denied') {
       setSubmitError({
         title: 'Access Restricted',
-        message: "famcal.ai is currently in private beta. Your email is not on the access list. Reach out if you'd like to be added."
+        message: "kinroo.ai is currently in private beta. Your email is not on the access list. Reach out if you'd like to be added."
       });
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlError === 'auth_failed') {
@@ -145,7 +145,7 @@ const Login: React.FC = () => {
           <img
             className="h-32 w-auto mb-4"
             src="/landing_page_logo_1024x1024.png"
-            alt="FamCal Logo"
+            alt="kinroo.ai Logo"
           />
           <h1 
             className="text-4xl font-extrabold text-gray-900 mb-2"
@@ -158,7 +158,7 @@ const Login: React.FC = () => {
               fontWeight: 800
             }}
           >
-            famcal.ai
+            kinroo.ai
           </h1>
           <p 
             className="text-sm text-gray-600 mb-8"
@@ -188,7 +188,7 @@ const Login: React.FC = () => {
               ✕
             </button>
             <p className="text-sm font-medium text-amber-800">
-              famcal.ai is in private beta
+              kinroo.ai is in private beta
             </p>
             <p className="mt-0.5 text-xs text-amber-700">
               Sign-in is currently limited to invited testers. Working on something great — stay tuned.

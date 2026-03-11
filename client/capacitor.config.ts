@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'ai.famcal.app',
-  appName: 'famcal.ai',
+  appId: 'ai.kinroo.app',
+  appName: 'kinroo.ai',
   webDir: 'build',
   bundledWebRuntime: false,
   server: {

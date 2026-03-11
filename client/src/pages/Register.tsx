@@ -73,7 +73,7 @@ const Register: React.FC = () => {
                     <img
                         className="h-32 w-auto mb-4"
                         src="/landing_page_logo_1024x1024.png"
-                        alt="FamCal Logo"
+                        alt="kinroo.ai Logo"
                     />
                     <h1
                         className="text-4xl font-extrabold text-gray-900 mb-2"
@@ -86,7 +86,7 @@ const Register: React.FC = () => {
                             fontWeight: 800
                         }}
                     >
-                        famcal.ai
+                        kinroo.ai
                     </h1>
                     <p
                         className="text-sm text-gray-600 mb-8"

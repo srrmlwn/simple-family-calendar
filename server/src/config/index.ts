@@ -36,7 +36,7 @@ export default {
         secure: process.env.EMAIL_SECURE === 'true',
         user: process.env.EMAIL_USER || '',
         password: process.env.EMAIL_PASSWORD || '',
-        senderName: process.env.EMAIL_SENDER_NAME || 'famcal.ai'
+        senderName: process.env.EMAIL_SENDER_NAME || 'kinroo.ai'
     },
     twilio: {
         accountSid: process.env.TWILIO_ACCOUNT_SID || '',

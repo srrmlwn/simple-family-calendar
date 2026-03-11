@@ -149,8 +149,8 @@ const LoginPage: React.FC = () => {
       <LoginContainer>
         <ToastContainer />
         <LoginCard>
-          <Logo>famcal.ai</Logo>
-          <Title>Welcome to FamCal</Title>
+          <Logo>kinroo.ai</Logo>
+          <Title>Welcome to kinroo.ai</Title>
           <Subtitle>Test Login Page</Subtitle>
           
           {error ? (

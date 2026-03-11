@@ -1,7 +1,7 @@
 /**
- * smoke.test.ts — Lightweight production smoke tests for famcal.ai.
+ * smoke.test.ts — Lightweight production smoke tests for kinroo.ai.
  *
- * Runs against https://famcal.ai (or SMOKE_BASE_URL env var).
+ * Runs against https://kinroo.ai (or SMOKE_BASE_URL env var).
  * Uses API-seeded test accounts — does NOT write events or touch shared data.
  *
  * Run with: npm run test:smoke
@@ -10,7 +10,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { createSmokeUser, teardownSmokeUsers, SmokeUser } from './helpers/prodSeed';
 
-const BASE_URL = process.env.SMOKE_BASE_URL || 'https://famcal.ai';
+const BASE_URL = process.env.SMOKE_BASE_URL || 'https://kinroo.ai';
 
 let browser: Browser;
 let page: Page;

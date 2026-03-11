@@ -63,7 +63,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
                 connectSrc: [
                     "'self'",
                     "https://accounts.google.com/gsi/",
-                    "https://famcal.ai",
+                    "https://kinroo.ai",
                     "https://simple-family-calendar-8282627220c3.herokuapp.com",
                     "https://www.googleapis.com",
                     "https://oauth2.googleapis.com",

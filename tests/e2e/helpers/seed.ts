@@ -3,7 +3,7 @@
  * Uses the same DATABASE_URL as the server's local .env.
  *
  * Test account:
- *   email:    e2e@famcal.test
+ *   email:    e2e@kinroo.test
  *   password: E2eTestPass123!
  */
 
@@ -15,7 +15,7 @@ import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../../server/.env') });
 
 export const TEST_USER = {
-  email: 'e2e@famcal.test',
+  email: 'e2e@kinroo.test',
   password: 'E2eTestPass123!',
   firstName: 'E2E',
   lastName: 'Test',

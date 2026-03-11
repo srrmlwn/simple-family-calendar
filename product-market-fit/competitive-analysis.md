@@ -24,7 +24,7 @@ Family calendar is a large, sticky category — once a family adopts a tool, swi
 | Free | Zero WhatsApp/SMS integration |
 | Excellent mobile apps | Can't parse a photo of a school flyer |
 
-**Verdict:** famcal.ai's biggest indirect competitor. Won't pivot to family-first. Their AI roadmap is generic (productivity), not family-specific.
+**Verdict:** kinroo.ai's biggest indirect competitor. Won't pivot to family-first. Their AI roadmap is generic (productivity), not family-specific.
 
 ---
 
@@ -83,7 +83,7 @@ Similar to Google Calendar — solid, ubiquitous, but generic. No family feature
 ```
                     AI-Native
                         |
-           famcal.ai    |    Fantastical
+           kinroo.ai    |    Fantastical
           (target)      |    (personal)
                         |
 Family ─────────────────┼───────────────── Personal
@@ -94,7 +94,7 @@ Family ─────────────────┼──────�
                     Traditional
 ```
 
-**famcal.ai's target quadrant:** AI-Native + Family-Focused. Nobody else is here yet.
+**kinroo.ai's target quadrant:** AI-Native + Family-Focused. Nobody else is here yet.
 
 ---
 
@@ -106,7 +106,7 @@ The WhatsApp/SMS integration angle is the clearest blue ocean move. Parents alre
 
 ## Win Conditions
 
-famcal.ai wins if it achieves:
+kinroo.ai wins if it achieves:
 1. **Faster event creation** than any competitor — the NLP input must be reliably faster than tapping through a form
 2. **The forward-and-forget workflow** — forward a text/WhatsApp message → it becomes a calendar event
 3. **Family-wide visibility** — the "who has what" view that no one else has built

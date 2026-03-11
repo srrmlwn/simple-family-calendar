@@ -30,7 +30,7 @@ describe('Authentication', () => {
   });
 
   test('rejects invalid credentials', async () => {
-    const result = await login(page, 'nobody@famcal.test', 'wrongpassword');
+    const result = await login(page, 'nobody@kinroo.test', 'wrongpassword');
     expect(result.success).toBe(false);
   });
 

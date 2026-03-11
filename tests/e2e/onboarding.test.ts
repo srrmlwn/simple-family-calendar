@@ -243,7 +243,7 @@ describe('Onboarding flow', () => {
     await page.waitForSelector('[data-testid="onboarding-step-3"]');
 
     await page.type('[data-testid="onboarding-recipient-name"]', 'Sarah Test');
-    await page.type('[data-testid="onboarding-recipient-email"]', 'sarah@famcal.test');
+    await page.type('[data-testid="onboarding-recipient-email"]', 'sarah@kinroo.test');
     await page.click('[data-testid="onboarding-recipient-add"]');
 
     await page.waitForSelector('[data-testid="onboarding-recipients-list"]', { timeout: 5000 });

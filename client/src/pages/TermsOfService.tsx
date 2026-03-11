@@ -6,7 +6,7 @@ const TermsOfService: React.FC = () => {
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-3xl mx-auto px-4 py-12">
                 <div className="mb-6">
-                    <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">← Back to famcal.ai</Link>
+                    <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">← Back to kinroo.ai</Link>
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
                 <p className="text-sm text-gray-500 mb-8">Last updated: March 7, 2026</p>
@@ -16,14 +16,14 @@ const TermsOfService: React.FC = () => {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptance</h2>
                         <p className="text-gray-700">
-                            By creating an account or using famcal.ai, you agree to these Terms of Service. If you do not agree, do not use the service.
+                            By creating an account or using kinroo.ai, you agree to these Terms of Service. If you do not agree, do not use the service.
                         </p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">2. Beta disclaimer</h2>
                         <p className="text-gray-700">
-                            famcal.ai is currently in <strong>private beta</strong>. This means:
+                            kinroo.ai is currently in <strong>private beta</strong>. This means:
                         </p>
                         <ul className="list-disc pl-6 mt-2 space-y-1 text-gray-700">
                             <li>The service may be modified, reset, or discontinued at any time without notice.</li>
@@ -48,7 +48,7 @@ const TermsOfService: React.FC = () => {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Your content</h2>
                         <p className="text-gray-700">
-                            You retain ownership of the calendar data you create. By using famcal.ai, you grant us a limited license
+                            You retain ownership of the calendar data you create. By using kinroo.ai, you grant us a limited license
                             to store and process that data solely to provide the service to you.
                         </p>
                     </section>
@@ -56,7 +56,7 @@ const TermsOfService: React.FC = () => {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">5. Limitation of liability</h2>
                         <p className="text-gray-700">
-                            famcal.ai is provided "as is" without warranty of any kind. We are not liable for any loss of data,
+                            kinroo.ai is provided "as is" without warranty of any kind. We are not liable for any loss of data,
                             missed events, or other damages arising from your use of the service. Your use is at your own risk.
                         </p>
                     </section>
@@ -64,7 +64,7 @@ const TermsOfService: React.FC = () => {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Changes to these terms</h2>
                         <p className="text-gray-700">
-                            We may update these terms. Continued use of famcal.ai after changes constitutes acceptance of the new terms.
+                            We may update these terms. Continued use of kinroo.ai after changes constitutes acceptance of the new terms.
                         </p>
                     </section>
 
@@ -72,7 +72,7 @@ const TermsOfService: React.FC = () => {
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Contact</h2>
                         <p className="text-gray-700">
                             Questions? Email{' '}
-                            <a href="mailto:sriram@famcal.ai" className="text-blue-600 hover:underline">sriram@famcal.ai</a>.
+                            <a href="mailto:hello@kinroo.ai" className="text-blue-600 hover:underline">hello@kinroo.ai</a>.
                         </p>
                     </section>
                 </div>

@@ -96,7 +96,7 @@ export class DigestService {
                 </p>
                 <p style="color: #718096; font-size: 0.9em;">
                     Best regards,<br>
-                    famcal.ai
+                    kinroo.ai
                 </p>
             </div>
         `;
@@ -127,7 +127,7 @@ export class DigestService {
         }
 
         text += '\nTo manage your digest preferences, please visit your calendar settings.\n\n';
-        text += 'Best regards,\nfamcal.ai';
+        text += 'Best regards,\nkinroo.ai';
 
         return text;
     }

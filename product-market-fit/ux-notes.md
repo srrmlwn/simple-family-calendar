@@ -1,4 +1,4 @@
-# UX Notes — famcal.ai
+# UX Notes — kinroo.ai
 _Consolidated from reviews on 2026-02-23 and 2026-02-28_
 
 ## Core Metric
@@ -54,7 +54,7 @@ Target: >70% via NLP. Evaluate every UX change against this.
 The boldest version is not "calendar with NLP" but "AI assistant that keeps your family schedule." The ideal first screen after login:
 
 ```
-Good morning, Sriram.
+Good morning.
 Emma has soccer at 4pm. Dentist tomorrow at 3pm.
 
 [ What's happening this week?           🎤 ▶ ]

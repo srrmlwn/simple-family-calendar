@@ -124,7 +124,7 @@ const AcceptInvite: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">You've been invited!</h1>
                 {invite && (
                     <p className="text-gray-600 mb-6">
-                        <strong>{invite.ownerName}</strong> has invited you to co-manage the family calendar on famcal.ai.
+                        <strong>{invite.ownerName}</strong> has invited you to co-manage the family calendar on kinroo.ai.
                     </p>
                 )}
                 <p className="text-sm text-gray-500 mb-6">

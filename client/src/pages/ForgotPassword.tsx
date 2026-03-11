@@ -28,7 +28,7 @@ const ForgotPassword: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h1 className="text-center text-3xl font-extrabold text-gray-900">famcal.ai</h1>
+                <h1 className="text-center text-3xl font-extrabold text-gray-900">kinroo.ai</h1>
                 <h2 className="mt-4 text-center text-xl font-semibold text-gray-700">Reset your password</h2>
             </div>
 

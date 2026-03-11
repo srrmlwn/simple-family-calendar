@@ -6,7 +6,7 @@ _Status: 💡 Future — spec written, code removed. Implement when ready._
 
 ## What It Does
 
-Parents already share event info via WhatsApp. This feature lets any user text or WhatsApp a famcal.ai phone number in plain English — the AI parses it and adds it to their calendar. Zero app-opening required.
+Parents already share event info via WhatsApp. This feature lets any user text or WhatsApp a kinroo.ai phone number in plain English — the AI parses it and adds it to their calendar. Zero app-opening required.
 
 **Examples:**
 - "Add soccer practice Saturday at 10am" → confirmation → event created
@@ -19,30 +19,30 @@ Parents already share event info via WhatsApp. This feature lets any user text o
 ## User Flow
 
 ### Setup (one-time)
-1. User logs into famcal.ai → Settings → links their phone number (E.164 format)
-2. User saves the famcal.ai Twilio number in their contacts as "FamCal"
+1. User logs into kinroo.ai → Settings → links their phone number (E.164 format)
+2. User saves the kinroo.ai Twilio number in their contacts as "kinroo.ai"
 
 ### Per-message flow
 
 **Mutations (create / update / delete):** two-phase confirmation
 ```
 User:   "Add dentist appointment tomorrow at 2pm"
-FamCal: "Got it! Create this event?
+kinroo.ai: "Got it! Create this event?
 
          Dentist Appointment
          📆 Mon Feb 23 at 2:00 PM (1h)
 
          Reply YES to confirm or NO to cancel."
 User:   "YES"
-FamCal: "✓ Created 'Dentist Appointment' on Feb 23 at 2:00 PM!
+kinroo.ai: "✓ Created 'Dentist Appointment' on Feb 23 at 2:00 PM!
 
-         View your calendar: https://famcal.ai"
+         View your calendar: https://kinroo.ai"
 ```
 
 **Queries:** immediate reply, no confirmation
 ```
 User:   "What's on this week?"
-FamCal: "You have 3 events this week:
+kinroo.ai: "You have 3 events this week:
 
          1. Meeting — Mon Feb 23, 10:00 AM
          2. Dentist — Wed Feb 25, 2:00 PM
@@ -52,7 +52,7 @@ FamCal: "You have 3 events this week:
 **Disambiguation (multiple matching events):**
 ```
 User:   "Cancel soccer"
-FamCal: "Found 2 matching events:
+kinroo.ai: "Found 2 matching events:
 
          1. Soccer Practice — Sat Feb 28
          2. Soccer Game — Sun Mar 1
@@ -62,10 +62,10 @@ FamCal: "Found 2 matching events:
 
 **Unlinked phone:**
 ```
-FamCal: "Hi! To use famcal.ai via WhatsApp/SMS, link your phone number at:
-         https://famcal.ai/settings
+kinroo.ai: "Hi! To use kinroo.ai via WhatsApp/SMS, link your phone number at:
+         https://kinroo.ai/settings
 
-         Don't have an account? Sign up at https://famcal.ai"
+         Don't have an account? Sign up at https://kinroo.ai"
 ```
 
 ---
@@ -145,7 +145,7 @@ Add to Heroku config and local `.env`:
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your_auth_token_here
 TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
-TWILIO_WEBHOOK_URL=https://famcal.ai/api/webhooks/twilio
+TWILIO_WEBHOOK_URL=https://kinroo.ai/api/webhooks/twilio
 ```
 
 ---
@@ -162,14 +162,14 @@ TWILIO_WEBHOOK_URL=https://famcal.ai/api/webhooks/twilio
 1. Go to **Phone Numbers → Manage → Buy a number** (~$1/month, needs SMS capability)
 2. Go to the number's config → **Messaging** → set **"A message comes in"** webhook to:
    ```
-   https://famcal.ai/api/webhooks/twilio   [HTTP POST]
+   https://kinroo.ai/api/webhooks/twilio   [HTTP POST]
    ```
 
 **WhatsApp — Testing (free, instant via sandbox):**
 1. Go to **Messaging → Try it out → Send a WhatsApp message**
 2. You'll get a sandbox number + join code (e.g. `join purple-tiger`)
 3. Each tester WhatsApps the join code to the sandbox number to opt in
-4. Under sandbox settings → set webhook to `https://famcal.ai/api/webhooks/twilio`
+4. Under sandbox settings → set webhook to `https://kinroo.ai/api/webhooks/twilio`
 
 **WhatsApp — Production (requires Meta approval, 1–4 weeks):**
 1. Go to **Messaging → Senders → WhatsApp senders** → submit a WhatsApp Business profile
@@ -180,7 +180,7 @@ TWILIO_WEBHOOK_URL=https://famcal.ai/api/webhooks/twilio
 heroku config:set TWILIO_ACCOUNT_SID=ACxxxxxxx
 heroku config:set TWILIO_AUTH_TOKEN=your_token
 heroku config:set TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
-heroku config:set TWILIO_WEBHOOK_URL=https://famcal.ai/api/webhooks/twilio
+heroku config:set TWILIO_WEBHOOK_URL=https://kinroo.ai/api/webhooks/twilio
 ```
 
 ### 4. Run the Database Migration
@@ -252,7 +252,7 @@ The `twilio` package includes TypeScript types — no separate `@types/twilio` n
 
 ## Acceptance Criteria
 
-- [ ] Unregistered phone → "link your phone at famcal.ai/settings" reply
+- [ ] Unregistered phone → "link your phone at kinroo.ai/settings" reply
 - [ ] Query intent → immediate event list, no confirmation
 - [ ] Create intent → confirmation prompt → YES → event appears on calendar
 - [ ] Create intent → NO → "Cancelled" reply, nothing created
@@ -271,6 +271,6 @@ The `twilio` package includes TypeScript types — no separate `@types/twilio` n
 ## Open Questions
 
 1. Should disambiguation for SMS offer numbered choices ("Reply 1 or 2") rather than defaulting to first match?
-2. Should the confirmation deep link go to a specific event date (`famcal.ai?date=2026-02-23`) rather than just the home page?
+2. Should the confirmation deep link go to a specific event date (`kinroo.ai?date=2026-02-23`) rather than just the home page?
 3. For production WhatsApp, should we use a Twilio Messaging Service (supports multiple numbers) or a single number?
 4. Should the phone-linking UI be added to the Settings page, or handled entirely via a first-message onboarding flow?
