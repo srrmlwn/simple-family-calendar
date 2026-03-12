@@ -650,7 +650,8 @@ const EventForm: React.FC<EventFormProps> = ({
                     <button
                         type="submit"
                         disabled={isSubmitting || isDeleting || !validation.isValid}
-                        className="flex items-center gap-2 px-3 py-2 text-white bg-green-600 hover:bg-green-700 rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        style={{ backgroundColor: 'var(--accent)' }}
                         title={!validation.isValid ? 'Please fill in all required fields' : 'Save'}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
