@@ -83,7 +83,7 @@ const WhatsAppChrome: React.FC<{ children: React.ReactNode }> = ({ children }) =
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>online</div>
       </div>
     </div>
-    <div style={{ flex: 1, background: WA_BG, padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 4, overflow: 'hidden' }}>
+    <div className="demo-chat" style={{ flex: 1, background: WA_BG, padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
       {children}
     </div>
   </div>
@@ -138,7 +138,7 @@ const WebDemo: React.FC = () => {
 
   return (
     <BrowserChrome>
-      <div style={{ flex: 1, padding: '12px 12px 8px', display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden' }}>
+      <div className="demo-chat" style={{ flex: 1, padding: '12px 12px 8px', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
         {/* Faded prior context */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', opacity: 0.3 }}>
           <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 12, fontWeight: 600, padding: '7px 11px', borderRadius: '14px 14px 3px 14px' }}>What's on this week?</div>
@@ -227,7 +227,7 @@ const VoiceDemo: React.FC = () => {
 
   return (
     <BrowserChrome>
-      <div style={{ flex: 1, padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
+      <div className="demo-chat" style={{ flex: 1, padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, overflowY: 'auto' }}>
 
         {/* Mic button with pulse rings */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, flexShrink: 0 }}>
@@ -398,7 +398,7 @@ const DemoShowcase: React.FC = () => {
 
   return (
     <div style={{
-      background: BG_SURFACE, borderRadius: 16, width: '100%', maxWidth: 380, height: 420,
+      background: BG_SURFACE, borderRadius: 16, width: '100%', maxWidth: 380, height: 500,
       boxShadow: '0 24px 64px rgba(30,26,20,0.13), 0 4px 12px rgba(30,26,20,0.06)',
       border: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
@@ -586,6 +586,8 @@ const LandingPage: React.FC = () => {
       </footer>
 
       <style>{`
+        .demo-chat { scrollbar-width: none; -ms-overflow-style: none; }
+        .demo-chat::-webkit-scrollbar { display: none; }
         @keyframes blink {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0; }
