@@ -105,6 +105,51 @@ const WaYesNo: React.FC = () => (
   </div>
 );
 
+// ── Mini calendar (shared by Web + Voice demos) ────────────────────────────────
+
+const MINI_WEEK: Array<{ day: string; date: number; events?: Array<{ label: string; color: string; textColor: string }> }> = [
+  { day: 'Mon', date: 10 },
+  { day: 'Tue', date: 11, events: [{ label: '⚽ Soccer', color: '#FBBF24', textColor: '#78350f' }] },
+  { day: 'Wed', date: 12, events: [{ label: '🎹 Piano',  color: '#8B5CF6', textColor: 'white'   }] },
+  { day: 'Thu', date: 13 },
+  { day: 'Fri', date: 14, events: [{ label: '🍽️ Dinner', color: ACCENT_MID, textColor: 'white'  }] },
+  { day: 'Sat', date: 15 },
+  { day: 'Sun', date: 16 },
+];
+
+const MiniCalendar: React.FC<{ newDay: string; newLabel: string; newColor: string; newTextColor?: string; show: boolean }> = ({ newDay, newLabel, newColor, newTextColor = 'white', show }) => (
+  <div style={{ width: 138, flexShrink: 0, borderRight: `1px solid ${BORDER}`, padding: '8px 7px', display: 'flex', flexDirection: 'column', background: BG_SURFACE }}>
+    <div style={{ fontSize: 9, fontWeight: 700, color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, paddingBottom: 5, borderBottom: `1px solid ${BORDER}` }}>
+      Mar 10 – 16
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {MINI_WEEK.map((row) => {
+        const isToday = row.day === 'Wed';
+        return (
+          <div key={row.day} style={{ display: 'flex', alignItems: 'flex-start', gap: 5, padding: '2px 3px', borderRadius: 5, background: isToday ? ACCENT_BG : 'transparent' }}>
+            <div style={{ width: 26, flexShrink: 0 }}>
+              <div style={{ fontSize: 9, color: isToday ? ACCENT : TEXT_MUTED, fontWeight: 700, lineHeight: 1.3 }}>{row.day}</div>
+              <div style={{ fontSize: 10, color: isToday ? ACCENT : TEXT_BASE, fontWeight: 700, lineHeight: 1.2 }}>{row.date}</div>
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, paddingTop: 1 }}>
+              {(row.events ?? []).map((e, i) => (
+                <div key={i} style={{ background: e.color, borderRadius: 3, padding: '1px 4px', fontSize: 9, color: e.textColor, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {e.label}
+                </div>
+              ))}
+              {row.day === newDay && show && (
+                <div style={{ background: newColor, borderRadius: 3, padding: '1px 4px', fontSize: 9, color: newTextColor, fontWeight: 600, animation: 'fadeUp 0.4s ease', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {newLabel}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
 // ── Tab 1: Web app demo ────────────────────────────────────────────────────────
 
 const WEB_CARD: CardData = { icon: '⚽', title: 'Soccer Practice', time: 'Sat · 9:00 AM', duration: '1h', person: 'Emma', strip: '#FBBF24', bg: '#FFFBEB' };
@@ -131,54 +176,70 @@ const WebDemo: React.FC = () => {
     return () => clearTimeout(t);
   }, [typed, phase]);
 
-  const isTyping  = phase === 'typing';
-  const isSent    = phase !== 'typing';
+  const isTyping   = phase === 'typing';
+  const isSent     = phase !== 'typing';
   const isThinking = phase === 'thinking';
-  const isShown   = phase === 'shown';
+  const isShown    = phase === 'shown';
 
   return (
     <BrowserChrome>
-      <div className="demo-chat" style={{ flex: 1, padding: '12px 12px 8px', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-        {/* Faded prior context */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', opacity: 0.3 }}>
-          <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 12, fontWeight: 600, padding: '7px 11px', borderRadius: '14px 14px 3px 14px' }}>What's on this week?</div>
-        </div>
-        <div style={{ opacity: 0.3 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 6, background: '#ede6da', padding: '7px 11px', borderRadius: '3px 14px 14px 14px', fontSize: 12, color: TEXT_BASE }}>
-            <span style={{ color: '#22C55E', fontSize: 11 }}>✓</span>
-            <span>3 events — Soccer Sat, Dentist Mon, Team call Tue.</span>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+        {/* Left: mini calendar panel */}
+        <MiniCalendar newDay="Sat" newLabel="⚽ Soccer 9am" newColor="#FBBF24" newTextColor="#78350f" show={isShown} />
+
+        {/* Right: chat sidebar */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div className="demo-chat" style={{ flex: 1, padding: '10px 10px 6px', display: 'flex', flexDirection: 'column', gap: 7, overflowY: 'auto' }}>
+
+            {/* Faded prior context */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', opacity: 0.3 }}>
+              <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 11, fontWeight: 600, padding: '6px 10px', borderRadius: '12px 12px 3px 12px' }}>What's on this week?</div>
+            </div>
+            <div style={{ opacity: 0.3 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#ede6da', padding: '6px 10px', borderRadius: '3px 12px 12px 12px', fontSize: 11, color: TEXT_BASE }}>
+                <span style={{ color: '#22C55E', fontSize: 10, flexShrink: 0 }}>✓</span>
+                <span>3 events — Soccer Tue, Piano Wed, Dinner Fri.</span>
+              </div>
+            </div>
+
+            {/* User message */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', opacity: isSent ? 1 : 0, transform: isSent ? 'none' : 'translateY(6px)', transition: 'opacity 0.22s, transform 0.22s' }}>
+              <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: '12px 12px 3px 12px', maxWidth: '90%' }}>{WEB_INPUT}</div>
+            </div>
+
+            {isThinking && <ThinkingDots />}
+
+            <div style={{ opacity: isShown ? 1 : 0, transform: isShown ? 'none' : 'translateY(8px)', transition: 'opacity 0.28s, transform 0.28s' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#ede6da', padding: '7px 10px', borderRadius: '3px 12px 12px 12px', marginBottom: 7, fontSize: 12, color: TEXT_BASE }}>
+                <span style={{ color: '#22C55E', flexShrink: 0, fontSize: 11 }}>✓</span>
+                <span style={{ fontWeight: 500 }}>{WEB_REPLY}</span>
+              </div>
+              <EventCard card={WEB_CARD} />
+            </div>
+          </div>
+
+          {/* Input bar */}
+          <div style={{ padding: '8px 10px', borderTop: `1px solid ${BORDER}`, background: BG_APP, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: BG_SURFACE, border: `1.5px solid ${isTyping ? ACCENT : BORDER}`, borderRadius: 9, padding: '7px 9px', transition: 'border-color 0.2s' }}>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: isTyping ? TEXT_BASE : TEXT_MUTED, minHeight: 18 }}>
+                {isTyping
+                  ? <>{typed}<span style={{ display: 'inline-block', width: 1.5, height: 13, background: ACCENT, marginLeft: 1, verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} /></>
+                  : 'Add an event…'
+                }
+              </div>
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ width: 20, height: 20, borderRadius: 5, background: BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 11, color: TEXT_MUTED }}>🎤</span>
+                </div>
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: isTyping ? ACCENT : BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
+                  <span style={{ color: isTyping ? ACCENT_BG : TEXT_MUTED, fontSize: 11 }}>↑</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* User message */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', opacity: isSent ? 1 : 0, transform: isSent ? 'none' : 'translateY(6px)', transition: 'opacity 0.22s, transform 0.22s' }}>
-          <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: '14px 14px 3px 14px' }}>{WEB_INPUT}</div>
-        </div>
-
-        {isThinking && <ThinkingDots />}
-
-        <div style={{ opacity: isShown ? 1 : 0, transform: isShown ? 'none' : 'translateY(8px)', transition: 'opacity 0.28s, transform 0.28s' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 6, background: '#ede6da', padding: '8px 12px', borderRadius: '3px 14px 14px 14px', marginBottom: 8, fontSize: 13, color: TEXT_BASE }}>
-            <span style={{ color: '#22C55E', flexShrink: 0, fontSize: 12 }}>✓</span>
-            <span style={{ fontWeight: 500 }}>{WEB_REPLY}</span>
-          </div>
-          <EventCard card={WEB_CARD} />
-        </div>
-      </div>
-
-      {/* Input bar */}
-      <div style={{ padding: '10px 12px', borderTop: `1px solid ${BORDER}`, background: BG_APP, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: BG_SURFACE, border: `1.5px solid ${isTyping ? ACCENT : BORDER}`, borderRadius: 10, padding: '8px 10px', transition: 'border-color 0.2s' }}>
-          <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: isTyping ? TEXT_BASE : TEXT_MUTED, minHeight: 20 }}>
-            {isTyping
-              ? <>{typed}<span style={{ display: 'inline-block', width: 1.5, height: 14, background: ACCENT, marginLeft: 1, verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} /></>
-              : 'Add an event…'
-            }
-          </div>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: isTyping ? ACCENT : BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }}>
-            <span style={{ color: isTyping ? ACCENT_BG : TEXT_MUTED, fontSize: 12 }}>↑</span>
-          </div>
-        </div>
       </div>
     </BrowserChrome>
   );
@@ -188,10 +249,9 @@ const WebDemo: React.FC = () => {
 
 const VOICE_TEXT = 'Dentist Monday at three pm';
 const VOICE_CARD: CardData = { icon: '🦷', title: 'Dentist Appointment', time: 'Mon · 3:00 PM', duration: '1h', person: null, strip: '#14B8A6', bg: '#F0FDFA' };
-const WAVEFORM_HEIGHTS = [5, 10, 16, 8, 13, 7, 18, 6, 12, 9];
 
 const VoiceDemo: React.FC = () => {
-  // 0=idle, 1=listening, 2=transcribing, 3=thinking, 4=shown
+  // 0=idle, 1=listening (mic active in input bar), 2=transcribing, 3=sent+thinking, 4=shown
   const [step, setStep] = useState(0);
   const [transcribed, setTranscribed] = useState('');
 
@@ -202,7 +262,7 @@ const VoiceDemo: React.FC = () => {
 
   useEffect(() => {
     if (step !== 1) return;
-    const t = setTimeout(() => setStep(2), 2400);
+    const t = setTimeout(() => setStep(2), 2200);
     return () => clearTimeout(t);
   }, [step]);
 
@@ -212,7 +272,7 @@ const VoiceDemo: React.FC = () => {
       const t = setTimeout(() => setTranscribed(VOICE_TEXT.slice(0, transcribed.length + 1)), 62);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setStep(3), 400);
+    const t = setTimeout(() => setStep(3), 500);
     return () => clearTimeout(t);
   }, [step, transcribed]);
 
@@ -223,66 +283,80 @@ const VoiceDemo: React.FC = () => {
   }, [step]);
 
   const isListening = step === 1;
-  const isActive    = step >= 1 && step < 4;
+  const isActive    = step >= 1 && step < 3;
+  const isSent      = step >= 3;
 
   return (
     <BrowserChrome>
-      <div className="demo-chat" style={{ flex: 1, padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, overflowY: 'auto' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-        {/* Mic button with pulse rings */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, flexShrink: 0 }}>
-          {isListening && <>
-            <div style={{ position: 'absolute', width: 80, height: 80, borderRadius: '50%', background: ACCENT, opacity: 0.12, animation: 'micPulse 1.5s ease-out infinite' }} />
-            <div style={{ position: 'absolute', width: 62, height: 62, borderRadius: '50%', background: ACCENT, opacity: 0.18, animation: 'micPulse 1.5s ease-out 0.35s infinite' }} />
-          </>}
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: isActive ? ACCENT : BORDER_MID, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s', zIndex: 1, boxShadow: isListening ? `0 0 0 4px ${ACCENT_BG}` : 'none' }}>
-            <span style={{ fontSize: 22 }}>🎤</span>
-          </div>
-        </div>
+        {/* Left: mini calendar panel */}
+        <MiniCalendar newDay="Mon" newLabel="🦷 Dentist 3pm" newColor="#14B8A6" show={step === 4} />
 
-        {/* Waveform / transcription */}
-        <div style={{ textAlign: 'center', minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {step === 0 && <span style={{ fontSize: 13, color: TEXT_MUTED }}>Tap mic to speak</span>}
-          {step === 1 && (
-            <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 28 }}>
-              {WAVEFORM_HEIGHTS.map((h, i) => (
-                <div key={i} style={{ width: 3, height: h, background: ACCENT, borderRadius: 2, animation: `wavebar 0.7s ease-in-out ${i * 0.07}s infinite alternate`, opacity: 0.85 }} />
-              ))}
+        {/* Right: chat sidebar */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div className="demo-chat" style={{ flex: 1, padding: '10px 10px 6px', display: 'flex', flexDirection: 'column', gap: 7, overflowY: 'auto' }}>
+
+            {/* Faded prior context */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', opacity: 0.3 }}>
+              <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 11, fontWeight: 600, padding: '6px 10px', borderRadius: '12px 12px 3px 12px' }}>What's on this week?</div>
             </div>
-          )}
-          {step >= 2 && step < 4 && (
-            <p style={{ fontSize: 14, fontWeight: 600, color: TEXT_BASE, margin: 0 }}>
-              "{transcribed}{step === 2 && transcribed.length < VOICE_TEXT.length && <span style={{ display: 'inline-block', width: 1.5, height: 13, background: ACCENT, marginLeft: 1, verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} />}"
-            </p>
-          )}
-        </div>
-
-        {step === 3 && <ThinkingDots />}
-
-        {step === 4 && (
-          <div style={{ width: '100%', animation: 'fadeUp 0.3s ease' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 6, background: '#ede6da', padding: '8px 12px', borderRadius: '3px 14px 14px 14px', marginBottom: 8, fontSize: 13, color: TEXT_BASE }}>
-              <span style={{ color: '#22C55E', flexShrink: 0, fontSize: 12 }}>✓</span>
-              <span style={{ fontWeight: 500 }}>Got it — Dentist on Monday at 3pm.</span>
+            <div style={{ opacity: 0.3 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#ede6da', padding: '6px 10px', borderRadius: '3px 12px 12px 12px', fontSize: 11, color: TEXT_BASE }}>
+                <span style={{ color: '#22C55E', fontSize: 10, flexShrink: 0 }}>✓</span>
+                <span>3 events — Soccer Tue, Piano Wed, Dinner Fri.</span>
+              </div>
             </div>
-            <EventCard card={VOICE_CARD} />
-          </div>
-        )}
-      </div>
 
-      {/* Input bar */}
-      <div style={{ padding: '10px 12px', borderTop: `1px solid ${BORDER}`, background: BG_APP, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: BG_SURFACE, border: `1.5px solid ${isActive ? ACCENT : BORDER}`, borderRadius: 10, padding: '8px 10px', transition: 'border-color 0.2s' }}>
-          <div style={{ flex: 1, fontSize: 13, color: TEXT_MUTED, minHeight: 20 }}>
-            {step === 0 && 'Add an event…'}
-            {step === 1 && <span style={{ color: ACCENT, fontWeight: 600 }}>Listening…</span>}
-            {step === 2 && (transcribed || 'Transcribing…')}
-            {step >= 3 && 'Add an event…'}
+            {/* Spoken message appears as chat bubble once sent */}
+            {isSent && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', animation: 'fadeUp 0.22s ease' }}>
+                <div style={{ background: ACCENT, color: ACCENT_BG, fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: '12px 12px 3px 12px', maxWidth: '90%' }}>{VOICE_TEXT}</div>
+              </div>
+            )}
+
+            {step === 3 && <ThinkingDots />}
+
+            {step === 4 && (
+              <div style={{ animation: 'fadeUp 0.28s ease' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5, background: '#ede6da', padding: '7px 10px', borderRadius: '3px 12px 12px 12px', marginBottom: 7, fontSize: 12, color: TEXT_BASE }}>
+                  <span style={{ color: '#22C55E', flexShrink: 0, fontSize: 11 }}>✓</span>
+                  <span style={{ fontWeight: 500 }}>Got it — Dentist on Monday at 3pm.</span>
+                </div>
+                <EventCard card={VOICE_CARD} />
+              </div>
+            )}
           </div>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: isActive ? ACCENT : BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }}>
-            <span style={{ fontSize: 14, lineHeight: 1 }}>🎤</span>
+
+          {/* Input bar — all voice states play out here, matching the real app */}
+          <div style={{ padding: '8px 10px', borderTop: `1px solid ${BORDER}`, background: BG_APP, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: BG_SURFACE, border: `1.5px solid ${isActive ? ACCENT : BORDER}`, borderRadius: 9, padding: '7px 9px', transition: 'border-color 0.2s', position: 'relative' }}>
+              <div style={{ flex: 1, fontSize: 12, color: TEXT_MUTED, minHeight: 18, display: 'flex', alignItems: 'center', gap: 5 }}>
+                {step === 0 && 'Add an event…'}
+                {step === 1 && <>
+                  <span style={{ color: ACCENT, fontWeight: 600 }}>Listening</span>
+                  <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 14 }}>
+                    {[4, 8, 5, 11, 6, 9, 4].map((h, i) => (
+                      <div key={i} style={{ width: 2, height: h, background: ACCENT, borderRadius: 2, animation: `wavebar 0.7s ease-in-out ${i * 0.07}s infinite alternate`, opacity: 0.85 }} />
+                    ))}
+                  </div>
+                </>}
+                {step === 2 && <span style={{ color: TEXT_BASE, fontWeight: 600 }}>
+                  {transcribed}{transcribed.length < VOICE_TEXT.length && <span style={{ display: 'inline-block', width: 1.5, height: 13, background: ACCENT, marginLeft: 1, verticalAlign: 'middle', animation: 'blink 1s step-end infinite' }} />}
+                </span>}
+                {step >= 3 && 'Add an event…'}
+              </div>
+              {/* Mic button — pulses when listening */}
+              <div style={{ position: 'relative', width: 22, height: 22, flexShrink: 0 }}>
+                {isListening && <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `1.5px solid ${ACCENT_BOR}`, animation: 'micPulse 1.5s ease-out infinite' }} />}
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: isActive ? ACCENT : BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
+                  <span style={{ fontSize: 12, lineHeight: 1 }}>🎤</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
     </BrowserChrome>
   );
