@@ -84,11 +84,11 @@ const AcceptInvite: React.FC = () => {
                     <h1 className="text-xl font-semibold text-red-600 mb-3">Invitation Invalid</h1>
                     <p className="text-gray-600 mb-6">{errorMsg}</p>
                     <button
-                        onClick={() => navigate('/login')}
+                        onClick={() => navigate('/')}
                         className="px-4 py-2 text-white rounded"
                         style={{ backgroundColor: 'var(--accent)' }}
                     >
-                        Go to Login
+                        Go to Home
                     </button>
                 </div>
             </div>

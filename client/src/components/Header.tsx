@@ -30,7 +30,6 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
     const handleLogout = () => {
         setShowLogoutMenu(false);
         logout();
-        navigate('/login');
     };
 
     const getUserInitials = () => {

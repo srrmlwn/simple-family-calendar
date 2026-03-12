@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -460,6 +460,32 @@ const BrandName: React.FC<{ size?: number }> = ({ size = 18 }) => (
 
 const LandingPage: React.FC = () => {
   const { loginWithGoogle, loading } = useAuth();
+  const location = useLocation();
+  const [authError, setAuthError] = useState<{ title: string; message: string } | null>(null);
+  const [authInfo, setAuthInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { error?: string; message?: string; info?: string } | null;
+    if (state?.info) {
+      setAuthInfo(state.info);
+      window.history.replaceState({}, document.title);
+      return;
+    }
+    if (state?.error) {
+      setAuthError({ title: state.error, message: state.message || 'Please try again.' });
+      window.history.replaceState({}, document.title);
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    const urlError = params.get('error');
+    if (urlError === 'access_denied') {
+      setAuthError({ title: 'Access Restricted', message: "kinroo.ai is currently in private beta. Your email is not on the access list. Reach out at hello@kinroo.ai to be added." });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlError === 'auth_failed') {
+      setAuthError({ title: 'Sign-in Failed', message: 'Something went wrong. Please try again.' });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location]);
 
   const signInBtn = (large?: boolean) => (
     <button
@@ -537,6 +563,17 @@ const LandingPage: React.FC = () => {
           <p style={{ fontSize: 15, color: TEXT_MUTED, margin: '0 0 32px', maxWidth: 420, lineHeight: 1.65 }}>
             Type "Emma soccer Saturday 9am" and it's done. WhatsApp your kinroo.ai number from anywhere — no app needed. Forward a school email or schedule PDF to <span style={{ color: ACCENT, fontWeight: 600 }}>add@kinroo.ai</span> and events appear automatically.
           </p>
+          {authInfo && (
+            <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: ACCENT_BG, border: `1px solid ${ACCENT_BOR}` }}>
+              <p style={{ fontSize: 14, color: ACCENT, margin: 0 }}>{authInfo}</p>
+            </div>
+          )}
+          {authError && (
+            <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#991b1b', margin: '0 0 2px' }}>{authError.title}</p>
+              <p style={{ fontSize: 13, color: '#b91c1c', margin: 0 }}>{authError.message}</p>
+            </div>
+          )}
           {signInBtn(true)}
           <p style={{ marginTop: 14, fontSize: 13, color: TEXT_MUTED }}>
             Free · No credit card required · Works on every device

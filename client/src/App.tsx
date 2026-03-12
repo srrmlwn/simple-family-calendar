@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Calendar from './pages/Calendar';
-import Login from './pages/Login';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
 import AcceptInvite from './pages/AcceptInvite';
@@ -19,7 +18,7 @@ const HomeRoute: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500" />
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: 'var(--accent)' }} />
             </div>
         );
     }
@@ -37,7 +36,7 @@ const App: React.FC = () => {
             <AuthProvider>
                 <Routes>
                     <Route path="/" element={<HomeRoute />} />
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login" element={<Navigate to="/" replace />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/accept-invite" element={<AcceptInvite />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />

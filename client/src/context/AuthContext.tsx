@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           await api.post('/api/family/invite/accept', { token: pendingToken });
           await authService.logout();
-          navigate('/login', {
+          navigate('/', {
             replace: true,
             state: { info: 'Invitation accepted! Please sign in again to access the family calendar.' },
           });
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       handleAuthSuccess(authUser);
     } catch {
-      navigate('/login', { state: { error: 'Authentication failed. Please try again.' } });
+      navigate('/', { state: { error: 'Authentication failed. Please try again.' } });
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('user');
     authService.logout();
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
   };
 
   return (

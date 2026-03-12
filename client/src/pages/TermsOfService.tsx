@@ -6,7 +6,7 @@ const TermsOfService: React.FC = () => {
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-3xl mx-auto px-4 py-12">
                 <div className="mb-6">
-                    <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">← Back to kinroo.ai</Link>
+                    <Link to="/" className="text-sm hover:opacity-70" style={{ color: 'var(--accent)' }}>← Back to kinroo.ai</Link>
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
                 <p className="text-sm text-gray-500 mb-8">Last updated: March 7, 2026</p>

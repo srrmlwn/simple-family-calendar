@@ -15,7 +15,7 @@ const AuthCallback: React.FC = () => {
             console.error('Auth callback error:', { error, message: errorMessage });
 
             if (error === 'Too many OAuth attempts') {
-                navigate('/login', {
+                navigate('/', {
                     state: {
                         error: 'Too many sign-in attempts',
                         message: 'Please wait an hour before trying again. This is a security measure to protect your account.',
@@ -24,7 +24,7 @@ const AuthCallback: React.FC = () => {
                 return;
             }
 
-            navigate('/login', {
+            navigate('/', {
                 state: {
                     error: 'Authentication failed',
                     message: errorMessage || 'Please try again.',
@@ -36,7 +36,7 @@ const AuthCallback: React.FC = () => {
         // JWT is in the httpOnly cookie set by the server redirect — just fetch /me
         handleAuthCallback().catch((err) => {
             console.error('Error handling auth callback:', err);
-            navigate('/login', {
+            navigate('/', {
                 state: {
                     error: 'Authentication failed',
                     message: err instanceof Error ? err.message : 'Please try again.',
