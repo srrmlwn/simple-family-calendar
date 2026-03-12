@@ -2,19 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, ArrowRight, Wand, Check, Users, MessageSquare, Mail } from 'lucide-react';
 import api from '../services/api';
 import eventService from '../services/eventService';
-import familyMemberService from '../services/familyMemberService';
+import familyMemberService, { FAMILY_MEMBER_COLORS } from '../services/familyMemberService';
 
 const STORAGE_KEY = 'onboarding_step';
 const TOTAL_STEPS = 3;
 
-// 10 fixed colors — must match the server's ALLOWED_COLORS set
-const MEMBER_COLORS = [
-    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-    '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16',
-];
-
 interface OnboardingFlowProps {
-    userName: string;
     onComplete: () => void;
 }
 
@@ -29,11 +22,12 @@ const StepDots: React.FC<{ current: number; total: number }> = ({ current, total
                 data-active={i === current ? 'true' : 'false'}
                 className={`rounded-full transition-all duration-200 ${
                     i === current
-                        ? 'w-6 h-2 bg-indigo-600'
+                        ? 'w-6 h-2'
                         : i < current
-                        ? 'w-2 h-2 bg-indigo-300'
-                        : 'w-2 h-2 bg-gray-200'
+                        ? 'w-2 h-2'
+                        : 'w-2 h-2 bg-warm-300'
                 }`}
+                style={i <= current ? { backgroundColor: 'var(--accent)' } : undefined}
             />
         ))}
     </div>
@@ -53,7 +47,8 @@ const PrimaryButton: React.FC<{
         onClick={onClick}
         disabled={disabled || loading}
         data-testid={testId}
-        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-surface)' }}
     >
         {loading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -114,7 +109,7 @@ const FamilyMembersStep: React.FC<{
 }> = ({ onNext, onBack, onSkip }) => {
     const [members, setMembers] = useState<AddedMember[]>([]);
     const [name, setName] = useState('');
-    const [color, setColor] = useState(MEMBER_COLORS[0]);
+    const [color, setColor] = useState<string>(FAMILY_MEMBER_COLORS[0]);
     const [adding, setAdding] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -130,8 +125,8 @@ const FamilyMembersStep: React.FC<{
             setMembers((prev) => [...prev, member]);
             setName('');
             // Auto-advance to next color for convenience
-            const idx = MEMBER_COLORS.indexOf(color);
-            setColor(MEMBER_COLORS[(idx + 1) % MEMBER_COLORS.length]);
+            const idx = FAMILY_MEMBER_COLORS.findIndex((c) => c === color);
+            setColor(FAMILY_MEMBER_COLORS[(idx + 1) % FAMILY_MEMBER_COLORS.length]);
         } catch {
             setError('Could not add family member. Try again or skip for now.');
         } finally {
@@ -149,8 +144,8 @@ const FamilyMembersStep: React.FC<{
     return (
         <div className="flex flex-col" data-testid="onboarding-step-1">
             <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                    <Users className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-900">Who's in your family?</h2>
@@ -173,11 +168,11 @@ const FamilyMembersStep: React.FC<{
                     onKeyDown={handleKeyDown}
                     disabled={adding}
                     data-testid="onboarding-member-name"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2" style={{ borderColor: 'var(--border)', outlineColor: 'var(--accent-border)' }}
                 />
                 {/* Color swatches */}
                 <div className="flex gap-2 flex-wrap">
-                    {MEMBER_COLORS.map((c) => (
+                    {FAMILY_MEMBER_COLORS.map((c) => (
                         <button
                             key={c}
                             type="button"
@@ -198,7 +193,8 @@ const FamilyMembersStep: React.FC<{
                     onClick={handleAdd}
                     disabled={adding || !name.trim()}
                     data-testid="onboarding-member-add"
-                    className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
+                    className="w-full px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-surface)' }}
                 >
                     {adding ? 'Adding…' : '+ Add'}
                 </button>
@@ -238,8 +234,8 @@ const ConnectStep: React.FC<{
     return (
         <div className="flex flex-col" data-testid="onboarding-step-connect">
             <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                    <Mail className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-900">Add events without opening the app</h2>
@@ -249,13 +245,13 @@ const ConnectStep: React.FC<{
 
             <div className="space-y-3 mb-6">
                 {/* Email forward */}
-                <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-                    <Mail className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ backgroundColor: 'var(--accent-bg)', borderColor: 'var(--accent-border)' }}>
+                    <Mail className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--accent)' }} />
                     <div>
                         <p className="text-sm font-semibold text-gray-800">Forward any email</p>
                         <p className="text-xs text-gray-500 mt-0.5">
                             Got a sports schedule or school notice? Forward it to{' '}
-                            <span className="font-medium text-indigo-600">add@kinroo.ai</span> and we'll add the events automatically.
+                            <span className="font-medium" style={{ color: 'var(--accent)' }}>add@kinroo.ai</span> and we'll add the events automatically.
                         </p>
                     </div>
                 </div>
@@ -317,10 +313,10 @@ const TryItStep: React.FC<{
     };
 
     return (
-        <div className="flex flex-col" data-testid="onboarding-step-4">
+        <div className="flex flex-col" data-testid="onboarding-step-0">
             <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                    <Wand className="w-5 h-5 text-purple-500" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                    <Wand className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-900">Try it out</h2>
@@ -338,7 +334,7 @@ const TryItStep: React.FC<{
                             onKeyDown={handleKeyDown}
                             disabled={status === 'loading'}
                             data-testid="onboarding-nlp-input"
-                            className="flex-1 px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            className="flex-1 px-3 py-2.5 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2" style={{ borderColor: 'var(--border)' }}
                             placeholder="Add dentist appointment on Thursday at 10am"
                         />
                         <button
@@ -346,7 +342,8 @@ const TryItStep: React.FC<{
                             onClick={handleTry}
                             disabled={status === 'loading' || !input.trim()}
                             data-testid="onboarding-nlp-send"
-                            className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors"
+                            className="px-4 py-2.5 text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                            style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-surface)' }}
                         >
                             {status === 'loading' ? (
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -397,7 +394,7 @@ const TryItStep: React.FC<{
 
 // ── Main orchestrator ────────────────────────────────────────────────────────
 
-const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userName, onComplete }) => {
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const [step, setStep] = useState<number>(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         const parsed = saved ? parseInt(saved, 10) : 0;

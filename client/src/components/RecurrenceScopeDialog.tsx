@@ -76,11 +76,11 @@ const RecurrenceScopeDialog: React.FC<RecurrenceScopeDialogProps> = ({ action, o
                     <button
                         type="button"
                         onClick={() => onConfirm(scope)}
-                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                            action === 'delete'
-                                ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-indigo-600 hover:bg-indigo-700'
-                        }`}
+                        className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style={action === 'delete'
+                            ? { backgroundColor: '#dc2626' }
+                            : { backgroundColor: 'var(--accent)' }
+                        }
                     >
                         {action === 'edit' ? 'Continue' : 'Delete'}
                     </button>

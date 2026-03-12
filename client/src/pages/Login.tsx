@@ -2,12 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Add Google Fonts import
-const fontLink = document.createElement('link');
-fontLink.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap';
-fontLink.rel = 'stylesheet';
-document.head.appendChild(fontLink);
-
 const GoogleIcon = () => (
   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -51,38 +45,44 @@ const Login: React.FC = () => {
   }, [location]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div
+      className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8"
+      style={{ backgroundColor: 'var(--bg-app)' }}
+    >
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img className="h-28 w-auto mb-4" src="/landing_page_logo_1024x1024.png" alt="kinroo.ai" />
+          <img className="h-20 w-auto mb-5" src="/landing_page_logo_1024x1024.png" alt="kinroo.ai" />
           <h1
-            className="text-4xl font-extrabold mb-1"
-            style={{
-              fontFamily: 'Nunito, sans-serif',
-              letterSpacing: '-0.03em',
-              background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontWeight: 800
-            }}
+            className="font-display text-5xl font-bold mb-2"
+            style={{ letterSpacing: '-0.04em', color: 'var(--text-base)' }}
           >
-            kinroo.ai
+            kinroo<span style={{ color: 'var(--accent-mid)' }}>.ai</span>
           </h1>
-          <p className="text-sm text-gray-500" style={{ fontFamily: 'Nunito, sans-serif' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             The family calendar that actually listens.
           </p>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-lg rounded-xl border border-gray-100">
+        <div
+          className="py-8 px-6 rounded-2xl"
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 4px 24px rgba(30,26,20,0.08)',
+          }}
+        >
           {infoMessage && (
-            <div className="mb-5 p-3 rounded-lg bg-indigo-50 border border-indigo-200">
-              <p className="text-sm text-indigo-800">{infoMessage}</p>
+            <div
+              className="mb-5 p-3 rounded-xl"
+              style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}
+            >
+              <p className="text-sm" style={{ color: 'var(--accent)' }}>{infoMessage}</p>
             </div>
           )}
 
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-sm font-medium text-red-800">{error.title}</p>
+            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200">
+              <p className="text-sm font-semibold text-red-800">{error.title}</p>
               <p className="mt-0.5 text-sm text-red-700">{error.message}</p>
             </div>
           )}
@@ -90,17 +90,24 @@ const Login: React.FC = () => {
           <button
             onClick={loginWithGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
+            className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--bg-app)',
+              border: '1px solid var(--border-mid)',
+              color: 'var(--text-base)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent-border)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-mid)')}
           >
             <GoogleIcon />
             {loading ? 'Signing in…' : 'Sign in with Google'}
           </button>
 
-          <p className="mt-6 text-center text-xs text-gray-400">
+          <p className="mt-6 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
             By signing in, you agree to our{' '}
-            <Link to="/terms" className="underline hover:text-gray-600">Terms of Service</Link>
+            <Link to="/terms" className="underline hover:opacity-70" style={{ color: 'var(--text-muted)' }}>Terms of Service</Link>
             {' '}and{' '}
-            <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>.
+            <Link to="/privacy" className="underline hover:opacity-70" style={{ color: 'var(--text-muted)' }}>Privacy Policy</Link>.
           </p>
         </div>
       </div>

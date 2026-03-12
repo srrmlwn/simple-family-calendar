@@ -20,7 +20,6 @@ interface AuthContextType {
   handleAuthCallback: () => Promise<void>;
   logout: () => void;
   loading: boolean;
-  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,13 +29,11 @@ const AuthContext = createContext<AuthContextType>({
   handleAuthCallback: async () => {},
   logout: () => {},
   loading: false,
-  error: null,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // On mount, restore session from localStorage (actual auth via httpOnly cookie).
@@ -60,21 +57,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Redirect to Google OAuth
   const loginWithGoogle = () => {
-    try {
-      setLoading(true);
-      setError(null);
-      window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/google`;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initiate Google login');
-      setLoading(false);
-    }
+    setLoading(true);
+    window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/google`;
   };
 
   // Handle Google OAuth redirect callback — cookie already set server-side, just fetch /me.
   const handleAuthCallback = async () => {
     try {
       setLoading(true);
-      setError(null);
 
       const { user: authUser } = await authService.handleGoogleCallback();
 
@@ -96,8 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       handleAuthSuccess(authUser);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete authentication');
+    } catch {
       navigate('/login', { state: { error: 'Authentication failed. Please try again.' } });
     } finally {
       setLoading(false);
@@ -112,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, loginWithGoogle, handleAuthCallback, logout, loading, error }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!user, user, loginWithGoogle, handleAuthCallback, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

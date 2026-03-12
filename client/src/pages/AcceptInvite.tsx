@@ -85,7 +85,8 @@ const AcceptInvite: React.FC = () => {
                     <p className="text-gray-600 mb-6">{errorMsg}</p>
                     <button
                         onClick={() => navigate('/login')}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                        className="px-4 py-2 text-white rounded"
+                        style={{ backgroundColor: 'var(--accent)' }}
                     >
                         Go to Login
                     </button>
@@ -132,7 +133,8 @@ const AcceptInvite: React.FC = () => {
                 </p>
                 <button
                     onClick={handleSignInAndAccept}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 text-white rounded-lg font-medium"
+                    style={{ backgroundColor: 'var(--accent)' }}
                 >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

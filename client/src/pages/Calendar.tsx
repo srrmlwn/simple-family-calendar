@@ -188,13 +188,12 @@ const CalendarPage: React.FC = () => {
     }, []);
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
             <Header onImportComplete={fetchEvents} />
 
             {/* Onboarding overlay — shown once for new users */}
             {showOnboarding && (
                 <OnboardingFlow
-                    userName={user?.firstName ?? 'there'}
                     onComplete={() => setShowOnboarding(false)}
                 />
             )}
@@ -210,7 +209,7 @@ const CalendarPage: React.FC = () => {
                 <div className="flex-1 overflow-auto overflow-x-hidden lg:overflow-hidden flex flex-col min-h-0">
                     {loading ? (
                         <div className="flex justify-center items-center flex-1">
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                            <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent" style={{ borderColor: 'var(--accent-border)', borderTopColor: 'transparent' }}></div>
                         </div>
                     ) : (
                         <>
@@ -269,7 +268,7 @@ const CalendarPage: React.FC = () => {
                                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
                                     onClick={(e) => { if (e.target === e.currentTarget) setNewEventDate(null); }}
                                 >
-                                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
                                         <EventForm
                                             initialDate={newEventDate}
                                             onSubmit={async (eventData) => {
@@ -288,7 +287,7 @@ const CalendarPage: React.FC = () => {
                                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
                                     onClick={(e) => { if (e.target === e.currentTarget) setNlpSelectedEvent(null); }}
                                 >
-                                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
                                         <EventForm
                                             event={nlpSelectedEvent}
                                             onSubmit={async (eventData) => {

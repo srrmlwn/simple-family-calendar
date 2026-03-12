@@ -27,10 +27,20 @@ const WeekStrip: React.FC<WeekStripProps> = ({ selectedDate, events, onSelectDat
     }, [events]);
 
     return (
-        <div className="sticky top-0 z-10 flex items-center gap-1 px-2 py-2 bg-white border-b border-gray-100 flex-shrink-0 shadow-sm">
+        <div
+            className="sticky top-0 z-10 flex items-center gap-1 px-2 py-2 flex-shrink-0"
+            style={{
+                backgroundColor: 'var(--bg-surface)',
+                borderBottom: '1px solid var(--border)',
+                boxShadow: '0 1px 4px rgba(30,26,20,0.06)',
+            }}
+        >
             <button
                 onClick={() => onNavigateWeek(-1)}
-                className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 flex-shrink-0"
+                className="p-1.5 rounded-lg flex-shrink-0 transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                 aria-label="Previous week"
             >
                 <ChevronLeft className="w-4 h-4" />
@@ -45,21 +55,37 @@ const WeekStrip: React.FC<WeekStripProps> = ({ selectedDate, events, onSelectDat
                         dayEvts.flatMap(e => e.familyMembers ?? []).map(m => m.color)
                     )).slice(0, 3);
 
+                    let pillBg = 'transparent';
+                    let dayNumColor = 'var(--text-base)';
+                    let dayLetterColor = 'var(--text-muted)';
+
+                    if (isSelected) {
+                        pillBg = 'var(--accent)';
+                        dayNumColor = '#fefcf8';
+                        dayLetterColor = 'rgba(254,252,248,0.7)';
+                    } else if (isToday) {
+                        pillBg = 'var(--accent-bg)';
+                        dayNumColor = 'var(--today)';
+                        dayLetterColor = 'var(--today)';
+                    }
+
                     return (
                         <button
                             key={i}
                             onClick={() => onSelectDate(day)}
-                            className={`
-                                flex flex-col items-center py-1.5 rounded-xl transition-colors
-                                ${isSelected ? 'bg-indigo-600' : isToday ? 'bg-blue-50' : 'hover:bg-gray-50'}
-                            `}
+                            className="flex flex-col items-center py-1.5 rounded-xl transition-all"
+                            style={{ backgroundColor: pillBg }}
+                            onMouseEnter={e => {
+                                if (!isSelected) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--bg-app)';
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = pillBg;
+                            }}
                         >
-                            <span className={`text-[10px] font-medium leading-tight ${isSelected ? 'text-indigo-200' : 'text-gray-400'}`}>
+                            <span className="text-[10px] font-medium leading-tight" style={{ color: dayLetterColor }}>
                                 {moment(day).format('dd')[0]}
                             </span>
-                            <span className={`text-sm font-bold leading-tight ${
-                                isSelected ? 'text-white' : isToday ? 'text-blue-600' : 'text-gray-800'
-                            }`}>
+                            <span className="text-sm font-bold leading-tight font-mono" style={{ color: dayNumColor, fontVariantNumeric: 'tabular-nums' }}>
                                 {moment(day).date()}
                             </span>
                             <div className="flex gap-0.5 mt-0.5 h-1.5 items-center justify-center">
@@ -67,7 +93,7 @@ const WeekStrip: React.FC<WeekStripProps> = ({ selectedDate, events, onSelectDat
                                     <span
                                         key={di}
                                         className="w-1 h-1 rounded-full flex-shrink-0"
-                                        style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.6)' : color }}
+                                        style={{ backgroundColor: isSelected ? 'rgba(254,252,248,0.6)' : color }}
                                     />
                                 )) : <span className="w-1 h-1" />}
                             </div>
@@ -78,7 +104,10 @@ const WeekStrip: React.FC<WeekStripProps> = ({ selectedDate, events, onSelectDat
 
             <button
                 onClick={() => onNavigateWeek(1)}
-                className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 flex-shrink-0"
+                className="p-1.5 rounded-lg flex-shrink-0 transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                 aria-label="Next week"
             >
                 <ChevronRight className="w-4 h-4" />

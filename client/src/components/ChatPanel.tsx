@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Drawer } from 'vaul';
-import { ArrowUp, Camera, Mic, MicOff, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowUp, Paperclip, Mic, MicOff, ChevronRight, CheckCircle, AlertCircle, X } from 'lucide-react';
 import moment from 'moment';
 import eventService, { Event, EventInput, NLPCommandResponse, ParsedFlyerEvent } from '../services/eventService';
 import { FamilyMember } from '../services/familyMemberService';
@@ -82,13 +81,13 @@ function getEventColors(title: string): EventColors {
         return { strip: 'bg-amber-400', bg: 'bg-amber-50', icon: 'text-amber-500' };
     if (['doctor','medical','dentist','hospital','clinic','appointment','checkup',
          'health','medicine','pharmacy'].some(k => t.includes(k)))
-        return { strip: 'bg-red-400', bg: 'bg-red-50', icon: 'text-red-500' };
+        return { strip: 'bg-teal-400', bg: 'bg-teal-50', icon: 'text-teal-600' };
     if (['work','office','meeting','interview','conference','business','client',
          'project','deadline','call','zoom','webinar'].some(k => t.includes(k)))
         return { strip: 'bg-blue-400', bg: 'bg-blue-50', icon: 'text-blue-500' };
     if (['birthday','party','celebration','concert','anniversary','wedding',
          'graduation','festival'].some(k => t.includes(k)))
-        return { strip: 'bg-purple-400', bg: 'bg-purple-50', icon: 'text-purple-500' };
+        return { strip: 'bg-pink-400', bg: 'bg-pink-50', icon: 'text-pink-500' };
     if (['dinner','lunch','breakfast','restaurant','coffee','drinks','brunch',
          'food','cafe','bar'].some(k => t.includes(k)))
         return { strip: 'bg-orange-400', bg: 'bg-orange-50', icon: 'text-orange-500' };
@@ -97,7 +96,7 @@ function getEventColors(title: string): EventColors {
     if (['school','class','study','exam','library','course','lecture','seminar',
          'workshop'].some(k => t.includes(k)))
         return { strip: 'bg-green-400', bg: 'bg-green-50', icon: 'text-green-500' };
-    return { strip: 'bg-indigo-400', bg: 'bg-indigo-50', icon: 'text-indigo-500' };
+    return { strip: 'bg-amber-400', bg: 'bg-amber-50', icon: 'text-amber-600' };
 }
 
 function formatDuration(start: Date | string, end: Date | string): string {
@@ -187,7 +186,7 @@ const MessageBubble: React.FC<{
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="max-w-[85%] bg-indigo-500 text-white px-3.5 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-snug">
+                <div className="max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-snug" style={{ backgroundColor: 'var(--accent)', color: 'var(--accent-bg)' }}>
                     {msg.text}
                 </div>
             </div>
@@ -250,7 +249,7 @@ const MessageBubble: React.FC<{
 
 const EmptyState: React.FC = () => (
     <div className="flex flex-col items-center justify-center h-full text-center px-6 py-8 select-none">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center mb-3">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ backgroundColor: 'var(--accent-bg)' }}>
             <span className="text-2xl">🗓️</span>
         </div>
         <p className="text-sm font-medium text-gray-700 mb-1">Your AI calendar</p>
@@ -290,11 +289,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
     const [isCreatingFlyerEvents, setIsCreatingFlyerEvents] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // ── Mobile drawer snap state ─────────────────────────────────────────────
+    // ── Mobile thread state (false = input only, true = thread expanded) ────
     const [snap, setSnap] = useState<number | string>('120px');
-    const handleSnapChange = useCallback((s: number | string | null) => {
-        if (s !== null) setSnap(s);
-    }, []);
 
     // Revoke object URL on change / unmount
     useEffect(() => {
@@ -333,18 +329,21 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
         if (!file) return;
         e.target.value = '';
 
-        const previewUrl = URL.createObjectURL(file);
+        const isImage = file.type.startsWith('image/');
+        const previewUrl = isImage ? URL.createObjectURL(file) : undefined;
         setFlyerPreviewUrl(previewUrl);
         setIsParsingImage(true);
 
         try {
-            const { events } = await eventService.parseFromImage(file);
+            const { events } = await eventService.parseFromDocument(file);
             setFlyerParsedEvents(events);
             setIsFlyerSheetOpen(true);
         } catch (err) {
-            URL.revokeObjectURL(previewUrl);
-            setFlyerPreviewUrl(undefined);
-            showError(err instanceof Error ? err.message : 'Failed to parse image');
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+                setFlyerPreviewUrl(undefined);
+            }
+            showError(err instanceof Error ? err.message : 'Failed to parse file');
         } finally {
             setIsParsingImage(false);
         }
@@ -400,10 +399,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
         // Push user message immediately
         addMessage({ role: 'user', text });
 
-        // Auto-expand mobile drawer
-        if (!isDesktop) {
-            setSnap(0.6);
-        }
+        // Auto-expand mobile thread
+        if (!isDesktop) setSnap(0.6);
 
         try {
             const result: NLPCommandResponse = await eventService.nlpCommand(text);
@@ -486,7 +483,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
 
     const handleClearSession = useCallback(async () => {
         setMessages([]);
-        setSnap('120px');
+        setSnap('120px'); // collapse mobile thread
         eventService.clearConversationSession().catch(() => {});
     }, []);
 
@@ -624,10 +621,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
     // ── Input bar (shared between desktop and mobile) ─────────────────────────
 
     const renderInputBar = () => (
-        <div className="bg-indigo-50 border-t border-indigo-200 px-3 py-3 shrink-0">
-            <div className={`flex items-center bg-white rounded-xl border shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-indigo-400 ${
-                isListening ? 'border-red-300' : 'border-indigo-200'
-            }`}>
+        <div className="px-3 py-3 shrink-0" style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
+            <div className="flex items-center rounded-xl border shadow-sm transition-shadow" style={{
+                backgroundColor: 'var(--bg-app)',
+                borderColor: isListening ? 'var(--today)' : 'var(--border-mid)',
+            }}>
                 <label htmlFor="chat-panel-input" className="sr-only">
                     Describe what you want to do
                 </label>
@@ -642,46 +640,38 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
                             ? interimText
                             : NLP_SUGGESTIONS[placeholderIdx]
                     }
-                    className={`flex-1 min-w-0 px-4 py-3 bg-transparent border-none outline-none text-sm truncate ${
-                        interimText ? 'placeholder-gray-400 italic' : 'placeholder-gray-400'
-                    }`}
+                    className={`flex-1 min-w-0 px-4 py-3 bg-transparent border-none outline-none text-sm truncate ${interimText ? 'italic' : ''}`}
+                    style={{ color: 'var(--text-base)' }}
                     disabled={isLoading}
                 />
                 <div className="flex items-center gap-0.5 pr-2 shrink-0">
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isParsingImage || isLoading}
-                        aria-label="Scan a flyer or schedule"
-                        title="Scan a flyer or photo to import events"
-                        className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            isParsingImage
-                                ? 'text-indigo-500 animate-pulse'
-                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                        }`}
+                        aria-label="Attach a file to import events"
+                        title="Attach an image, PDF, or Word doc to import events"
+                        className="p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ color: isParsingImage ? 'var(--accent)' : 'var(--text-muted)' }}
                     >
-                        <Camera size={18} />
+                        <Paperclip size={17} />
                     </button>
                     <button
                         onClick={() => void toggleListening()}
                         disabled={isUploading}
                         aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
                         title={isListening ? 'Stop listening' : 'Start voice input (Alt+V)'}
-                        className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            isListening
-                                ? 'text-red-500 animate-pulse'
-                                : isUploading
-                                    ? 'text-amber-500'
-                                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                        }`}
+                        className="p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ color: isListening ? 'var(--today)' : 'var(--text-muted)' }}
                     >
-                        {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                        {isListening ? <MicOff size={17} /> : <Mic size={17} />}
                     </button>
                     <button
                         onClick={() => handleSubmit()}
                         disabled={isLoading || !inputText.trim()}
                         aria-label="Send"
                         title="Send"
-                        className="p-1.5 ml-0.5 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 ml-0.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: 'var(--accent)', color: 'var(--accent-bg)' }}
                     >
                         {isLoading
                             ? <span className="block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -693,13 +683,13 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
 
             {/* Status labels */}
             {isParsingImage && (
-                <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">Scanning image…</p>
+                <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--accent)' }}>Reading file…</p>
             )}
             {isListening && (
-                <p className="mt-1.5 text-xs text-red-500 animate-pulse">Listening…</p>
+                <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--today)' }}>Listening…</p>
             )}
             {isUploading && (
-                <p className="mt-1.5 text-xs text-amber-600 animate-pulse">Transcribing…</p>
+                <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--accent-mid)' }}>Transcribing…</p>
             )}
         </div>
     );
@@ -712,7 +702,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
+                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 className="hidden"
                 onChange={handleImageSelect}
                 aria-hidden="true"
@@ -731,10 +721,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
 
             {/* ── Desktop sidebar ── */}
             {isDesktop ? (
-                <div className="w-[340px] border-l border-gray-200 bg-white flex flex-col h-full shrink-0">
+                <div className="w-[340px] flex flex-col h-full shrink-0" style={{ borderLeft: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)' }}>
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-                        <span className="text-sm font-semibold text-gray-700">Ask kinroo.ai</span>
+                    <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+                        <span className="text-sm font-semibold" style={{ color: 'var(--text-base)' }}>Ask kinroo.ai</span>
                         {messages.length > 0 && (
                             <button
                                 onClick={handleClearSession}
@@ -767,56 +757,89 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onEventsChanged, onEventSelect, f
                     {renderInputBar()}
                 </div>
             ) : (
-                /* ── Mobile vaul drawer ── */
-                <Drawer.Root
-                    open={true}
-                    modal={false}
-                    snapPoints={['120px', 0.6]}
-                    activeSnapPoint={snap}
-                    setActiveSnapPoint={handleSnapChange}
-                >
-                    <Drawer.Portal>
-                        <Drawer.Content
-                            className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl flex flex-col shadow-2xl z-40 outline-none"
-                            style={{ maxHeight: '80vh' }}
+                /* ── Mobile: fixed input bar + slide-up thread panel ── */
+                <>
+                    {/* Thread panel — slides in above the input bar */}
+                    {snap === 0.6 && (
+                        <div
+                            className="fixed inset-x-0 z-40 flex flex-col"
+                            style={{
+                                top: '20vh',
+                                bottom: '72px',
+                                backgroundColor: 'var(--bg-surface)',
+                                borderTop: '1px solid var(--border)',
+                                boxShadow: '0 -4px 24px rgba(30,26,20,0.12)',
+                            }}
                         >
-                            {/* Drag handle */}
-                            <div className="mx-auto mt-2 mb-1 w-10 h-1 rounded-full bg-gray-300 shrink-0" />
-
-                            {/* Thread — only visible when expanded */}
-                            {snap === 0.6 && (
-                                <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
-                                    {messages.length === 0 ? (
-                                        <EmptyState />
-                                    ) : (
-                                        messages.map(msg => (
-                                            <MessageBubble
-                                                key={msg.id}
-                                                msg={msg}
-                                                onCandidateSelect={handleCandidateSelect}
-                                                onEventCardClick={handleEventCardClick}
-                                            />
-                                        ))
-                                    )}
+                            <div
+                                className="flex items-center justify-between px-4 py-3 shrink-0"
+                                style={{ borderBottom: '1px solid var(--border)' }}
+                            >
+                                <span className="text-sm font-semibold" style={{ color: 'var(--text-base)' }}>
+                                    Ask kinroo.ai
+                                </span>
+                                <div className="flex items-center gap-3">
                                     {messages.length > 0 && (
-                                        <div className="flex justify-center pt-1">
-                                            <button
-                                                onClick={handleClearSession}
-                                                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                                            >
-                                                New chat
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={handleClearSession}
+                                            className="text-xs transition-colors"
+                                            style={{ color: 'var(--text-muted)' }}
+                                        >
+                                            New chat
+                                        </button>
                                     )}
-                                    <div ref={messagesEndRef} />
+                                    <button
+                                        onClick={() => setSnap('120px')}
+                                        aria-label="Close chat"
+                                        style={{ color: 'var(--text-muted)' }}
+                                    >
+                                        <X size={16} />
+                                    </button>
                                 </div>
-                            )}
+                            </div>
+                            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+                                {messages.length === 0 ? (
+                                    <EmptyState />
+                                ) : (
+                                    messages.map(msg => (
+                                        <MessageBubble
+                                            key={msg.id}
+                                            msg={msg}
+                                            onCandidateSelect={handleCandidateSelect}
+                                            onEventCardClick={handleEventCardClick}
+                                        />
+                                    ))
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+                        </div>
+                    )}
 
-                            {/* Input — always visible */}
-                            {renderInputBar()}
-                        </Drawer.Content>
-                    </Drawer.Portal>
-                </Drawer.Root>
+                    {/* Input bar — always visible at bottom */}
+                    <div
+                        className="fixed inset-x-0 bottom-0 z-50"
+                        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                    >
+                        {/* Chat history badge — tap to open thread */}
+                        {messages.length > 0 && snap !== 0.6 && (
+                            <div style={{ padding: '0 12px 0' }}>
+                                <button
+                                    onClick={() => setSnap(0.6)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-t-lg text-xs font-medium transition-colors"
+                                    style={{
+                                        backgroundColor: 'var(--accent-bg)',
+                                        color: 'var(--accent)',
+                                        border: '1px solid var(--accent-border)',
+                                        borderBottom: 'none',
+                                    }}
+                                >
+                                    <span>↑ {messages.length} message{messages.length !== 1 ? 's' : ''}</span>
+                                </button>
+                            </div>
+                        )}
+                        {renderInputBar()}
+                    </div>
+                </>
             )}
         </>
     );

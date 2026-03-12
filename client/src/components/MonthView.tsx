@@ -178,7 +178,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                                                         key={evt.id}
                                                         onClick={(e) => { e.stopPropagation(); setSelectedEvent(evt); }}
                                                         className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 font-medium text-white hover:opacity-80 transition-opacity leading-tight"
-                                                        style={{ backgroundColor: evt.familyMembers?.[0]?.color ?? '#6366f1' }}
+                                                        style={{ backgroundColor: evt.familyMembers?.[0]?.color ?? 'var(--accent)' }}
                                                         title={`${moment(evt.startTime).format('h:mm A')} ${evt.title}`}
                                                     >
                                                         {!evt.isAllDay && (
@@ -192,7 +192,8 @@ const MonthView: React.FC<MonthViewProps> = ({
                                                 {overflow > 0 && (
                                                     <button
                                                         onClick={() => handleDayClick(day)}
-                                                        className="w-full text-left text-[11px] text-indigo-500 hover:text-indigo-700 px-1 font-medium transition-colors"
+                                                        className="w-full text-left text-[11px] px-1 font-medium transition-colors"
+                                                        style={{ color: 'var(--accent)' }}
                                                     >
                                                         +{overflow} more
                                                     </button>
@@ -205,7 +206,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                                                     <span
                                                         key={i}
                                                         className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                                        style={{ backgroundColor: evt.familyMembers?.[0]?.color ?? '#6366f1' }}
+                                                        style={{ backgroundColor: evt.familyMembers?.[0]?.color ?? 'var(--accent)' }}
                                                     />
                                                 ))}
                                                 {dayEvts.length > 3 && (

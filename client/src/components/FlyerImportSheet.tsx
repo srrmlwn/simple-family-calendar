@@ -53,7 +53,7 @@ const FlyerImportSheet: React.FC<FlyerImportSheetProps> = ({
         const member = familyMembers.find(
             fm => fm.name.toLowerCase() === name.toLowerCase()
         );
-        return member?.color ?? '#6366f1';
+        return member?.color ?? 'var(--accent)';
     };
 
     const formatEventTime = (event: ParsedFlyerEvent): string => {
@@ -73,11 +73,12 @@ const FlyerImportSheet: React.FC<FlyerImportSheetProps> = ({
             <div className="flex flex-col" style={{ maxHeight: '70vh' }}>
                 {/* Image thumbnail */}
                 {imagePreviewUrl && (
-                    <div className="px-4 pt-3 pb-3 border-b border-gray-100">
+                    <div className="px-4 pt-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
                         <img
                             src={imagePreviewUrl}
                             alt="Uploaded flyer"
-                            className="h-16 w-auto rounded-lg object-cover border border-gray-200"
+                            className="h-16 w-auto rounded-lg object-cover"
+                            style={{ border: '1px solid var(--border)' }}
                         />
                     </div>
                 )}
@@ -85,14 +86,15 @@ const FlyerImportSheet: React.FC<FlyerImportSheetProps> = ({
                 {parsedEvents.length === 0 ? (
                     /* Empty state */
                     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                        <Camera className="w-10 h-10 text-gray-300 mb-3" />
-                        <p className="text-sm font-medium text-gray-500">No calendar events found</p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <Camera className="w-10 h-10 mb-3" style={{ color: 'var(--border-mid)' }} />
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>No calendar events found</p>
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                             Try a clearer photo of a schedule, flyer, or calendar.
                         </p>
                         <button
                             onClick={onClose}
-                            className="mt-6 px-5 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="mt-6 px-5 py-2 text-sm font-medium rounded-lg transition-colors"
+                            style={{ color: 'var(--text-base)', backgroundColor: 'var(--bg-app)' }}
                         >
                             Close
                         </button>
@@ -107,19 +109,20 @@ const FlyerImportSheet: React.FC<FlyerImportSheetProps> = ({
                                     <div
                                         key={idx}
                                         onClick={() => toggleEvent(idx)}
-                                        className={`flex items-start gap-3 px-4 py-3 border-b border-gray-100 last:border-0 cursor-pointer transition-colors select-none ${
-                                            isSelected
-                                                ? 'bg-white hover:bg-gray-50 active:bg-gray-100'
-                                                : 'bg-gray-50 opacity-50'
-                                        }`}
+                                        className="flex items-start gap-3 px-4 py-3 last:border-0 cursor-pointer transition-colors select-none"
+                                        style={{
+                                            borderBottom: '1px solid var(--border)',
+                                            backgroundColor: isSelected ? 'var(--bg-surface)' : 'var(--bg-app)',
+                                            opacity: isSelected ? 1 : 0.5,
+                                        }}
                                     >
                                         {/* Checkbox */}
                                         <div
-                                            className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${
-                                                isSelected
-                                                    ? 'bg-indigo-500 border-indigo-500'
-                                                    : 'border-gray-300 bg-white'
-                                            }`}
+                                            className="mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors"
+                                            style={isSelected
+                                                ? { backgroundColor: 'var(--accent)', borderColor: 'var(--accent)' }
+                                                : { borderColor: 'var(--border-mid)', backgroundColor: 'var(--bg-surface)' }
+                                            }
                                         >
                                             {isSelected && (
                                                 <Check size={12} color="white" strokeWidth={3} />
@@ -128,14 +131,14 @@ const FlyerImportSheet: React.FC<FlyerImportSheetProps> = ({
 
                                         {/* Event details */}
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-900 leading-tight">
+                                            <p className="text-sm font-medium leading-tight" style={{ color: 'var(--text-base)' }}>
                                                 {event.title}
                                             </p>
-                                            <p className="text-xs text-gray-500 mt-0.5">
+                                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                                                 {formatEventTime(event)}
                                             </p>
                                             {event.location && (
-                                                <p className="text-xs text-gray-400 mt-0.5 truncate">
+                                                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
                                                     📍 {event.location}
                                                 </p>
                                             )}
@@ -159,18 +162,20 @@ const FlyerImportSheet: React.FC<FlyerImportSheetProps> = ({
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center gap-3 px-4 py-4 border-t border-gray-200 bg-white shrink-0">
+                        <div className="flex items-center gap-3 px-4 py-4 shrink-0" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)' }}>
                             <button
                                 onClick={onClose}
                                 disabled={isCreating}
-                                className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                                className="flex-1 py-2.5 px-4 text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                                style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-app)' }}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => void onConfirm(selectedEvents)}
                                 disabled={isCreating || selectedCount === 0}
-                                className="flex-1 py-2.5 px-4 text-sm font-medium text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 disabled:opacity-50 transition-colors"
+                                className="flex-1 py-2.5 px-4 text-sm font-medium text-white rounded-lg disabled:opacity-50 transition-colors"
+                                style={{ backgroundColor: 'var(--accent)' }}
                             >
                                 {isCreating
                                     ? 'Adding…'

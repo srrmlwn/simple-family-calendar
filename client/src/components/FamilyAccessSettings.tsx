@@ -103,10 +103,10 @@ const FamilyAccessSettings: React.FC = () => {
     };
 
     return (
-        <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium">Co-Manager Access</h2>
-                <p className="text-sm text-gray-600">
+        <div className="shadow rounded-lg overflow-hidden mb-6" style={{ backgroundColor: 'var(--bg-surface)' }}>
+            <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                <h2 className="text-lg font-medium" style={{ color: 'var(--text-base)' }}>Co-Manager Access</h2>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                     {isCoManager
                         ? `You are co-managing ${user?.managingFamilyName ? `${user.managingFamilyName}'s` : 'another'} family calendar. Contact them to make changes to access.`
                         : 'Invite a partner or co-parent to share full access to this calendar.'}
@@ -115,7 +115,7 @@ const FamilyAccessSettings: React.FC = () => {
 
             {isCoManager ? (
                 <div className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-indigo-700 bg-indigo-50 rounded-md px-4 py-3">
+                    <div className="flex items-center gap-2 rounded-md px-4 py-3" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
                         <span className="text-sm font-medium">
                             Co-managing {user?.managingFamilyName ? `${user.managingFamilyName}'s` : 'another'} family calendar
                         </span>
@@ -135,10 +135,10 @@ const FamilyAccessSettings: React.FC = () => {
                     )}
 
                     {/* Invite form */}
-                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <div className="px-6 py-4" style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border)' }}>
                         <div className="flex gap-3">
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                                     Invite by email
                                 </label>
                                 <input
@@ -146,7 +146,8 @@ const FamilyAccessSettings: React.FC = () => {
                                     value={inviteEmail}
                                     onChange={e => setInviteEmail(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && handleSendInvite()}
-                                    className="w-full p-2 border border-gray-300 rounded"
+                                    className="w-full p-2 rounded focus:outline-none"
+                                    style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
                                     placeholder="partner@example.com"
                                     disabled={loading}
                                 />
@@ -154,7 +155,10 @@ const FamilyAccessSettings: React.FC = () => {
                             <div className="flex items-end">
                                 <button
                                     onClick={handleSendInvite}
-                                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-indigo-300"
+                                    className="flex items-center px-4 py-2 text-white rounded transition-colors"
+                                    style={{ backgroundColor: 'var(--accent)' }}
+                                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-mid)')}
+                                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
                                     disabled={loading}
                                 >
                                     <Mail size={16} className="mr-1" />
@@ -166,14 +170,14 @@ const FamilyAccessSettings: React.FC = () => {
 
                     {/* Pending invites */}
                     {invites.length > 0 && (
-                        <div className="px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-700 mb-3">Pending Invitations</h3>
+                        <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                            <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>Pending Invitations</h3>
                             <div className="space-y-2">
                                 {invites.map(invite => (
                                     <div key={invite.id} className="flex items-center justify-between py-2">
                                         <div>
                                             <p className="text-sm font-medium">{invite.inviteeEmail}</p>
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                                 Expires {new Date(invite.expiresAt).toLocaleDateString()}
                                             </p>
                                         </div>
@@ -194,13 +198,13 @@ const FamilyAccessSettings: React.FC = () => {
                     {/* Active co-managers */}
                     {coManagers.length > 0 && (
                         <div className="px-6 py-4">
-                            <h3 className="text-sm font-medium text-gray-700 mb-3">Active Co-Managers</h3>
+                            <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>Active Co-Managers</h3>
                             <div className="space-y-2">
                                 {coManagers.map(manager => (
                                     <div key={manager.id} className="flex items-center justify-between py-2">
                                         <div>
                                             <p className="text-sm font-medium">{manager.name || manager.email}</p>
-                                            <p className="text-xs text-gray-500">{manager.email}</p>
+                                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{manager.email}</p>
                                         </div>
                                         <button
                                             onClick={() => handleRemoveCoManager(manager.id, manager.name || manager.email)}
@@ -217,7 +221,7 @@ const FamilyAccessSettings: React.FC = () => {
                     )}
 
                     {invites.length === 0 && coManagers.length === 0 && (
-                        <div className="px-6 py-4 text-sm text-gray-500">
+                        <div className="px-6 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>
                             No co-managers yet. Invite someone above.
                         </div>
                     )}

@@ -101,17 +101,17 @@ const MiniCalendarPopover: React.FC<MiniCalendarPopoverProps> = ({
                                 relative flex flex-col items-center justify-center py-1 rounded-md
                                 text-[11px] font-medium transition-colors
                                 ${!inMonth ? 'text-gray-300 cursor-default' : ''}
-                                ${isSelected && inMonth ? 'bg-indigo-600 text-white' : ''}
-                                ${isToday && !isSelected ? 'text-blue-600 font-bold' : ''}
-                                ${!isSelected && inMonth ? 'hover:bg-gray-100' : ''}
+                                ${isToday && !isSelected ? 'font-bold' : ''}
+                                ${!isSelected && inMonth ? 'hover:bg-warm-100' : ''}
                                 ${!isSelected && !isToday && inMonth ? 'text-gray-700' : ''}
                             `}
+                            style={isSelected && inMonth ? { backgroundColor: 'var(--accent)', color: 'white' } :
+                                   isToday && !isSelected ? { color: 'var(--accent)' } : undefined}
                         >
                             {moment(day).date()}
                             {hasEvents && inMonth && (
-                                <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
-                                    isSelected ? 'bg-white/70' : 'bg-indigo-400'
-                                }`} />
+                                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                                    style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.7)' : 'var(--accent)' }} />
                             )}
                         </button>
                     );
@@ -121,7 +121,8 @@ const MiniCalendarPopover: React.FC<MiniCalendarPopoverProps> = ({
             {/* Today shortcut */}
             <button
                 onClick={() => { onSelectDate(new Date()); onClose(); }}
-                className="mt-2 w-full text-xs text-indigo-600 hover:text-indigo-800 font-medium py-1 hover:bg-indigo-50 rounded-md transition-colors"
+                className="mt-2 w-full text-xs font-medium py-1 rounded-md transition-colors hover:bg-warm-100"
+                style={{ color: 'var(--accent)' }}
             >
                 Today
             </button>

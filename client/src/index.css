@@ -2,13 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-app:     #f2ece0;
+  --bg-surface: #fefcf8;
+  --border:     #e2d9c8;
+  --border-mid: #cec3ae;
+  --text-base:  #1e1a14;
+  --text-muted: #7a6f65;
+  --accent:     #b35110;   /* burnt amber — primary action */
+  --accent-mid: #d4650f;
+  --accent-bg:  #fef3e6;   /* tinted amber background */
+  --accent-border: #f0c090;
+  --today:      #dc2626;   /* red — classic planner today-marker */
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-  sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* Subtle warm grain texture on the app background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  opacity: 0.4;
 }
 
 /* React Big Calendar custom styling */
@@ -17,22 +44,19 @@ body {
 }
 
 .rbc-toolbar button {
-  @apply bg-white border border-gray-300 text-gray-700 font-normal rounded;
+  @apply bg-warm-50 border border-warm-300 text-warm-700 font-normal rounded;
 }
 
 .rbc-toolbar button:hover,
 .rbc-toolbar button:focus {
-  @apply bg-gray-100 border-gray-400;
+  @apply bg-warm-100 border-warm-400;
 }
 
 .rbc-toolbar button:active,
 .rbc-toolbar button.rbc-active {
-  @apply bg-blue-100 border-blue-400 shadow-none;
-}
-
-.rbc-toolbar button.rbc-active:hover,
-.rbc-toolbar button.rbc-active:focus {
-  @apply bg-blue-200 border-blue-500;
+  background-color: var(--accent-bg);
+  border-color: var(--accent-border);
+  box-shadow: none;
 }
 
 .rbc-toolbar-label {
@@ -40,19 +64,20 @@ body {
 }
 
 .rbc-header {
-  @apply font-normal py-2 text-gray-600;
+  @apply font-normal py-2 text-warm-600;
 }
 
 .rbc-today {
-  @apply bg-blue-50;
+  background-color: #fff8f0;
 }
 
 .rbc-off-range-bg {
-  @apply bg-gray-50;
+  @apply bg-warm-100;
 }
 
 .rbc-event {
   @apply rounded-md px-2 py-1;
+  background-color: var(--accent);
 }
 
 .rbc-event-content {
@@ -60,7 +85,8 @@ body {
 }
 
 .rbc-show-more {
-  @apply text-blue-600 font-normal;
+  color: var(--accent-mid);
+  @apply font-normal;
 }
 
 .rbc-event-label {
@@ -72,29 +98,29 @@ body {
 }
 
 .rbc-agenda-time-cell {
-  @apply text-gray-700;
+  @apply text-warm-700;
 }
 
 .rbc-agenda-event-cell {
-  @apply text-gray-900;
+  @apply text-warm-900;
 }
 
 .rbc-time-view {
-  @apply border border-gray-200 rounded-md;
+  @apply border border-warm-200 rounded-md;
 }
 
 .rbc-timeslot-group {
-  @apply border-gray-100;
+  @apply border-warm-100;
 }
 
 .rbc-time-header {
-  @apply border-gray-200;
+  @apply border-warm-200;
 }
 
 .rbc-time-content {
-  @apply border-gray-200;
+  @apply border-warm-200;
 }
 
 .rbc-day-slot .rbc-time-slot {
-  @apply border-gray-50;
+  @apply border-warm-100;
 }

@@ -72,10 +72,10 @@ const FamilyMemberManager: React.FC = () => {
     };
 
     return (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium">Family Members</h2>
-                <p className="text-sm text-gray-600">
+        <div className="shadow rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)' }}>
+            <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                <h2 className="text-lg font-medium" style={{ color: 'var(--text-base)' }}>Family Members</h2>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                     Tag events to family members to filter the calendar by person.
                 </p>
             </div>
@@ -87,7 +87,7 @@ const FamilyMemberManager: React.FC = () => {
             )}
 
             {/* Add new member */}
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="px-6 py-4" style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-3">
                     <input
                         type="text"
@@ -95,13 +95,17 @@ const FamilyMemberManager: React.FC = () => {
                         onChange={e => setNewName(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                         placeholder="Name (e.g. Maya, Dad)"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        className="flex-1 px-3 py-2 rounded text-sm focus:outline-none"
+                        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
                     />
                     <ColorPicker value={newColor} onChange={setNewColor} />
                     <button
                         onClick={handleAdd}
                         disabled={!newName.trim()}
-                        className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-1 px-3 py-2 text-white text-sm rounded disabled:cursor-not-allowed transition-colors"
+                        style={{ backgroundColor: 'var(--accent)' }}
+                        onMouseEnter={e => { if (newName.trim()) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent-mid)'; }}
+                        onMouseLeave={e => { if (newName.trim()) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent)'; }}
                     >
                         <Plus size={16} />
                         Add
@@ -110,11 +114,11 @@ const FamilyMemberManager: React.FC = () => {
             </div>
 
             {/* Member list */}
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
                 {loading ? (
-                    <div className="px-6 py-4 text-sm text-gray-600">Loading…</div>
+                    <div className="px-6 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>
                 ) : members.length === 0 ? (
-                    <div className="px-6 py-6 text-sm text-gray-600 text-center">
+                    <div className="px-6 py-6 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
                         No family members yet. Add your first one above.
                     </div>
                 ) : (
@@ -128,7 +132,8 @@ const FamilyMemberManager: React.FC = () => {
                                         value={editName}
                                         onChange={e => setEditName(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleEditSave()}
-                                        className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                        className="flex-1 px-2 py-1 rounded text-sm focus:outline-none"
+                                        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
                                         autoFocus
                                     />
                                     <button onClick={handleEditSave} className="text-green-600 hover:text-green-800" aria-label="Save">
@@ -144,17 +149,19 @@ const FamilyMemberManager: React.FC = () => {
                                         className="w-4 h-4 rounded-full flex-shrink-0"
                                         style={{ backgroundColor: member.color }}
                                     />
-                                    <span className="flex-1 text-sm font-medium text-gray-800">{member.name}</span>
+                                    <span className="flex-1 text-sm font-medium" style={{ color: 'var(--text-base)' }}>{member.name}</span>
                                     <button
                                         onClick={() => handleEditStart(member)}
-                                        className="text-gray-400 hover:text-gray-700 transition-colors"
+                                        className="transition-colors"
+                                        style={{ color: 'var(--text-muted)' }}
                                         aria-label={`Edit ${member.name}`}
                                     >
                                         <Pencil size={15} />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(member.id)}
-                                        className="text-gray-400 hover:text-red-600 transition-colors"
+                                        className="hover:text-red-600 transition-colors"
+                                        style={{ color: 'var(--text-muted)' }}
                                         aria-label={`Delete ${member.name}`}
                                     >
                                         <Trash2 size={15} />

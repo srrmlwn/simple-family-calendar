@@ -68,30 +68,30 @@ const TrayEventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event,
     return (
         <div
             onClick={onClick}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 group transition-colors"
+            className="flex items-center gap-3 px-4 py-3 cursor-pointer group transition-colors"
+            style={{ borderBottom: '1px solid var(--border)' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-            {/* Time */}
             <div className="flex flex-col items-center w-10 shrink-0">
-                <span className="text-sm font-bold text-blue-600 leading-tight">
+                <span className="font-mono text-sm font-medium leading-tight" style={{ color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
                     {moment(event.startTime).format('h:mm')}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="font-mono text-[10px]" style={{ color: 'var(--text-muted)' }}>
                     {moment(event.startTime).format('A')}
                 </span>
             </div>
-            {/* Details */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                    <EventIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                    <span className="font-medium text-gray-900 text-sm truncate">{event.title}</span>
+                    <EventIcon className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <span className="font-semibold text-sm truncate" style={{ color: 'var(--text-base)' }}>{event.title}</span>
                 </div>
-                <div className="text-xs text-gray-600 mt-0.5 truncate">
+                <div className="text-xs mt-0.5 truncate font-mono" style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
                     {moment(event.startTime).format('MMM D')}
                     {event.location ? ` · ${event.location}` : ''}
                 </div>
             </div>
-            {/* Arrow affordance */}
-            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 shrink-0 transition-colors" />
+            <ChevronRight className="w-4 h-4 shrink-0 transition-colors" style={{ color: 'var(--border-mid)' }} />
         </div>
     );
 };
@@ -460,59 +460,56 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
     const renderTray = () => {
         if (!tray) return null;
 
-        // Disambiguation
+        const trayStyle: React.CSSProperties = {
+            backgroundColor: 'var(--bg-surface)',
+            borderTop: '1px solid var(--border)',
+            maxHeight: '50vh',
+            overflowY: 'auto',
+            boxShadow: '0 -4px 16px rgba(30,26,20,0.12)',
+        };
+        const headerStyle: React.CSSProperties = {
+            borderBottom: '1px solid var(--border)',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+        };
+
         if (tray.requiresDisambiguation && tray.candidates) {
             return (
-                <div className="border-t border-gray-200 bg-white max-h-[50vh] overflow-y-auto shadow-lg">
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-100 bg-amber-50">
-                        <span className="text-sm font-medium text-amber-800">
+                <div style={trayStyle}>
+                    <div style={{ ...headerStyle, backgroundColor: 'var(--accent-bg)' }}>
+                        <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
                             Which event did you mean?
                         </span>
-                        <button
-                            onClick={() => setTray(null)}
-                            aria-label="Dismiss"
-                            className="ml-3 shrink-0 text-amber-400 hover:text-amber-600"
-                        >
+                        <button onClick={() => setTray(null)} aria-label="Dismiss" style={{ color: 'var(--accent)', opacity: 0.6 }}>
                             <X size={14} />
                         </button>
                     </div>
                     {tray.candidates.map(c => (
-                        <TrayEventCard
-                            key={c.id}
-                            event={c}
-                            onClick={() => handleCandidateSelect(c.id)}
-                        />
+                        <TrayEventCard key={c.id} event={c} onClick={() => handleCandidateSelect(c.id)} />
                     ))}
                 </div>
             );
         }
 
-        // Query results
         if (tray.intent === 'query') {
             const events = tray.events ?? [];
             return (
-                <div className="border-t border-gray-200 bg-white max-h-[50vh] overflow-y-auto shadow-lg">
-                    <div className="flex items-start justify-between px-4 py-2.5 border-b border-gray-100 bg-gray-50">
-                        <p className="text-sm text-gray-600 flex-1 pr-4 leading-snug">{tray.message}</p>
-                        <button
-                            onClick={() => setTray(null)}
-                            aria-label="Dismiss results"
-                            className="shrink-0 mt-0.5 text-gray-400 hover:text-gray-600"
-                        >
+                <div style={trayStyle}>
+                    <div style={{ ...headerStyle, backgroundColor: 'var(--bg-app)' }}>
+                        <p className="text-sm flex-1 pr-4 leading-snug" style={{ color: 'var(--text-muted)' }}>{tray.message}</p>
+                        <button onClick={() => setTray(null)} aria-label="Dismiss results" style={{ color: 'var(--text-muted)' }}>
                             <X size={14} />
                         </button>
                     </div>
                     {events.length === 0 ? (
-                        <div className="px-4 py-6 text-sm text-center text-gray-400">
+                        <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
                             No events found
                         </div>
                     ) : (
                         events.map(e => (
-                            <TrayEventCard
-                                key={e.id}
-                                event={e}
-                                onClick={() => handleEventCardClick(e)}
-                            />
+                            <TrayEventCard key={e.id} event={e} onClick={() => handleEventCardClick(e)} />
                         ))
                     )}
                 </div>
@@ -555,28 +552,50 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             />
 
             {/* Input bar */}
-            <div className="bg-indigo-50 border-t border-indigo-200 px-3 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.07)]">
+            <div
+                className="px-3 py-3"
+                style={{
+                    backgroundColor: 'var(--bg-surface)',
+                    borderTop: '1px solid var(--border)',
+                    boxShadow: '0 -2px 12px rgba(30,26,20,0.06)',
+                }}
+            >
                 <div className="max-w-3xl mx-auto">
 
-                    {/* Context pill — shows last user message when session is active */}
+                    {/* Context pill */}
                     {lastUserMsg && (
-                        <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-indigo-100 rounded-lg text-xs text-indigo-700">
-                            <span className="font-medium shrink-0">Continuing:</span>
-                            <span className="flex-1 truncate italic">{lastUserMsg}</span>
+                        <div
+                            className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg text-xs"
+                            style={{
+                                backgroundColor: 'var(--accent-bg)',
+                                border: '1px solid var(--accent-border)',
+                                color: 'var(--accent)',
+                            }}
+                        >
+                            <span className="font-semibold shrink-0">Continuing:</span>
+                            <span className="flex-1 truncate italic opacity-80">{lastUserMsg}</span>
                             <button
                                 onClick={handleClearSession}
                                 aria-label="Clear conversation context"
                                 title="Start a new conversation"
-                                className="shrink-0 ml-1 text-indigo-400 hover:text-indigo-600 transition-colors"
+                                className="shrink-0 ml-1 transition-opacity hover:opacity-60"
                             >
                                 <X size={12} />
                             </button>
                         </div>
                     )}
-                    {/* Combined input + inline buttons */}
-                    <div className={`flex items-center bg-white rounded-xl border shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-indigo-400 ${
-                        isListening ? 'border-red-300' : 'border-indigo-200'
-                    }`}>
+
+                    {/* Input row */}
+                    <div
+                        className="flex items-center rounded-xl transition-shadow"
+                        style={{
+                            backgroundColor: 'var(--bg-app)',
+                            border: isListening
+                                ? '1.5px solid var(--today)'
+                                : '1.5px solid var(--border-mid)',
+                            boxShadow: 'inset 0 1px 3px rgba(30,26,20,0.05)',
+                        }}
+                    >
                         <label htmlFor="nlp-event-input" className="sr-only">
                             Describe what you want to do
                         </label>
@@ -586,85 +605,65 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
                             value={inputText}
                             onChange={e => setInputText(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={
-                                interimText
-                                    ? interimText
-                                    : NLP_SUGGESTIONS[placeholderIdx]
-                            }
-                            className={`flex-1 min-w-0 px-4 py-3 bg-transparent border-none outline-none text-sm sm:text-base truncate ${
-                                interimText ? 'placeholder-gray-400 italic' : 'placeholder-gray-400'
-                            }`}
+                            placeholder={interimText || NLP_SUGGESTIONS[placeholderIdx]}
+                            className={`flex-1 min-w-0 px-4 py-3 bg-transparent border-none outline-none text-sm sm:text-base truncate ${interimText ? 'italic' : ''}`}
+                            style={{ color: 'var(--text-base)' }}
                             disabled={isLoading}
                         />
-                        {/* Inline action buttons */}
                         <div className="flex items-center gap-0.5 pr-2 shrink-0">
-                            {/* Attach — images, PDF, or Word doc */}
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isParsingImage || isLoading}
                                 aria-label="Attach a file to import events"
                                 title="Attach an image, PDF, or Word doc to import events"
-                                className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                    isParsingImage
-                                        ? 'text-indigo-500 animate-pulse'
-                                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                                }`}
+                                className="p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                style={{ color: isParsingImage ? 'var(--accent)' : 'var(--text-muted)' }}
                             >
-                                <Paperclip size={18} />
+                                <Paperclip size={17} />
                             </button>
-                            {/* Mic — voice input */}
                             <button
                                 onClick={() => void toggleListening()}
                                 disabled={isUploading}
                                 aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
                                 title={isListening ? 'Stop listening' : 'Start voice input (Alt+V)'}
-                                className={`p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                    isListening
-                                        ? 'text-red-500 animate-pulse'
-                                        : isUploading
-                                            ? 'text-amber-500'
-                                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                                }`}
+                                className="p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                style={{ color: isListening ? 'var(--today)' : 'var(--text-muted)' }}
                             >
-                                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                                {isListening ? <MicOff size={17} /> : <Mic size={17} />}
                             </button>
-                            {/* Send */}
                             <button
                                 onClick={() => handleSubmit()}
                                 disabled={isLoading || !inputText.trim()}
                                 aria-label="Send"
                                 title="Send"
-                                className="p-1.5 ml-0.5 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                className="p-1.5 ml-0.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                style={{ backgroundColor: 'var(--accent)', color: '#fefcf8' }}
                             >
                                 {isLoading
-                                    ? <span className="block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    : <ArrowUp size={18} />
+                                    ? <span className="block h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                                    : <ArrowUp size={17} />
                                 }
                             </button>
                         </div>
                     </div>
 
-                    {/* Status labels */}
+                    {/* Status + feedback */}
                     {isParsingImage && (
-                        <p className="mt-1.5 text-xs text-indigo-500 animate-pulse">Reading file…</p>
+                        <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--accent)' }}>Reading file…</p>
                     )}
                     {isListening && (
-                        <p className="mt-1.5 text-xs text-red-500 animate-pulse">Listening…</p>
+                        <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--today)' }}>Listening…</p>
                     )}
                     {isUploading && (
-                        <p className="mt-1.5 text-xs text-amber-600 animate-pulse">Transcribing…</p>
+                        <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--accent-mid)' }}>Transcribing…</p>
                     )}
-
-                    {/* Persistent assistant response */}
                     {persistentMsg && (
-                        <p className="mt-1.5 text-xs text-gray-700 leading-snug">
+                        <p className="mt-1.5 text-xs leading-snug" style={{ color: 'var(--text-muted)' }}>
                             ✓ {persistentMsg}
                         </p>
                     )}
-
-                    {/* Error message (auto-dismisses) */}
                     {errorMsg && (
-                        <p className="mt-1.5 text-xs text-red-600">{errorMsg}</p>
+                        <p className="mt-1.5 text-xs" style={{ color: 'var(--today)' }}>{errorMsg}</p>
                     )}
                 </div>
             </div>

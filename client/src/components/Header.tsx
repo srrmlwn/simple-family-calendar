@@ -17,14 +17,12 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
     const [showLogoutMenu, setShowLogoutMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setShowLogoutMenu(false);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -35,11 +33,6 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
         navigate('/login');
     };
 
-    const handleSettingsClick = () => {
-        navigate('/settings');
-    };
-
-    // Get user initials for the fallback avatar
     const getUserInitials = () => {
         if (!user) return '';
         const firstInitial = user.firstName?.[0]?.toUpperCase() || '';
@@ -47,105 +40,127 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
         return `${firstInitial}${lastInitial}`;
     };
 
-    const handleImageError = () => {
-        setProfileImageError(true);
-    };
-
-    const toggleLogoutMenu = () => {
-        setShowLogoutMenu(!showLogoutMenu);
-    };
-
     return (
-        <header className="bg-white border-b border-gray-200">
+        <header style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
             {user?.managingFamilyId && (
-                <div className="bg-indigo-600 text-white text-xs text-center py-1 px-4">
+                <div
+                    className="text-xs text-center py-1 px-4 font-medium"
+                    style={{ backgroundColor: 'var(--accent)', color: '#fef3e6' }}
+                >
                     Co-managing {user.managingFamilyName ? `${user.managingFamilyName}'s` : 'a'} family calendar
                 </div>
             )}
             <div className="px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    {/* Left side - Logo and Brand */}
-                    <div className="flex items-center space-x-3">
+                <div className="flex justify-between items-center h-14">
+                    {/* Brand */}
+                    <div className="flex items-center gap-3">
                         <img
-                            className="h-8 w-auto"
+                            className="h-7 w-auto"
                             src="/landing_page_logo_1024x1024.png"
                             alt="kinroo.ai Logo"
                         />
-                        <h1 
-                            className={`${isMobile ? 'text-lg' : 'text-xl'} font-extrabold text-gray-900`}
-                            style={{ 
-                                fontFamily: 'Nunito, sans-serif',
-                                letterSpacing: '-0.03em',
-                                fontWeight: 800
+                        <h1
+                            className={`font-display ${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}
+                            style={{
+                                letterSpacing: '-0.04em',
+                                color: 'var(--text-base)',
+                                fontVariantNumeric: 'normal',
                             }}
                         >
-                            kinroo.ai
+                            kinroo<span style={{ color: 'var(--accent-mid)' }}>.ai</span>
                         </h1>
                     </div>
 
-                    {/* Right side - Import, Settings and Profile */}
-                    <div className="flex items-center space-x-4">
+                    {/* Right side */}
+                    <div className="flex items-center gap-3">
                         {onImportComplete && (
                             <ImportButton onImportComplete={onImportComplete} compact />
                         )}
                         <button
-                            onClick={handleSettingsClick}
-                            className="p-2 text-gray-600 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors"
+                            onClick={() => navigate('/settings')}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{ color: 'var(--text-muted)' }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                             title="Settings"
                             aria-label="Settings"
                         >
-                            <Settings size={20} />
+                            <Settings size={18} />
                         </button>
 
-                        {/* Profile Menu */}
                         <div className="relative" ref={menuRef}>
                             <button
-                                onClick={toggleLogoutMenu}
+                                onClick={() => setShowLogoutMenu(!showLogoutMenu)}
                                 className="flex items-center focus:outline-none"
-                                title="Profile menu"
                                 aria-label="Profile menu"
                                 aria-expanded={showLogoutMenu}
                                 aria-haspopup="true"
                             >
                                 {user?.profileImage && !profileImageError ? (
-                                    <img 
-                                        src={user.profileImage} 
+                                    <img
+                                        src={user.profileImage}
                                         alt={`${user.firstName}'s profile`}
-                                        className="h-8 w-8 rounded-full object-cover border border-gray-200 hover:border-gray-300 transition-colors"
-                                        onError={handleImageError}
+                                        className="h-8 w-8 rounded-full object-cover"
+                                        style={{ border: '2px solid var(--border)' }}
+                                        onError={() => setProfileImageError(true)}
                                     />
                                 ) : (
-                                    <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 hover:border-gray-300 transition-colors">
-                                        <span className="text-sm font-medium text-gray-600">
+                                    <div
+                                        className="h-8 w-8 rounded-full flex items-center justify-center"
+                                        style={{
+                                            backgroundColor: 'var(--accent-bg)',
+                                            border: '2px solid var(--accent-border)',
+                                        }}
+                                    >
+                                        <span
+                                            className="text-xs font-bold"
+                                            style={{ color: 'var(--accent)' }}
+                                        >
                                             {getUserInitials()}
                                         </span>
                                     </div>
                                 )}
                             </button>
 
-                            {/* Profile Dropdown */}
                             {showLogoutMenu && (
-                                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                                    <div className="py-1">
-                                        <div className="px-4 py-2 border-b border-gray-100">
-                                            <p className="text-xs font-medium text-gray-600 truncate">{user?.firstName} {user?.lastName}</p>
-                                            <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => { setShowLogoutMenu(false); navigate('/settings'); }}
-                                            className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                        >
-                                            <Settings size={16} className="mr-2" />
-                                            Settings
-                                        </button>
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                        >
-                                            <LogOut size={16} className="mr-2" />
-                                            Sign out
-                                        </button>
+                                <div
+                                    className="absolute right-0 mt-2 w-52 rounded-xl shadow-lg z-50 overflow-hidden"
+                                    style={{
+                                        backgroundColor: 'var(--bg-surface)',
+                                        border: '1px solid var(--border)',
+                                    }}
+                                >
+                                    <div
+                                        className="px-4 py-3"
+                                        style={{ borderBottom: '1px solid var(--border)' }}
+                                    >
+                                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-base)' }}>
+                                            {user?.firstName} {user?.lastName}
+                                        </p>
+                                        <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                            {user?.email}
+                                        </p>
                                     </div>
+                                    <button
+                                        onClick={() => { setShowLogoutMenu(false); navigate('/settings'); }}
+                                        className="w-full flex items-center px-4 py-2.5 text-sm transition-colors"
+                                        style={{ color: 'var(--text-base)' }}
+                                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    >
+                                        <Settings size={14} className="mr-2.5" style={{ color: 'var(--text-muted)' }} />
+                                        Settings
+                                    </button>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center px-4 py-2.5 text-sm transition-colors"
+                                        style={{ color: 'var(--text-base)' }}
+                                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    >
+                                        <LogOut size={14} className="mr-2.5" style={{ color: 'var(--text-muted)' }} />
+                                        Sign out
+                                    </button>
                                 </div>
                             )}
                         </div>

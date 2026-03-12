@@ -73,28 +73,32 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                 <div
                     ref={contentRef}
                     className={`
-                        bg-white w-full max-w-2xl shadow-xl 
-                        transform transition-all duration-300 ease-in-out 
-                        flex flex-col translate-y-0 opacity-100 
+                        w-full max-w-2xl shadow-xl
+                        transform transition-all duration-300 ease-in-out
+                        flex flex-col translate-y-0 opacity-100
                         !rounded-t-2xl sm:!rounded-2xl sm:mx-4
                         overflow-hidden
                         ${className}
                     `}
                     style={{
-                        animation: 'slideUp 0.3s ease-out'
+                        animation: 'slideUp 0.3s ease-out',
+                        backgroundColor: 'var(--bg-surface)',
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
                     {showHeader && (
-                        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
-                            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                        <div className="flex-shrink-0 flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-base)' }}>{title}</h2>
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                className="p-2 rounded-full transition-colors"
+                                style={{ color: 'var(--text-muted)' }}
+                                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                             >
                                 <svg
-                                    className="w-6 h-6 text-gray-600"
+                                    className="w-6 h-6"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"

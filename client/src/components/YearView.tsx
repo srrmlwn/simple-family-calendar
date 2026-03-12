@@ -197,7 +197,7 @@ const YearView: React.FC<YearViewProps> = ({ events, date, onNavigate, onViewCha
                                                 className={`
                                                     relative flex-1 flex flex-col items-center justify-center
                                                     cursor-pointer group/day
-                                                    ${isFirst ? 'border-l-2 border-l-indigo-200' : ''}
+                                                    ${isFirst ? 'border-l-2 border-l-warm-200' : ''}
                                                 `}
                                                 onClick={() => handleDayClick(d)}
                                             >
@@ -214,7 +214,7 @@ const YearView: React.FC<YearViewProps> = ({ events, date, onNavigate, onViewCha
                                                     text-[10px] font-medium w-4 h-4 flex items-center justify-center
                                                     rounded-full leading-none select-none
                                                     ${isToday    ? 'bg-blue-500 text-white' : ''}
-                                                    ${isSelected && !isToday ? 'bg-indigo-100 text-indigo-700' : ''}
+                                                    ${isSelected && !isToday ? 'bg-warm-200' : ''}
                                                     ${!isToday && !isSelected
                                                         ? 'text-gray-400 group-hover/day:bg-gray-100 group-hover/day:text-gray-700'
                                                         : ''}
@@ -229,7 +229,7 @@ const YearView: React.FC<YearViewProps> = ({ events, date, onNavigate, onViewCha
 
                                 {/* Event bars */}
                                 {segs.map((seg, si) => {
-                                    const color = seg.event.familyMembers?.[0]?.color ?? '#6366f1';
+                                    const color = seg.event.familyMembers?.[0]?.color ?? 'var(--accent)';
                                     const br =
                                         seg.clippedAtStart && seg.clippedAtEnd ? 0
                                         : seg.clippedAtStart ? '0 3px 3px 0'

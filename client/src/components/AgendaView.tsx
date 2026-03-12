@@ -109,8 +109,11 @@ const AgendaView: React.FC<AgendaViewProps> = ({
             <>
                 <div className="flex flex-col pb-[120px]">
                     {/* Mobile header — month label + view switcher */}
-                    <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
-                        <span className="text-sm font-semibold text-gray-700">
+                    <div
+                        className="flex items-center justify-between px-4 py-2 flex-shrink-0"
+                        style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
+                    >
+                        <span className="text-sm font-semibold" style={{ color: 'var(--text-base)' }}>
                             {moment(date).format('MMMM YYYY')}
                         </span>
                         <ViewSwitcher view="week" onChange={onViewChange} />
@@ -133,24 +136,31 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                             return (
                                 <div key={dayKey}>
                                     {/* Sticky day header */}
-                                    <div className={`
-                                        sticky top-[57px] z-10 flex items-center justify-between px-4 py-2
-                                        border-b border-gray-100
-                                        ${isSelected
-                                            ? 'bg-indigo-50 border-l-2 border-l-indigo-400'
-                                            : 'bg-gray-50 border-l-2 border-l-transparent'}
-                                    `}>
+                                    <div
+                                        className="sticky top-[57px] z-10 flex items-center justify-between px-4 py-2"
+                                        style={{
+                                            backgroundColor: isSelected ? 'var(--accent-bg)' : 'var(--bg-app)',
+                                            borderBottom: '1px solid var(--border)',
+                                            borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
+                                        }}
+                                    >
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-xs font-bold tracking-wider ${isToday ? 'text-indigo-600' : 'text-gray-500'}`}>
+                                            <span
+                                                className="text-xs font-bold tracking-wider"
+                                                style={{ color: isToday ? 'var(--accent)' : 'var(--text-muted)' }}
+                                            >
                                                 {dayLabel(day)}
                                             </span>
                                             {!isToday && (
-                                                <span className="text-xs text-gray-400">{moment(day).format('MMM D')}</span>
+                                                <span className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+                                                    {moment(day).format('MMM D')}
+                                                </span>
                                             )}
                                         </div>
                                         <button
                                             onClick={() => onCreateEvent(day)}
-                                            className="p-1 rounded-md hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+                                            className="p-1 rounded-md transition-colors"
+                                            style={{ color: 'var(--text-muted)' }}
                                             aria-label={`Add event on ${moment(day).format('MMM D')}`}
                                         >
                                             <Plus className="w-3.5 h-3.5" />
@@ -203,17 +213,26 @@ const AgendaView: React.FC<AgendaViewProps> = ({
     // ─── Tablet / Desktop: 7-column week layout ──────────────────────────────
     return (
         <>
-            <div className="flex flex-col h-full bg-white rounded-lg overflow-hidden shadow">
+            <div
+                className="flex flex-col h-full rounded-xl overflow-hidden"
+                style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 1px 6px rgba(30,26,20,0.06)' }}
+            >
                 {/* Header bar */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+                <div
+                    className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                >
                     <div className="flex-1 flex items-center gap-2">
                     <div className="relative">
                         <button
                             ref={miniCalAnchorRef}
                             onClick={() => setShowMiniCal(v => !v)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                            style={{ color: 'var(--text-base)' }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
-                            <CalendarDays className="w-4 h-4 text-gray-400" />
+                            <CalendarDays className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                             <span>{moment(date).format('MMMM YYYY')}</span>
                         </button>
                         <MiniCalendarPopover
@@ -231,20 +250,27 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => onNavigate('TODAY')}
-                            className="px-3 py-1.5 text-sm font-medium text-blue-500 bg-blue-50/50 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                            style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}
                         >
                             Today
                         </button>
                         <button
                             onClick={() => handleNavWeek(-1)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                            className="p-1.5 rounded-lg transition-colors"
+                            style={{ color: 'var(--text-muted)' }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                             aria-label="Previous week"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => handleNavWeek(1)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                            className="p-1.5 rounded-lg transition-colors"
+                            style={{ color: 'var(--text-muted)' }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                             aria-label="Next week"
                         >
                             <ChevronRight className="w-4 h-4" />
@@ -265,39 +291,47 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                         return (
                             <div
                                 key={dayKey}
-                                className={`
-                                    flex-1 flex flex-col border-r border-gray-100 last:border-r-0
-                                    overflow-hidden min-w-0
-                                    ${isToday ? 'bg-blue-50/20' : 'bg-white'}
-                                `}
+                                className="flex-1 flex flex-col overflow-hidden min-w-0 last:border-r-0"
+                                style={{
+                                    backgroundColor: isToday ? '#fff9f0' : 'var(--bg-surface)',
+                                    borderRight: '1px solid var(--border)',
+                                }}
                             >
                                 {/* Column header */}
                                 <div
-                                    className={`
-                                        flex items-center justify-between px-2 py-2.5 cursor-pointer
-                                        border-b flex-shrink-0 group/col-header
-                                        ${isToday ? 'border-blue-100' : 'border-gray-100'}
-                                        ${isSelected ? 'border-b-2 border-b-indigo-200' : ''}
-                                    `}
+                                    className="flex items-center justify-between px-2 py-2.5 cursor-pointer flex-shrink-0 group/col-header"
+                                    style={{
+                                        borderBottom: isSelected
+                                            ? '2px solid var(--accent)'
+                                            : '1px solid var(--border)',
+                                    }}
                                     onClick={() => onNavigate(day)}
                                 >
                                     <div className="flex flex-col">
-                                        <span className={`text-xs font-bold tracking-widest uppercase ${isToday ? 'text-blue-500' : 'text-gray-400'}`}>
+                                        <span
+                                            className="text-[10px] font-bold tracking-widest uppercase"
+                                            style={{ color: isToday ? 'var(--accent)' : 'var(--text-muted)' }}
+                                        >
                                             {moment(day).format('ddd')}
                                         </span>
-                                        <span className={`text-xl font-bold leading-tight ${
-                                            isToday
-                                                ? 'text-blue-600'
-                                                : isSelected
-                                                    ? 'text-indigo-600'
-                                                    : 'text-gray-700'
-                                        }`}>
+                                        <span
+                                            className="font-mono text-xl font-bold leading-tight"
+                                            style={{
+                                                color: isToday
+                                                    ? 'var(--today)'
+                                                    : isSelected
+                                                        ? 'var(--accent)'
+                                                        : 'var(--text-base)',
+                                                fontVariantNumeric: 'tabular-nums',
+                                            }}
+                                        >
                                             {moment(day).date()}
                                         </span>
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onCreateEvent(day); }}
-                                        className="p-1 rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100 opacity-0 group-hover/col-header:opacity-100 transition-all"
+                                        className="p-1 rounded-md opacity-0 group-hover/col-header:opacity-100 transition-all"
+                                        style={{ color: 'var(--text-muted)' }}
                                         aria-label={`Add event on ${moment(day).format('MMM D')}`}
                                     >
                                         <Plus className="w-3.5 h-3.5" />
@@ -307,15 +341,15 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                                 {/* Event list */}
                                 <div className="flex-1 overflow-y-auto p-1.5 space-y-1.5">
                                     {past.map(evt => (
-                                        <div key={evt.id} className="opacity-40">
+                                        <div key={evt.id} className="opacity-35">
                                             <AgendaEventCard event={evt} onClick={handleEventClick} compact={isCompact} />
                                         </div>
                                     ))}
                                     {showNowMarker && (
                                         <div className="flex items-center gap-1.5 py-0.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                                            <div className="flex-1 border-t border-red-300" />
-                                            <span className="text-[10px] font-medium text-red-400 flex-shrink-0">
+                                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'var(--today)' }} />
+                                            <div className="flex-1 border-t" style={{ borderColor: 'var(--today)', opacity: 0.4 }} />
+                                            <span className="font-mono text-[10px] font-medium flex-shrink-0" style={{ color: 'var(--today)' }}>
                                                 {moment(nowTime).format('h:mm')}
                                             </span>
                                         </div>
@@ -329,7 +363,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                                         />
                                     ))}
                                     {dayEvts.length === 0 && (
-                                        <p className="text-xs text-gray-300 text-center py-4">—</p>
+                                        <p className="text-xs text-center py-4" style={{ color: 'var(--border-mid)' }}>—</p>
                                     )}
                                 </div>
                             </div>
@@ -337,7 +371,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                     })}
                     {events.length === 0 && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                                 Nothing on this week — type in the chat to add events →
                             </p>
                         </div>

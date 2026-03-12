@@ -28,16 +28,19 @@ const FamilyMemberFilter: React.FC<FamilyMemberFilterProps> = ({
         return (
             <button
                 onClick={onToggleExpand}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    activeCount > 0
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-300'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                style={activeCount > 0
+                    ? { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }
+                    : { backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                }
             >
                 <Users className="w-3 h-3" />
                 Filter members
                 {activeCount > 0 && (
-                    <span className="ml-0.5 inline-flex items-center justify-center w-4 h-4 bg-indigo-500 text-white rounded-full text-[10px] font-bold">
+                    <span
+                        className="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                        style={{ backgroundColor: 'var(--accent)', color: '#fefcf8' }}
+                    >
                         {activeCount}
                     </span>
                 )}
@@ -50,17 +53,18 @@ const FamilyMemberFilter: React.FC<FamilyMemberFilterProps> = ({
             <button
                 onClick={onToggleExpand}
                 aria-label="Collapse filter"
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-1 rounded transition-colors"
+                style={{ color: 'var(--text-muted)' }}
             >
                 <X className="w-3.5 h-3.5" />
             </button>
             <button
                 onClick={onSelectAll}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    allSelected
-                        ? 'bg-gray-800 text-white border-gray-800'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-                }`}
+                className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                style={allSelected
+                    ? { backgroundColor: 'var(--text-base)', color: 'var(--bg-surface)', border: '1px solid var(--text-base)' }
+                    : { backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                }
             >
                 All
             </button>
@@ -70,12 +74,11 @@ const FamilyMemberFilter: React.FC<FamilyMemberFilterProps> = ({
                     <button
                         key={member.id}
                         onClick={() => onToggle(member.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
-                            isSelected
-                                ? 'text-white border-transparent'
-                                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-                        }`}
-                        style={isSelected ? { backgroundColor: member.color, borderColor: member.color } : {}}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all"
+                        style={isSelected
+                            ? { backgroundColor: member.color, color: '#fff', border: `1px solid ${member.color}` }
+                            : { backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                        }
                     >
                         <span
                             className="w-2 h-2 rounded-full flex-shrink-0"

@@ -201,15 +201,13 @@ const EventForm: React.FC<EventFormProps> = ({
             <div className="inline-block relative group">
                 <div
                     onClick={() => setActiveField(field)}
-                    className={`
-                        inline-block px-2 py-1 rounded-md cursor-pointer
-                        transition-all duration-200
-                        ${isActive 
-                            ? 'bg-blue-50 border border-blue-200 ring-2 ring-blue-100' 
-                            : 'bg-gray-50/50 hover:bg-gray-100 border border-gray-100 group-hover:border-gray-200'
-                        }
-                        ${validationError ? 'border-red-200 bg-red-50' : ''}
-                    `}
+                    className="inline-block px-2 py-1 rounded-md cursor-pointer transition-all duration-200"
+                    style={validationError
+                        ? { border: '1px solid #fca5a5', backgroundColor: '#fef2f2' }
+                        : isActive
+                            ? { border: '1px solid var(--accent-border)', backgroundColor: 'var(--accent-bg)', boxShadow: '0 0 0 2px var(--accent-border)' }
+                            : { border: '1px solid var(--border)', backgroundColor: 'transparent' }
+                    }
                 >
                     {isActive ? (
                         <input
@@ -230,13 +228,14 @@ const EventForm: React.FC<EventFormProps> = ({
                         />
                     ) : (
                         <div className="flex items-center gap-1.5">
-                            <span className={`${validationError ? 'text-red-600' : 'text-gray-700'}`}>
+                            <span style={{ color: validationError ? '#dc2626' : 'var(--text-base)' }}>
                                 {value || 'Click to edit'}
                             </span>
-                            <svg 
-                                className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" 
-                                fill="none" 
-                                stroke="currentColor" 
+                            <svg
+                                className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ color: 'var(--text-muted)' }}
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
                                 <path 
@@ -267,15 +266,13 @@ const EventForm: React.FC<EventFormProps> = ({
             <div className="inline-block relative group">
                 <div
                     onClick={() => setActiveField(field)}
-                    className={`
-                        inline-block px-2 py-1 rounded-md cursor-pointer
-                        transition-all duration-200
-                        ${isActive 
-                            ? 'bg-blue-50 border border-blue-200 ring-2 ring-blue-100' 
-                            : 'bg-gray-50/50 hover:bg-gray-100 border border-gray-100 group-hover:border-gray-200'
-                        }
-                        ${validationError ? 'border-red-200 bg-red-50' : ''}
-                    `}
+                    className="inline-block px-2 py-1 rounded-md cursor-pointer transition-all duration-200"
+                    style={validationError
+                        ? { border: '1px solid #fca5a5', backgroundColor: '#fef2f2' }
+                        : isActive
+                            ? { border: '1px solid var(--accent-border)', backgroundColor: 'var(--accent-bg)', boxShadow: '0 0 0 2px var(--accent-border)' }
+                            : { border: '1px solid var(--border)', backgroundColor: 'transparent' }
+                    }
                 >
                     {isActive ? (
                         <div className="flex items-center gap-2">
@@ -300,7 +297,8 @@ const EventForm: React.FC<EventFormProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => (document.getElementById(`${field}-date`) as HTMLInputElement)?.showPicker()}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 cursor-pointer p-0 border-0 bg-transparent"
+                                    style={{ color: 'var(--text-muted)' }}
                                 >
                                     <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
                                 </button>
@@ -325,7 +323,8 @@ const EventForm: React.FC<EventFormProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => (document.getElementById(`${field}-time`) as HTMLInputElement)?.showPicker()}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 cursor-pointer p-0 border-0 bg-transparent"
+                                    style={{ color: 'var(--text-muted)' }}
                                 >
                                     <Clock className="w-full h-full opacity-50" strokeWidth={1.5} />
                                 </button>
@@ -333,13 +332,14 @@ const EventForm: React.FC<EventFormProps> = ({
                         </div>
                     ) : (
                         <div className="flex items-center gap-1.5">
-                            <span className={`${validationError ? 'text-red-600' : 'text-gray-700'} whitespace-nowrap`}>
+                            <span className="whitespace-nowrap" style={{ color: validationError ? '#dc2626' : 'var(--text-base)' }}>
                                 {moment(dateTime).format('MMM D, h:mm A')}
                             </span>
-                            <svg 
-                                className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" 
-                                fill="none" 
-                                stroke="currentColor" 
+                            <svg
+                                className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                style={{ color: 'var(--text-muted)' }}
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
                                 <path 
@@ -400,15 +400,15 @@ const EventForm: React.FC<EventFormProps> = ({
 
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-3">
-                    <CalendarPlus className="w-5 h-5 text-gray-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Event Details</h2>
+                    <CalendarPlus className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+                    <h2 className="text-lg font-semibold" style={{ color: 'var(--text-base)' }}>Event Details</h2>
                 </div>
 
                 {/* Event Card Layout */}
                 <div className="space-y-3">
                     {/* Title */}
                     <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 w-20">
+                        <label className="text-sm font-medium w-20" style={{ color: 'var(--text-muted)' }}>
                             Title:
                         </label>
                         <div className="flex-1">
@@ -418,7 +418,7 @@ const EventForm: React.FC<EventFormProps> = ({
 
                     {/* Location */}
                     <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 w-20">
+                        <label className="text-sm font-medium w-20" style={{ color: 'var(--text-muted)' }}>
                             Location:
                         </label>
                         <div className="flex-1">
@@ -430,7 +430,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     <div className="space-y-3">
                         {/* Start Date/Time */}
                         <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-gray-700 w-20">
+                            <label className="text-sm font-medium w-20" style={{ color: 'var(--text-muted)' }}>
                                 Start:
                             </label>
                             <div className="flex-1">
@@ -449,7 +449,7 @@ const EventForm: React.FC<EventFormProps> = ({
 
                         {/* End Date/Time */}
                         <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-gray-700 w-20">
+                            <label className="text-sm font-medium w-20" style={{ color: 'var(--text-muted)' }}>
                                 End:
                             </label>
                             <div className="flex-1">
@@ -470,7 +470,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     {/* Family Members */}
                     {familyMembers.length > 0 && (
                         <div className="flex items-start gap-2 pt-1">
-                            <label className="text-sm font-medium text-gray-700 w-20 pt-1">
+                            <label className="text-sm font-medium w-20 pt-1" style={{ color: 'var(--text-muted)' }}>
                                 Who:
                             </label>
                             <div className="flex flex-wrap gap-1.5 flex-1">
@@ -481,12 +481,11 @@ const EventForm: React.FC<EventFormProps> = ({
                                             key={m.id}
                                             type="button"
                                             onClick={() => toggleMember(m.id)}
-                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${
-                                                selected
-                                                    ? 'text-white border-transparent'
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                                            }`}
-                                            style={selected ? { backgroundColor: m.color, borderColor: m.color } : {}}
+                                            className="px-2.5 py-0.5 rounded-full text-xs font-medium transition-all"
+                                            style={selected
+                                                ? { backgroundColor: m.color, borderColor: m.color, border: '1px solid transparent', color: '#fff' }
+                                                : { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
+                                            }
                                         >
                                             {m.name}
                                         </button>
@@ -498,13 +497,14 @@ const EventForm: React.FC<EventFormProps> = ({
 
                     {/* ── Recurrence ─────────────────────────────────────────── */}
                     <div className="flex items-center gap-2 pt-1">
-                        <label className="text-sm font-medium text-gray-700 w-20">
+                        <label className="text-sm font-medium w-20" style={{ color: 'var(--text-muted)' }}>
                             Repeat:
                         </label>
                         <select
                             value={recurrencePattern}
                             onChange={e => setRecurrencePattern(e.target.value as RecurrencePattern)}
-                            className="flex-1 text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                            className="flex-1 text-sm rounded-md px-2 py-1 focus:outline-none"
+                            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
                         >
                             {(Object.entries(RECURRENCE_LABELS) as [RecurrencePattern, string][]).map(([value, label]) => (
                                 <option key={value} value={value}>{label}</option>
@@ -515,7 +515,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     {/* Ends On — only shown when a recurrence is selected */}
                     {recurrencePattern !== 'none' && (
                         <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-gray-700 w-20">
+                            <label className="text-sm font-medium w-20" style={{ color: 'var(--text-muted)' }}>
                                 Ends:
                             </label>
                             <div className="flex items-center gap-2 flex-1">
@@ -524,13 +524,15 @@ const EventForm: React.FC<EventFormProps> = ({
                                         type="date"
                                         value={recurrenceEndsOn}
                                         onChange={e => setRecurrenceEndsOn(e.target.value)}
-                                        className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 w-36 [&::-webkit-calendar-picker-indicator]:hidden"
+                                        className="text-sm rounded-md px-2 py-1 focus:outline-none w-36 [&::-webkit-calendar-picker-indicator]:hidden"
+                                        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
                                         id="recurrence-ends-date"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => (document.getElementById('recurrence-ends-date') as HTMLInputElement)?.showPicker()}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 cursor-pointer p-0 border-0 bg-transparent"
+                                        style={{ color: 'var(--text-muted)' }}
                                     >
                                         <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
                                     </button>
@@ -539,13 +541,14 @@ const EventForm: React.FC<EventFormProps> = ({
                                     <button
                                         type="button"
                                         onClick={() => setRecurrenceEndsOn('')}
-                                        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                        className="text-xs transition-colors"
+                                        style={{ color: 'var(--text-muted)' }}
                                     >
                                         Never
                                     </button>
                                 )}
                                 {!recurrenceEndsOn && (
-                                    <span className="text-xs text-gray-400">Never</span>
+                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Never</span>
                                 )}
                             </div>
                         </div>
@@ -554,19 +557,20 @@ const EventForm: React.FC<EventFormProps> = ({
                     {/* Exception dates — skip specific dates in the series */}
                     {recurrencePattern !== 'none' && (
                         <div className="flex items-start gap-2">
-                            <label className="text-sm font-medium text-gray-700 w-20 pt-1">
+                            <label className="text-sm font-medium w-20 pt-1" style={{ color: 'var(--text-muted)' }}>
                                 Skip:
                             </label>
                             <div className="flex-1 space-y-1.5">
                                 {exceptionDates.map(d => (
                                     <div key={d} className="flex items-center gap-1.5">
-                                        <span className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-0.5">
+                                        <span className="text-xs rounded px-2 py-0.5" style={{ color: 'var(--text-base)', backgroundColor: 'var(--bg-app)' }}>
                                             {moment(d).format('MMM D, YYYY')}
                                         </span>
                                         <button
                                             type="button"
                                             onClick={() => setExceptionDates(prev => prev.filter(x => x !== d))}
-                                            className="text-gray-400 hover:text-red-500 transition-colors text-xs"
+                                            className="hover:text-red-500 transition-colors text-xs"
+                                            style={{ color: 'var(--text-muted)' }}
                                             aria-label="Remove exception date"
                                         >
                                             ✕
@@ -579,13 +583,15 @@ const EventForm: React.FC<EventFormProps> = ({
                                             type="date"
                                             value={newExceptionDate}
                                             onChange={e => setNewExceptionDate(e.target.value)}
-                                            className="text-sm border border-dashed border-gray-300 rounded-md px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 w-36 [&::-webkit-calendar-picker-indicator]:hidden"
+                                            className="text-sm rounded-md px-2 py-1 border-dashed focus:outline-none w-36 [&::-webkit-calendar-picker-indicator]:hidden"
+                                            style={{ border: '1px dashed var(--border-mid)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
                                             id="exception-date-picker"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => (document.getElementById('exception-date-picker') as HTMLInputElement)?.showPicker()}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer p-0 border-0 bg-transparent"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 cursor-pointer p-0 border-0 bg-transparent"
+                                            style={{ color: 'var(--text-muted)' }}
                                         >
                                             <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
                                         </button>
@@ -599,7 +605,8 @@ const EventForm: React.FC<EventFormProps> = ({
                                             }
                                         }}
                                         disabled={!newExceptionDate}
-                                        className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+                                        className="text-xs disabled:cursor-not-allowed transition-colors font-medium"
+                                        style={{ color: 'var(--accent)' }}
                                     >
                                         + Add
                                     </button>
@@ -611,7 +618,7 @@ const EventForm: React.FC<EventFormProps> = ({
             </div>
 
             {/* Action buttons */}
-            <div className="flex justify-between items-center mt-6 p-3 border-t bg-white">
+            <div className="flex justify-between items-center mt-6 p-3" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)' }}>
                 {onDelete && (
                     <button
                         type="button"
@@ -631,7 +638,8 @@ const EventForm: React.FC<EventFormProps> = ({
                         type="button"
                         onClick={onCancel}
                         disabled={isSubmitting || isDeleting}
-                        className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md disabled:text-gray-400 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 rounded-md disabled:cursor-not-allowed transition-colors"
+                        style={{ color: 'var(--text-muted)' }}
                         title="Cancel"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -134,8 +134,12 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete, compact =
                     onClick={() => setOpen((v) => !v)}
                     disabled={isWorking}
                     className={compact
-                        ? "p-2 text-gray-600 hover:text-gray-700 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                        : "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        ? "p-2 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        : "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    }
+                    style={compact
+                        ? { color: 'var(--text-muted)' }
+                        : { color: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }
                     }
                     aria-label="Import events"
                     aria-haspopup="true"
@@ -143,7 +147,7 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete, compact =
                     title="Import events"
                 >
                     {isWorking ? (
-                        <span className="h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="h-4 w-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
                     ) : (
                         <CalendarPlus size={compact ? 20 : 14} />
                     )}
@@ -151,7 +155,7 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete, compact =
                     {!compact && <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />}
                 </button>
                 {!compact && lastSyncedAt && (
-                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                    <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                         Synced {formatLastSynced(lastSyncedAt)}
                     </span>
                 )}
@@ -171,17 +175,20 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImportComplete, compact =
             )}
 
             {isWorking && message && (
-                <span className="absolute right-0 top-9 z-10 whitespace-nowrap rounded-md px-3 py-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                <span className="absolute right-0 top-9 z-10 whitespace-nowrap rounded-md px-3 py-1.5 text-xs shadow-sm" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }}>
                     {message}
                 </span>
             )}
 
             {/* Dropdown */}
             {open && (
-                <div className="absolute right-0 top-full mt-1 z-20 min-w-[200px] bg-white rounded-md shadow-lg border border-gray-200 py-1">
+                <div className="absolute right-0 top-full mt-1 z-20 min-w-[200px] rounded-md shadow-lg py-1" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                     <button
                         onClick={handleGoogleCalendar}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors"
+                        style={{ color: 'var(--text-base)' }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                         {/* Google "G" icon */}
                         <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
