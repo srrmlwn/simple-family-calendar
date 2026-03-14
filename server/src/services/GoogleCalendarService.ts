@@ -4,7 +4,7 @@ import { AppDataSource } from '../data-source';
 import { UserSettings } from '../entities/UserSettings';
 import { Event } from '../entities/Event';
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/calendar.events.readonly'];
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const REDIRECT_URI = process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
     `${process.env.SERVER_URL || 'http://localhost:4000'}/api/google-calendar/callback`;

@@ -73,7 +73,7 @@ const Header: React.FC<HeaderProps> = ({ onImportComplete }) => {
                     {/* Right side */}
                     <div className="flex items-center gap-3">
                         {onImportComplete && (
-                            <ImportButton onImportComplete={onImportComplete} compact />
+                            <ImportButton onImportComplete={onImportComplete} compact={isMobile} />
                         )}
                         <button
                             onClick={() => navigate('/settings')}

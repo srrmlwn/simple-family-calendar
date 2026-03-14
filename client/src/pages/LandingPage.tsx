@@ -377,7 +377,7 @@ const TABS = [
   { key: 'web',      label: 'Web',      icon: '🖥️' },
   { key: 'voice',    label: 'Voice',    icon: '🎤' },
   { key: 'whatsapp', label: 'WhatsApp', icon: '💬' },
-  { key: 'forward',  label: 'Forward',  icon: '📎' },
+  { key: 'forward',  label: 'Email',    icon: '📧' },
 ] as const;
 
 const TAB_DURATIONS = [8500, 9500, 9000, 10500];
@@ -550,9 +550,6 @@ const LandingPage: React.FC = () => {
         position: 'relative', zIndex: 1,
       }}>
         <div style={{ flex: '1 1 360px' }}>
-          <div style={{ marginBottom: 20 }}>
-            <Logo size={56} />
-          </div>
           <h1 style={{ fontSize: 'clamp(36px, 5vw, 58px)', fontWeight: 800, lineHeight: 1.07, margin: '0 0 18px', letterSpacing: '-0.03em', color: TEXT_BASE }}>
             Family life,<br />
             <span style={{ color: ACCENT }}>finally organized.</span>
@@ -560,9 +557,18 @@ const LandingPage: React.FC = () => {
           <p style={{ fontSize: 17, fontWeight: 500, color: TEXT_MUTED, margin: '0 0 8px', maxWidth: 420, lineHeight: 1.6 }}>
             The family calendar that actually listens.
           </p>
-          <p style={{ fontSize: 15, color: TEXT_MUTED, margin: '0 0 32px', maxWidth: 420, lineHeight: 1.65 }}>
-            Type "Emma soccer Saturday 9am" and it's done. WhatsApp your kinroo.ai number from anywhere — no app needed. Forward a school email or schedule PDF to <span style={{ color: ACCENT, fontWeight: 600 }}>add@kinroo.ai</span> and events appear automatically.
-          </p>
+          <ul style={{ fontSize: 15, color: TEXT_MUTED, margin: '0 0 32px', maxWidth: 420, lineHeight: 1.75, paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              <>Type "Emma soccer Saturday 9am" and it's done</>,
+              <>WhatsApp your kinroo.ai number from anywhere — no app needed</>,
+              <>Forward a school email or schedule PDF to <span style={{ color: ACCENT, fontWeight: 600 }}>add@kinroo.ai</span> and events appear automatically</>,
+            ].map((text, i) => (
+              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ color: ACCENT, fontWeight: 700, fontSize: 15, lineHeight: 1.75, flexShrink: 0 }}>✓</span>
+                <span>{text}</span>
+              </li>
+            ))}
+          </ul>
           {authInfo && (
             <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: ACCENT_BG, border: `1px solid ${ACCENT_BOR}` }}>
               <p style={{ fontSize: 14, color: ACCENT, margin: 0 }}>{authInfo}</p>
@@ -575,9 +581,11 @@ const LandingPage: React.FC = () => {
             </div>
           )}
           {signInBtn(true)}
-          <p style={{ marginTop: 14, fontSize: 13, color: TEXT_MUTED }}>
-            Free · No credit card required · Works on every device
-          </p>
+          <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {['Free', 'No credit card', 'Works on every device'].map(label => (
+              <span key={label} style={{ fontSize: 12, fontWeight: 600, color: TEXT_MUTED, background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: 20, padding: '3px 10px' }}>{label}</span>
+            ))}
+          </div>
         </div>
 
         {/* Live demo */}
@@ -589,14 +597,20 @@ const LandingPage: React.FC = () => {
       {/* FEATURES */}
       <section style={{ borderTop: `1px solid ${BORDER}`, position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ padding: '48px 0 0', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: ACCENT, margin: '0 0 10px' }}>Everything a family needs</p>
+            <h2 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800, letterSpacing: '-0.03em', color: TEXT_BASE, margin: '0 0 40px' }}>
+              Add events the way you already communicate
+            </h2>
+          </div>
           <div className="landing-features" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
             {[
               { icon: '🗣️', title: 'Talk, don\'t tap',  desc: 'Just say what\'s happening. No date pickers, no dropdowns, no friction.' },
               { icon: '📧', title: 'Forward anything',   desc: 'Coach emails, school PDFs — forward to add@kinroo.ai and events appear.' },
               { icon: '👨‍👩‍👧', title: 'Everyone in sync', desc: 'Assign events to family members. iCal invites go out automatically.' },
-              { icon: '💬', title: 'WhatsApp it',         desc: 'Text or WhatsApp your kinroo.ai number from anywhere. No app to open, no login required.' },
-            ].map((f, i) => (
-              <div key={i} style={{ padding: '32px 24px', borderRight: `1px solid ${BORDER}` }}>
+              { icon: '💬', title: 'WhatsApp it',         desc: 'Text your kinroo.ai number from anywhere. No app to open, no login required.' },
+            ].map((f, i, arr) => (
+              <div key={i} style={{ padding: '32px 24px 40px', borderRight: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
                 <div style={{ fontSize: 26, marginBottom: 12 }}>{f.icon}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, letterSpacing: '-0.02em', color: TEXT_BASE }}>{f.title}</div>
                 <div style={{ fontSize: 13, lineHeight: 1.65, color: TEXT_MUTED }}>{f.desc}</div>
