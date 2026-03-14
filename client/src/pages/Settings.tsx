@@ -7,6 +7,7 @@ import { MessageSquare } from 'lucide-react';
 import api from '../services/api';
 import phoneService from '../services/phoneService';
 import { useAuth } from '../context/AuthContext';
+import { RefreshCw } from 'lucide-react';
 
 const Settings: React.FC = () => {
     const { logout } = useAuth();
@@ -55,6 +56,15 @@ const Settings: React.FC = () => {
             setPhoneJustLinked(false);
         } catch {
             setError('Could not remove phone number');
+        }
+    };
+
+    const handleRestartOnboarding = async () => {
+        try {
+            await api.post('/api/settings/reset-onboarding');
+            navigate('/calendar');
+        } catch {
+            setError('Could not reset setup. Please try again.');
         }
     };
 
@@ -176,6 +186,23 @@ const Settings: React.FC = () => {
                 {/* Account section */}
                 <div className="mb-2 mt-8">
                     <h2 className="text-xs font-semibold uppercase tracking-wider px-1 mb-3" style={{ color: 'var(--text-muted)' }}>Account</h2>
+
+                    <div className="shadow rounded-lg overflow-hidden mb-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                        <div className="px-6 py-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-base)' }}>Redo setup tour</p>
+                                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Walk through the getting-started flow again.</p>
+                            </div>
+                            <button
+                                onClick={handleRestartOnboarding}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors"
+                                style={{ borderColor: 'var(--border)', color: 'var(--text-base)' }}
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Restart
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="shadow rounded-lg overflow-hidden border border-red-100" style={{ backgroundColor: 'var(--bg-surface)' }}>
                         <div className="px-6 py-4 border-b border-red-100">

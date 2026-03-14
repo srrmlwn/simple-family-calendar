@@ -174,4 +174,20 @@ router.post('/complete-onboarding', asyncHandler(async (req: Request, res: Respo
     return res.json({ success: true });
 }));
 
+// Reset onboarding so the setup flow shows again on next calendar load
+router.post('/reset-onboarding', asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = effectiveUserId(req);
+
+    const settingsRepository = AppDataSource.getRepository(UserSettings);
+    const settings = await settingsRepository.findOne({ where: { userId } });
+
+    if (settings) {
+        settings.onboardingCompleted = false;
+        await settingsRepository.save(settings);
+    }
+
+    return res.json({ success: true });
+}));
+
 export default router;
