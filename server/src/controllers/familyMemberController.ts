@@ -26,7 +26,7 @@ export class FamilyMemberController {
         try {
             if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
             const userId = effectiveUserId(req);
-            const { name, color } = req.body;
+            const { name, color, email } = req.body;
 
             if (!name || !color) {
                 return res.status(400).json({ error: 'Name and color are required' });
@@ -40,6 +40,7 @@ export class FamilyMemberController {
             member.name = name;
             member.color = color;
             member.userId = userId;
+            if (email !== undefined) member.email = email || undefined;
 
             await validateOrReject(member);
 
@@ -59,7 +60,7 @@ export class FamilyMemberController {
         try {
             const { id } = req.params;
             const userId = effectiveUserId(req);
-            const { name, color } = req.body;
+            const { name, color, email } = req.body;
 
             const repo = AppDataSource.getRepository(FamilyMember);
             const member = await repo.findOne({ where: { id, userId } });
@@ -75,6 +76,7 @@ export class FamilyMemberController {
                 }
                 member.color = color;
             }
+            if (email !== undefined) member.email = email || undefined;
 
             await validateOrReject(member);
             const updated = await repo.save(member);

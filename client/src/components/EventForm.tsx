@@ -44,8 +44,6 @@ const EventForm: React.FC<EventFormProps> = ({
     // Recurrence state
     const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>('none');
     const [recurrenceEndsOn, setRecurrenceEndsOn] = useState(''); // YYYY-MM-DD or ''
-    const [exceptionDates, setExceptionDates] = useState<string[]>([]); // YYYY-MM-DD strings
-    const [newExceptionDate, setNewExceptionDate] = useState('');
 
     // Load family members
     useEffect(() => {
@@ -74,11 +72,6 @@ const EventForm: React.FC<EventFormProps> = ({
         } else {
             setRecurrencePattern('none');
             setRecurrenceEndsOn('');
-        }
-        if (event?.exceptionDates) {
-            setExceptionDates(event.exceptionDates);
-        } else {
-            setExceptionDates([]);
         }
     }, [event]);
 
@@ -152,7 +145,6 @@ const EventForm: React.FC<EventFormProps> = ({
                 location: location || undefined,
                 familyMemberIds: selectedMemberIds,
                 rrule: builtRRule,
-                exceptionDates: builtRRule ? exceptionDates : undefined,
             };
 
             // If this is an existing event, check if anything has changed
@@ -554,66 +546,6 @@ const EventForm: React.FC<EventFormProps> = ({
                         </div>
                     )}
 
-                    {/* Exception dates — skip specific dates in the series */}
-                    {recurrencePattern !== 'none' && (
-                        <div className="flex items-start gap-2">
-                            <label className="text-sm font-medium w-20 pt-1" style={{ color: 'var(--text-muted)' }}>
-                                Skip:
-                            </label>
-                            <div className="flex-1 space-y-1.5">
-                                {exceptionDates.map(d => (
-                                    <div key={d} className="flex items-center gap-1.5">
-                                        <span className="text-xs rounded px-2 py-0.5" style={{ color: 'var(--text-base)', backgroundColor: 'var(--bg-app)' }}>
-                                            {moment(d).format('MMM D, YYYY')}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setExceptionDates(prev => prev.filter(x => x !== d))}
-                                            className="hover:text-red-500 transition-colors text-xs"
-                                            style={{ color: 'var(--text-muted)' }}
-                                            aria-label="Remove exception date"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
-                                <div className="flex items-center gap-2">
-                                    <div className="relative">
-                                        <input
-                                            type="date"
-                                            value={newExceptionDate}
-                                            onChange={e => setNewExceptionDate(e.target.value)}
-                                            className="text-sm rounded-md px-2 py-1 border-dashed focus:outline-none w-36 [&::-webkit-calendar-picker-indicator]:hidden"
-                                            style={{ border: '1px dashed var(--border-mid)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
-                                            id="exception-date-picker"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => (document.getElementById('exception-date-picker') as HTMLInputElement)?.showPicker()}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 cursor-pointer p-0 border-0 bg-transparent"
-                                            style={{ color: 'var(--text-muted)' }}
-                                        >
-                                            <CalendarPlus className="w-full h-full opacity-50" strokeWidth={1.5} />
-                                        </button>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (newExceptionDate && !exceptionDates.includes(newExceptionDate)) {
-                                                setExceptionDates(prev => [...prev, newExceptionDate].sort());
-                                                setNewExceptionDate('');
-                                            }
-                                        }}
-                                        disabled={!newExceptionDate}
-                                        className="text-xs disabled:cursor-not-allowed transition-colors font-medium"
-                                        style={{ color: 'var(--accent)' }}
-                                    >
-                                        + Add
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 

@@ -8,7 +8,7 @@ import {
     OneToMany,
     JoinColumn
 } from 'typeorm';
-import { IsNotEmpty, Matches } from 'class-validator';
+import { IsNotEmpty, IsEmail, IsOptional, Matches } from 'class-validator';
 import { User } from './User';
 import { EventFamilyMember } from './EventFamilyMember';
 
@@ -31,6 +31,11 @@ export class FamilyMember {
     @Column({ length: 7 })
     @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'Color must be a valid hex color (e.g. #3B82F6)' })
     color!: string;
+
+    @Column({ nullable: true, type: 'varchar' })
+    @IsOptional()
+    @IsEmail({}, { message: 'Invalid email address' })
+    email?: string;
 
     @OneToMany(() => EventFamilyMember, efm => efm.familyMember)
     eventFamilyMembers?: EventFamilyMember[];

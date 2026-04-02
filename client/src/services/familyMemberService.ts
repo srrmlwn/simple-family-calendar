@@ -4,6 +4,7 @@ export interface FamilyMember {
     id: string;
     name: string;
     color: string;
+    email?: string;
     userId: string;
     createdAt: string;
     updatedAt: string;
@@ -12,6 +13,7 @@ export interface FamilyMember {
 export interface FamilyMemberInput {
     name: string;
     color: string;
+    email?: string;
 }
 
 export const FAMILY_MEMBER_COLORS = [

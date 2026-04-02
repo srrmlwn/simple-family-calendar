@@ -8,9 +8,11 @@ const FamilyMemberManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [newName, setNewName] = useState('');
     const [newColor, setNewColor] = useState<string>(FAMILY_MEMBER_COLORS[0]);
+    const [newEmail, setNewEmail] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [editColor, setEditColor] = useState('');
+    const [editEmail, setEditEmail] = useState('');
 
     useEffect(() => {
         fetchMembers();
@@ -33,10 +35,11 @@ const FamilyMemberManager: React.FC = () => {
         if (!newName.trim()) return;
         try {
             setError(null);
-            const created = await familyMemberService.create({ name: newName.trim(), color: newColor });
+            const created = await familyMemberService.create({ name: newName.trim(), color: newColor, email: newEmail.trim() || undefined });
             setMembers(prev => [...prev, created]);
             setNewName('');
             setNewColor(FAMILY_MEMBER_COLORS[0]);
+            setNewEmail('');
         } catch {
             setError('Failed to add family member');
         }
@@ -46,13 +49,14 @@ const FamilyMemberManager: React.FC = () => {
         setEditingId(member.id);
         setEditName(member.name);
         setEditColor(member.color);
+        setEditEmail(member.email ?? '');
     };
 
     const handleEditSave = async () => {
         if (!editingId || !editName.trim()) return;
         try {
             setError(null);
-            const updated = await familyMemberService.update(editingId, { name: editName.trim(), color: editColor });
+            const updated = await familyMemberService.update(editingId, { name: editName.trim(), color: editColor, email: editEmail.trim() || undefined });
             setMembers(prev => prev.map(m => m.id === editingId ? updated : m));
             setEditingId(null);
         } catch {
@@ -76,7 +80,7 @@ const FamilyMemberManager: React.FC = () => {
             <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
                 <h2 className="text-lg font-medium" style={{ color: 'var(--text-base)' }}>Family Members</h2>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Tag events to family members to filter the calendar by person.
+                    Tag events by person and optionally add an email to send invites.
                 </p>
             </div>
 
@@ -88,7 +92,7 @@ const FamilyMemberManager: React.FC = () => {
 
             {/* Add new member */}
             <div className="px-6 py-4" style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border)' }}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-2">
                     <input
                         type="text"
                         value={newName}
@@ -111,6 +115,14 @@ const FamilyMemberManager: React.FC = () => {
                         Add
                     </button>
                 </div>
+                <input
+                    type="email"
+                    value={newEmail}
+                    onChange={e => setNewEmail(e.target.value)}
+                    placeholder="Email (optional — for event invites)"
+                    className="w-full px-3 py-2 rounded text-sm focus:outline-none"
+                    style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
+                />
             </div>
 
             {/* Member list */}
@@ -123,33 +135,48 @@ const FamilyMemberManager: React.FC = () => {
                     </div>
                 ) : (
                     members.map(member => (
-                        <div key={member.id} className="px-6 py-3 flex items-center gap-3">
+                        <div key={member.id} className="px-6 py-3">
                             {editingId === member.id ? (
-                                <>
-                                    <ColorPicker value={editColor} onChange={setEditColor} />
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3">
+                                        <ColorPicker value={editColor} onChange={setEditColor} />
+                                        <input
+                                            type="text"
+                                            value={editName}
+                                            onChange={e => setEditName(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && handleEditSave()}
+                                            className="flex-1 px-2 py-1 rounded text-sm focus:outline-none"
+                                            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
+                                            autoFocus
+                                        />
+                                        <button onClick={handleEditSave} className="text-green-600 hover:text-green-800" aria-label="Save">
+                                            <Check size={18} />
+                                        </button>
+                                        <button onClick={() => setEditingId(null)} className="text-red-500 hover:text-red-700" aria-label="Cancel">
+                                            <X size={18} />
+                                        </button>
+                                    </div>
                                     <input
-                                        type="text"
-                                        value={editName}
-                                        onChange={e => setEditName(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleEditSave()}
-                                        className="flex-1 px-2 py-1 rounded text-sm focus:outline-none"
+                                        type="email"
+                                        value={editEmail}
+                                        onChange={e => setEditEmail(e.target.value)}
+                                        placeholder="Email (optional)"
+                                        className="w-full px-2 py-1 rounded text-sm focus:outline-none"
                                         style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)', color: 'var(--text-base)' }}
-                                        autoFocus
                                     />
-                                    <button onClick={handleEditSave} className="text-green-600 hover:text-green-800" aria-label="Save">
-                                        <Check size={18} />
-                                    </button>
-                                    <button onClick={() => setEditingId(null)} className="text-red-500 hover:text-red-700" aria-label="Cancel">
-                                        <X size={18} />
-                                    </button>
-                                </>
+                                </div>
                             ) : (
-                                <>
+                                <div className="flex items-center gap-3">
                                     <span
                                         className="w-4 h-4 rounded-full flex-shrink-0"
                                         style={{ backgroundColor: member.color }}
                                     />
-                                    <span className="flex-1 text-sm font-medium" style={{ color: 'var(--text-base)' }}>{member.name}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="text-sm font-medium" style={{ color: 'var(--text-base)' }}>{member.name}</span>
+                                        {member.email && (
+                                            <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{member.email}</p>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => handleEditStart(member)}
                                         className="transition-colors"
@@ -166,7 +193,7 @@ const FamilyMemberManager: React.FC = () => {
                                     >
                                         <Trash2 size={15} />
                                     </button>
-                                </>
+                                </div>
                             )}
                         </div>
                     ))
