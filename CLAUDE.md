@@ -81,6 +81,7 @@ Schema file: `schema.sql` (run with `heroku pg:psql --app simple-family-calendar
 - **Single developer** — push directly to `main`, no PRs or feature branches needed
 - Commit after any meaningful session (new features, fixes, doc updates)
 - Commit message format: `type: short description` (e.g. `feat:`, `fix:`, `docs:`, `refactor:`)
+- **Worktrees** — when working with git worktrees, always confirm which worktree/branch is active and that it has the latest code from `main` before claiming a feature exists or doesn't exist.
 
 ---
 
@@ -215,6 +216,8 @@ If no new migration files exist, skip this step.
 ---
 
 ### Step 3 — Outer loop: start servers + health check
+
+Before starting servers, kill any stale processes on ports 3000 and 4000 — old processes or wrong worktrees serving outdated code are a common source of confusing test failures.
 
 ```bash
 # Terminal 1 — backend (port 4000)
@@ -353,6 +356,33 @@ tests/
 | `npm run verify` | Full pipeline: type-check → lint → unit → E2E → security scan |
 
 _Note: Some of these scripts need to be wired up in `package.json`._
+
+---
+
+## Build & Deploy
+
+- **TypeScript monorepo** (client + server) — always run `npm run build` or type-check after making changes to catch TS errors before committing.
+- **Build-time env vars** — `REACT_APP_*` variables are baked in at build time. Changing them requires a full rebuild to take effect; they are not read at runtime.
+- **Deploy target: Heroku** — app name `simple-family-calendar`. DB migrations run via the release phase in `Procfile` (runs automatically on every deploy).
+- **devDependencies not installed in production** — ensure any package needed at build time (e.g. TypeScript, type definitions) is in `dependencies`, not `devDependencies`.
+
+---
+
+## AI Features
+
+When implementing AI-powered features (NLP parsing, vision/OCR, flyer extraction):
+- **Always handle null/missing fields** — AI outputs are unpredictable. Never assume required fields are present.
+- **Validate before DB insertion** — explicitly check `startTime`, `endTime`, `duration`, and other NOT NULL columns before calling `.save()` or `.update()`.
+- **Show a confirmation step** — NLP accuracy is trust-critical. Never create or modify events from AI output without user confirmation.
+
+---
+
+## UI/UX Guidelines
+
+- **Prefer minimal, targeted changes** over sweeping redesigns. If you didn't touch a component, don't restyle it.
+- **Match the existing aesthetic** — warm color scheme, Nunito font, consistent Tailwind classes. Avoid generic "AI slop" styling.
+- **Landing page consistency** — if a change touches the landing page, verify it looks consistent with the authenticated app pages.
+- **Mobile-first** — the Capacitor wrapper means UI must work on small screens. Test bottom sheet behavior on mobile viewport.
 
 ---
 
