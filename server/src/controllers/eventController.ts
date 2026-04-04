@@ -302,8 +302,8 @@ export class EventController {
 
                 // Send calendar invites
                 await this.emailService.sendCalendarInvites(savedEvent, defaultRecipients, {
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`
+                    email: process.env.SMTP_FROM_EMAIL || 'hello@kinroo.ai',
+                    name: `${user.firstName} ${user.lastName} via kinroo.ai`
                 });
             }
 
@@ -336,8 +336,8 @@ export class EventController {
 
                     // Send calendar invites to additional recipients
                     await this.emailService.sendCalendarInvites(savedEvent, specificRecipients, {
-                        email: user.email,
-                        name: `${user.firstName} ${user.lastName}`
+                        email: process.env.SMTP_FROM_EMAIL || 'hello@kinroo.ai',
+                        name: `${user.firstName} ${user.lastName} via kinroo.ai`
                     });
                 }
             }
@@ -436,8 +436,8 @@ export class EventController {
                     const userRepository = AppDataSource.getRepository(User);
                     const user = await userRepository.findOneOrFail({ where: { id: userId } });
                     await this.emailService.sendCalendarUpdates(updatedEvent, eventRecipients, {
-                        email: user.email,
-                        name: `${user.firstName} ${user.lastName}`
+                        email: process.env.SMTP_FROM_EMAIL || 'hello@kinroo.ai',
+                        name: `${user.firstName} ${user.lastName} via kinroo.ai`
                     });
                 }
             }
@@ -625,8 +625,8 @@ export class EventController {
                 const userRepository = AppDataSource.getRepository(User);
                 const user = await userRepository.findOneOrFail({ where: { id: userId } });
                 await this.emailService.sendCalendarCancellations(existingEvent, eventRecipients, {
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`
+                    email: process.env.SMTP_FROM_EMAIL || 'hello@kinroo.ai',
+                    name: `${user.firstName} ${user.lastName} via kinroo.ai`
                 });
             }
 
