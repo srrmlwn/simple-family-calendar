@@ -25,6 +25,9 @@ import passport from './config/passport';
 const app = express();
 const PORT = config.server.port;
 
+// Trust Heroku's proxy so express-rate-limit can read the real client IP
+app.set('trust proxy', 1);
+
 // Middleware
 const allowedOrigins = [
     'https://kinroo.ai',
