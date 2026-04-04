@@ -15,14 +15,13 @@ export class EmailService {
     private transporter: nodemailer.Transporter;
 
     constructor() {
-        // Create reusable transporter object using Gmail SMTP
         this.transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
+            host: process.env.SMTP_HOST || 'smtp.sendgrid.net',
             port: 587,
-            secure: false, // true for 465, false for other ports
+            secure: false,
             auth: {
-                user: process.env.EMAIL_USER || '',
-                pass: process.env.EMAIL_PASSWORD || '',
+                user: process.env.SMTP_USER || 'apikey',
+                pass: process.env.SMTP_PASS || '',
             },
             connectionTimeout: 10000,
             greetingTimeout: 10000,
@@ -281,7 +280,7 @@ export class EmailService {
         await this.transporter.sendMail({
             from: {
                 name: 'kinroo.ai',
-                address: process.env.EMAIL_USER || ''
+                address: process.env.SMTP_FROM_EMAIL || 'hello@kinroo.ai'
             },
             ...options
         });
