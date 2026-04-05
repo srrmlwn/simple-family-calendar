@@ -276,6 +276,7 @@ export class EmailService {
         subject: string;
         html: string;
         text: string;
+        replyTo?: string;
     }): Promise<void> {
         await this.transporter.sendMail({
             from: {

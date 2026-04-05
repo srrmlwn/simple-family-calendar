@@ -4,7 +4,9 @@ import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
 import { UserSettings } from '../entities/UserSettings';
 import { FamilyMember } from '../entities/FamilyMember';
+import { Event } from '../entities/Event';
 import { AgentService } from '../services/agentService';
+import { EventService } from '../services/eventService';
 import emailService from '../services/emailService';
 import moment from 'moment-timezone';
 import {
@@ -17,13 +19,38 @@ import {
     CandidateEvent,
 } from '../services/emailIngestService';
 
-const agentSvc = new AgentService(process.env.ANTHROPIC_API_KEY || '');
+const agentSvc  = new AgentService(process.env.ANTHROPIC_API_KEY || '');
+const eventSvc  = new EventService();
+
+const REPLY_TO  = 'add@kinroo.ai';
 
 // ── Webhook secret check ───────────────────────────────────────────────────────
 function validateWebhookSecret(req: Request): boolean {
     const secret = process.env.SENDGRID_INBOUND_WEBHOOK_SECRET;
-    if (!secret) return true; // Dev mode — no secret configured, allow all
+    if (!secret) return true;
     return req.query['secret'] === secret;
+}
+
+// ── Reply detection ───────────────────────────────────────────────────────────
+// SendGrid provides raw headers as a newline-delimited string in req.body.headers
+function isReplyEmail(headers: string, subject: string): boolean {
+    if (/^in-reply-to:/im.test(headers)) return true;
+    if (/^references:/im.test(headers)) return true;
+    if (/^re:/i.test(subject.trim())) return true;
+    return false;
+}
+
+// Strip quoted content — everything from "On ... wrote:" or lines starting with ">"
+function stripQuotedContent(text: string): string {
+    const lines = text.split('\n');
+    const result: string[] = [];
+    for (const line of lines) {
+        if (/^>/.test(line.trim())) break;                          // quoted line
+        if (/^on .+ wrote:$/i.test(line.trim())) break;            // Gmail/Outlook quote header
+        if (/^-{3,}\s*original message\s*-{3,}/i.test(line)) break; // Outlook divider
+        result.push(line);
+    }
+    return result.join('\n').trim();
 }
 
 // ── Confirmation email HTML ────────────────────────────────────────────────────
@@ -32,7 +59,9 @@ function buildConfirmationHtml(events: CandidateEvent[], timezone: string): stri
         const start = e.isAllDay
             ? moment(e.startTime).tz(timezone).format('ddd, MMM D')
             : moment(e.startTime).tz(timezone).format('ddd, MMM D [at] h:mm A z');
-        const loc = e.location ? `<br><span style="color:#6b7280;font-size:13px;">📍 ${e.location}</span>` : '';
+        const loc = e.location
+            ? `<br><span style="color:#6b7280;font-size:13px;">📍 ${e.location}</span>`
+            : '';
         const members = e.familyMemberNames?.length
             ? `<br><span style="color:#6b7280;font-size:13px;">👤 ${e.familyMemberNames.join(', ')}</span>`
             : '';
@@ -64,7 +93,7 @@ function buildConfirmationHtml(events: CandidateEvent[], timezone: string): stri
           </a>
         </div>
         <p style="font-size:12px;color:#9ca3af;margin-top:24px;text-align:center;">
-          Forwarded to add@kinroo.ai · <a href="https://kinroo.ai" style="color:#6366f1;">kinroo.ai</a>
+          Reply to this email to make changes · <a href="https://kinroo.ai" style="color:#6366f1;">kinroo.ai</a>
         </p>
       </div>
     </div>`;
@@ -79,12 +108,11 @@ function buildConfirmationText(events: CandidateEvent[], timezone: string): stri
         return `• ${e.title} — ${start}${loc}`;
     });
     const heading = events.length === 1 ? '1 event added:' : `${events.length} events added:`;
-    return `${heading}\n\n${lines.join('\n')}\n\nView your calendar at https://kinroo.ai`;
+    return `${heading}\n\n${lines.join('\n')}\n\nReply to this email to make changes, or view at https://kinroo.ai`;
 }
 
 // ── Main handler ───────────────────────────────────────────────────────────────
 export async function handleEmailIngest(req: Request, res: Response): Promise<void> {
-    // Always respond 200 quickly to the webhook provider
     res.status(200).send('OK');
 
     if (!validateWebhookSecret(req)) {
@@ -93,11 +121,12 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
     }
 
     // ── 1. Parse inbound email fields ────────────────────────────────────────
-    const body = req.body as Record<string, string>;
+    const body     = req.body as Record<string, string>;
     const rawFrom  = body['from']    ?? '';
     const subject  = body['subject'] ?? '(no subject)';
     const textBody = body['text']    ?? '';
     const htmlBody = body['html']    ?? '';
+    const headers  = body['headers'] ?? '';
 
     const senderEmail = extractEmailAddress(rawFrom);
     if (!senderEmail) return;
@@ -119,8 +148,53 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
     const settingsRepo = AppDataSource.getRepository(UserSettings);
     const settings     = await settingsRepo.findOne({ where: { userId: user.id } });
     const timezone     = settings?.timezone ?? 'America/New_York';
+    const fmRepo       = AppDataSource.getRepository(FamilyMember);
+    const familyMembers = await fmRepo.find({ where: { userId: user.id } });
 
-    // ── 3. Extract content from email body + attachments ─────────────────────
+    // ── 3. Reply path — route through agent for edits ────────────────────────
+    if (isReplyEmail(headers, subject)) {
+        const instruction = stripQuotedContent(extractBodyText(textBody, htmlBody));
+        if (!instruction) return;
+
+        // Load upcoming events so the agent can find and edit them
+        const contextStart = moment().subtract(7, 'days').toDate();
+        const contextEnd   = moment().add(90, 'days').toDate();
+        const upcomingEvents = await eventSvc.findByUserIdAndDateRange(
+            user.id, contextStart, contextEnd, timezone
+        ) as Event[];
+
+        let agentReply: string;
+        try {
+            const result = await agentSvc.run({
+                message: instruction,
+                userId: user.id,
+                timezone,
+                channel: 'email',
+                history: [],
+                preloadedEvents: upcomingEvents,
+                familyMembers,
+            });
+            agentReply = result.reply;
+        } catch {
+            agentReply = 'Something went wrong processing your request. Please try again or edit the event at kinroo.ai.';
+        }
+
+        await emailService.sendEmail({
+            to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
+            subject: `Re: ${subject}`,
+            text: agentReply,
+            html: `<div style="font-family:'Nunito',Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <p style="color:#111827;">${agentReply.replace(/\n/g, '<br>')}</p>
+              <p style="font-size:12px;color:#9ca3af;margin-top:24px;">
+                <a href="https://kinroo.ai" style="color:#6366f1;">View calendar at kinroo.ai</a>
+              </p>
+            </div>`,
+            replyTo: REPLY_TO,
+        }).catch(err => console.error('emailIngest: reply response failed', err));
+        return;
+    }
+
+    // ── 4. Forward path — extract content from body + attachments ────────────
     const bodyText = extractBodyText(textBody, htmlBody);
     const contentParts: string[] = [];
     if (bodyText) contentParts.push(bodyText);
@@ -148,15 +222,13 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
             subject: `Re: ${subject}`,
             text: "Got your email, but it appears to be empty. Forward an email with event details (dates, times, descriptions) and I'll add them to your calendar.",
             html: "<p>Got your email, but it appears to be empty. Forward an email with event details (dates, times, descriptions) and I'll add them to your calendar.</p>",
+            replyTo: REPLY_TO,
         }).catch(err => void err);
         return;
     }
 
-    // ── 4. Parse events ───────────────────────────────────────────────────────
-    const fmRepo = AppDataSource.getRepository(FamilyMember);
-    const familyMembers = await fmRepo.find({ where: { userId: user.id } });
+    // ── 5. Parse events ───────────────────────────────────────────────────────
     const familyMemberNames = familyMembers.map(m => m.name);
-
     let candidates: CandidateEvent[];
     try {
         candidates = await parseEventsFromContent(fullContent, subject, timezone, familyMemberNames, user.id);
@@ -170,18 +242,19 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
             subject: `Re: ${subject}`,
             text: "Got your email but couldn't find any calendar events in it. Try forwarding emails with dates and times, or attach a schedule PDF.",
             html: "<p>Got your email but couldn't find any calendar events in it. Try forwarding emails with dates and times, or attach a schedule PDF.</p>",
+            replyTo: REPLY_TO,
         }).catch(err => void err);
         return;
     }
 
-    // ── 5. Create events directly ─────────────────────────────────────────────
+    // ── 6. Create events ──────────────────────────────────────────────────────
     const batchOps = candidates.map(e => ({
         toolName: 'create_event',
         toolInput: {
-            title:       e.title,
-            start_time:  e.startTime,
-            end_time:    e.endTime,
-            is_all_day:  e.isAllDay,
+            title:      e.title,
+            start_time: e.startTime,
+            end_time:   e.endTime,
+            is_all_day: e.isAllDay,
             ...(e.location ? { location: e.location } : {}),
             ...(e.familyMemberNames?.length ? { family_member_names: e.familyMemberNames } : {}),
         },
@@ -201,15 +274,17 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
             subject: `Re: ${subject}`,
             text: 'Something went wrong adding your events. Please try again or add them manually at kinroo.ai.',
             html: '<p>Something went wrong adding your events. Please try again or add them manually at <a href="https://kinroo.ai">kinroo.ai</a>.</p>',
+            replyTo: REPLY_TO,
         }).catch(err2 => void err2);
         return;
     }
 
-    // ── 6. Send confirmation ──────────────────────────────────────────────────
+    // ── 7. Send confirmation ──────────────────────────────────────────────────
     await emailService.sendEmail({
         to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
         subject: `Added to your calendar: ${candidates.length === 1 ? candidates[0].title : `${candidates.length} events`}`,
         text: buildConfirmationText(candidates, timezone),
         html: buildConfirmationHtml(candidates, timezone),
+        replyTo: REPLY_TO,
     }).catch(err => console.error('emailIngest: confirmation email failed', err));
 }
