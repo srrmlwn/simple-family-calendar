@@ -38,3 +38,12 @@ _All features here are live in production. Moved from `feature-roadmap.md` to ke
 ## Tier 2 — Growth & Delight
 
 - ✅ **Photo / Flyer → Events (Bulk Import)** — snap a photo of a soccer schedule or school flyer → AI extracts all dates → confirmation screen → bulk event creation. OpenAI vision API. Mobile share sheet entrypoint.
+
+---
+
+## Email Channel (shipped 2026-04-04)
+
+- ✅ **SendGrid Outbound** — all calendar invites, updates, cancellations sent from `hello@kinroo.ai` via SendGrid SMTP. Domain authenticated (SPF/DKIM via Namecheap CNAME records). Sender shown as "Name via kinroo.ai".
+- ✅ **Email Ingest (add@kinroo.ai)** — forward any email to `add@kinroo.ai`; Claude parses events from body, PDF attachments, images, and .ics files; events created immediately (fire-and-forget, no YES/NO step); branded HTML confirmation email lists all events added.
+- ✅ **Reply-to-Edit** — confirmation emails have `Reply-To: add@kinroo.ai`; replying with an edit instruction (e.g. "change the soccer game to 4pm") routes through the agent and updates the event; response email confirms the change.
+- ✅ **Unknown sender handling** — unregistered senders get a helpful reply; rate limited to 20/hr per IP; SendGrid spam filter enabled.

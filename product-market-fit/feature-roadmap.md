@@ -1,8 +1,8 @@
 # Feature Roadmap
 
-_Last updated: 2026-04-01_
+_Last updated: 2026-04-04_
 
-> **Current focus:** Production launch. Core agent + channels are built. Remaining work is infra config, one UI cleanup, and manual channel setup.
+> **Current focus:** Production launch. Email ingest is live. WhatsApp bot is being wired up by a separate agent.
 
 ---
 
@@ -25,10 +25,11 @@ kinroo.ai is a family calendar agent, not a calendar with NLP bolted on. Parents
 ### Infrastructure (manual — must configure in Heroku)
 - [ ] `SENTRY_DSN` — Sentry is wired, just needs the DSN env var
 - [ ] `ALLOWED_EMAILS` — beta allowlist (or unset for open access)
-- [ ] `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+- [ ] `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — WhatsApp (in progress, separate agent)
 - [ ] WhatsApp Business: enable Sandbox or register number in Twilio console
-- [ ] `SENDGRID_INBOUND_WEBHOOK_SECRET` + `INBOUND_EMAIL_ADDRESS=add@kinroo.ai`
-- [ ] SendGrid Inbound Parse: add MX record `add.kinroo.ai → mx.sendgrid.net`, configure webhook URL
+- [x] `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL` — SendGrid outbound configured ✅
+- [x] `SENDGRID_INBOUND_WEBHOOK_SECRET` — set in Heroku ✅
+- [x] SendGrid Inbound Parse: MX record on kinroo.ai → `mx.sendgrid.net`, webhook → `/api/email/inbound` ✅
 
 ### Manual verification (run the day before launch)
 - [ ] `grep -r "sk-ant-api03\|GOCSPX-" server/src/ client/src/` returns nothing
@@ -62,11 +63,12 @@ kinroo.ai is a family calendar agent, not a calendar with NLP bolted on. Parents
 | **Privacy Policy + Terms** | `/privacy` and `/terms` pages live and linked |
 | **Account deletion** | Deletes all data via FK CASCADE |
 
-### Phase 2 — Channels (merged, pending Heroku config)
-| Feature | Notes |
-|---|---|
-| **WhatsApp / SMS Bot** | Inbound Twilio webhook, two-phase confirmation, disambiguation, outbound messages |
-| **Email Ingest** | `POST /api/email/inbound`; extracts from plain text, HTML, PDF, images, .ics; dedup; rate limiting |
+### Phase 2 — Channels
+| Feature | Status | Notes |
+|---|---|---|
+| **WhatsApp / SMS Bot** | 🔧 In progress (separate agent) | Inbound Twilio webhook, two-phase confirmation, disambiguation |
+| **Email Ingest** | ✅ Live | Fire-and-forget: forward to add@kinroo.ai → events created → branded confirmation email. Reply to confirmation to edit. Handles plain text, HTML, PDF, images, .ics. SendGrid Inbound Parse. |
+| **Outbound Email (SendGrid)** | ✅ Live | All invites/updates/cancellations sent from hello@kinroo.ai via SendGrid SMTP. Domain authenticated (SPF/DKIM). |
 
 ### UI / Infra cleanup (all done)
 - Deleted `LoginPage.tsx` / `/login-test`
