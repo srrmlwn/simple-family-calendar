@@ -277,13 +277,15 @@ export class EmailService {
         html: string;
         text: string;
         replyTo?: string;
+        from?: { name: string; address: string };
     }): Promise<void> {
+        const { from, ...rest } = options;
         await this.transporter.sendMail({
-            from: {
+            from: from ?? {
                 name: 'kinroo.ai',
                 address: process.env.SMTP_FROM_EMAIL || 'hello@kinroo.ai'
             },
-            ...options
+            ...rest
         });
     }
 }

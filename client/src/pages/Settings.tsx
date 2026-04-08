@@ -113,12 +113,12 @@ const Settings: React.FC = () => {
                 <div className="mb-2 mt-8">
                     <h2 className="text-xs font-semibold uppercase tracking-wider px-1 mb-3" style={{ color: 'var(--text-muted)' }}>Connect</h2>
 
-                    {/* WhatsApp */}
+                    {/* SMS */}
                     <div className="shadow rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)' }}>
                         <div className="px-6 py-4 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                            <MessageSquare className="w-5 h-5 text-green-600" />
+                            <MessageSquare className="w-5 h-5 text-blue-600" />
                             <div>
-                                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-base)' }}>WhatsApp</h3>
+                                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-base)' }}>Text (SMS)</h3>
                                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Text your calendar — add events, check your schedule, get reminders.</p>
                             </div>
                         </div>
@@ -138,15 +138,11 @@ const Settings: React.FC = () => {
                                 </div>
                             ) : phoneJustLinked ? (
                                 <div className="space-y-2 text-sm">
-                                    <p className="font-medium text-green-700">Phone linked!</p>
+                                    <p className="font-medium text-blue-700">Phone linked!</p>
                                     {twilioPhoneNumber && (
                                         <p style={{ color: 'var(--text-base)' }}>Save <span className="font-semibold">{twilioPhoneNumber}</span> as <span className="font-semibold">"kinroo.ai"</span> in your contacts.</p>
                                     )}
-                                    {twilioJoinCode ? (
-                                        <p style={{ color: 'var(--text-base)' }}>Send <span className="font-semibold">{twilioJoinCode}</span> to that number on WhatsApp to activate.</p>
-                                    ) : (
-                                        <p style={{ color: 'var(--text-base)' }}>Then send any message to that number on WhatsApp to start.</p>
-                                    )}
+                                    <p style={{ color: 'var(--text-base)' }}>Text any message to that number to get started.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
@@ -158,12 +154,12 @@ const Settings: React.FC = () => {
                                             onChange={(e) => setPhoneNumber(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSavePhone()}
                                             disabled={phoneSaving}
-                                            className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                                         />
                                         <button
                                             onClick={handleSavePhone}
                                             disabled={phoneSaving || !phoneNumber.trim()}
-                                            className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:bg-green-300"
+                                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:bg-blue-300"
                                         >
                                             {phoneSaving ? 'Saving…' : 'Save'}
                                         </button>

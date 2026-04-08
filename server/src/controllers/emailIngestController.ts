@@ -18,11 +18,16 @@ import {
     parseEventsFromContent,
     CandidateEvent,
 } from '../services/emailIngestService';
+import {
+    getActiveSession,
+    extractHistory,
+    upsertTurn,
+} from '../services/conversationService';
 
 const agentSvc  = new AgentService(process.env.ANTHROPIC_API_KEY || '');
 const eventSvc  = new EventService();
 
-const REPLY_TO  = 'add@kinroo.ai';
+const INGEST_FROM = { name: 'kinroo.ai', address: 'add@kinroo.ai' };
 
 // ── Webhook secret check ───────────────────────────────────────────────────────
 function validateWebhookSecret(req: Request): boolean {
@@ -137,6 +142,7 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
 
     if (!user) {
         await emailService.sendEmail({
+            from: INGEST_FROM,
             to: { name: rawFrom, address: senderEmail },
             subject: `Re: ${subject}`,
             text: "Hi! This email address isn't linked to a kinroo.ai account. Sign up or log in at kinroo.ai to start forwarding events to your calendar.",
@@ -156,6 +162,10 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
         const instruction = stripQuotedContent(extractBodyText(textBody, htmlBody));
         if (!instruction) return;
 
+        // Load conversation history so the agent knows what was previously added/discussed
+        const session = await getActiveSession(user.id, 'email');
+        const history = extractHistory(session);
+
         // Load upcoming events so the agent can find and edit them
         const contextStart = moment().subtract(7, 'days').toDate();
         const contextEnd   = moment().add(90, 'days').toDate();
@@ -170,7 +180,7 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
                 userId: user.id,
                 timezone,
                 channel: 'email',
-                history: [],
+                history,
                 preloadedEvents: upcomingEvents,
                 familyMembers,
             });
@@ -179,7 +189,11 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
             agentReply = 'Something went wrong processing your request. Please try again or edit the event at kinroo.ai.';
         }
 
+        // Persist this turn so the next reply has full context
+        upsertTurn(user.id, 'email', instruction, agentReply, session?.id).catch(() => {});
+
         await emailService.sendEmail({
+            from: INGEST_FROM,
             to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
             subject: `Re: ${subject}`,
             text: agentReply,
@@ -189,7 +203,6 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
                 <a href="https://kinroo.ai" style="color:#6366f1;">View calendar at kinroo.ai</a>
               </p>
             </div>`,
-            replyTo: REPLY_TO,
         }).catch(err => console.error('emailIngest: reply response failed', err));
         return;
     }
@@ -218,11 +231,11 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
 
     if (!fullContent.trim()) {
         await emailService.sendEmail({
+            from: INGEST_FROM,
             to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
             subject: `Re: ${subject}`,
             text: "Got your email, but it appears to be empty. Forward an email with event details (dates, times, descriptions) and I'll add them to your calendar.",
             html: "<p>Got your email, but it appears to be empty. Forward an email with event details (dates, times, descriptions) and I'll add them to your calendar.</p>",
-            replyTo: REPLY_TO,
         }).catch(err => void err);
         return;
     }
@@ -238,11 +251,11 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
 
     if (candidates.length === 0) {
         await emailService.sendEmail({
+            from: INGEST_FROM,
             to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
             subject: `Re: ${subject}`,
             text: "Got your email but couldn't find any calendar events in it. Try forwarding emails with dates and times, or attach a schedule PDF.",
             html: "<p>Got your email but couldn't find any calendar events in it. Try forwarding emails with dates and times, or attach a schedule PDF.</p>",
-            replyTo: REPLY_TO,
         }).catch(err => void err);
         return;
     }
@@ -270,21 +283,27 @@ export async function handleEmailIngest(req: Request, res: Response): Promise<vo
     } catch (err) {
         console.error('emailIngest: failed to create events', err);
         await emailService.sendEmail({
+            from: INGEST_FROM,
             to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
             subject: `Re: ${subject}`,
             text: 'Something went wrong adding your events. Please try again or add them manually at kinroo.ai.',
             html: '<p>Something went wrong adding your events. Please try again or add them manually at <a href="https://kinroo.ai">kinroo.ai</a>.</p>',
-            replyTo: REPLY_TO,
         }).catch(err2 => void err2);
         return;
     }
 
-    // ── 7. Send confirmation ──────────────────────────────────────────────────
+    // ── 7. Seed session so reply has context ──────────────────────────────────
+    // Store a turn summarising what was added — this becomes the conversation
+    // history the agent sees when the user replies to make changes.
+    const confirmationSummary = buildConfirmationText(candidates, timezone);
+    upsertTurn(user.id, 'email', `[forwarded email: ${subject}]`, confirmationSummary).catch(() => {});
+
+    // ── 8. Send confirmation ──────────────────────────────────────────────────
     await emailService.sendEmail({
+        from: INGEST_FROM,
         to: { name: `${user.firstName} ${user.lastName}`, address: senderEmail },
         subject: `Added to your calendar: ${candidates.length === 1 ? candidates[0].title : `${candidates.length} events`}`,
-        text: buildConfirmationText(candidates, timezone),
+        text: confirmationSummary,
         html: buildConfirmationHtml(candidates, timezone),
-        replyTo: REPLY_TO,
     }).catch(err => console.error('emailIngest: confirmation email failed', err));
 }
