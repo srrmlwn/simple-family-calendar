@@ -15,7 +15,7 @@ export interface AgentInput {
     message: string;
     userId: string;
     timezone: string;
-    channel: 'web' | 'whatsapp' | 'email';
+    channel: 'web' | 'whatsapp' | 'sms' | 'email';
     history: Array<{ role: 'user' | 'assistant'; content: string }>;
     preloadedEvents: Event[];
     familyMembers: FamilyMember[];
@@ -170,8 +170,8 @@ export class AgentService {
             // ── Tool use: process each block ──────────────────────────────
             messages.push({ role: 'assistant', content: response.content });
 
-            // WhatsApp: intercept the first mutating tool — return pending confirmation
-            if (channel === 'whatsapp' && mutatingBlock) {
+            // SMS/WhatsApp: intercept the first mutating tool — return pending confirmation
+            if ((channel === 'whatsapp' || channel === 'sms') && mutatingBlock) {
                 const toolInput = mutatingBlock.input as Record<string, unknown>;
                 const conflicts = await this.detectConflicts(toolInput, mutatingBlock.name, userId, familyMembers);
                 const confirmationPrompt = await this.buildConfirmationPrompt(
@@ -302,7 +302,7 @@ export class AgentService {
         userId: string,
         timezone: string,
         familyMembers: FamilyMember[],
-        channel: 'web' | 'whatsapp' | 'email'
+        channel: 'web' | 'whatsapp' | 'sms' | 'email'
     ): Promise<{ output: string; event?: Event; queriedEvents?: Event[] }> {
 
         if (toolName === 'get_events') {

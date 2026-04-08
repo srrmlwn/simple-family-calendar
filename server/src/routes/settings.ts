@@ -42,8 +42,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     return res.json({
         ...settings,
         phoneNumber: user?.phoneNumber ?? null,
-        twilioPhoneNumber: config.twilio.phoneNumber || null,
-        twilioJoinCode: config.twilio.joinCode || null,
+        twilioPhoneNumber: config.twilio.smsPhoneNumber || null,
     });
 }));
 

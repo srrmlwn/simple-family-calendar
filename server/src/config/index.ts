@@ -41,8 +41,8 @@ export default {
     twilio: {
         accountSid: process.env.TWILIO_ACCOUNT_SID || '',
         authToken: process.env.TWILIO_AUTH_TOKEN || '',
-        phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
+        smsPhoneNumber: process.env.TWILIO_SMS_PHONE_NUMBER || '',
+        whatsappPhoneNumber: process.env.TWILIO_WHATSAPP_PHONE_NUMBER || '',
         webhookUrl: process.env.TWILIO_WEBHOOK_URL || '',
-        joinCode: process.env.TWILIO_JOIN_CODE || '',
     }
 };

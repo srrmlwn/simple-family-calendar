@@ -57,7 +57,8 @@ async function handleMediaAttachment(
     user: User,
     timezone: string,
     familyMembers: FamilyMember[],
-    sessionId: string | undefined
+    sessionId: string | undefined,
+    channel: 'sms' | 'whatsapp'
 ): Promise<void | string> {
     // Unsupported type
     if (!SUPPORTED_WHATSAPP_MEDIA_TYPES.has(mediaContentType)) {
@@ -94,7 +95,7 @@ async function handleMediaAttachment(
         `Reply YES to add all to your calendar, or NO to cancel.`;
 
     // Store as pending batch creation
-    const sid = sessionId ?? (await createSession(user.id, 'whatsapp')).id;
+    const sid = sessionId ?? (await createSession(user.id, channel)).id;
     await storePendingToolCall(sid, {
         toolName: 'create_events_batch',
         toolInput: {
@@ -126,7 +127,8 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
     const rawFrom: string = rawBody.From ?? '';
     const body: string    = (rawBody.Body ?? '').trim();
     const numMedia        = parseInt(rawBody.NumMedia ?? '0', 10);
-    const phone = normalizePhone(rawFrom);
+    const phone   = normalizePhone(rawFrom);
+    const channel = rawFrom.startsWith('whatsapp:') ? 'whatsapp' : 'sms' as const;
 
     // 2. Look up user by phone number
     const userRepo = AppDataSource.getRepository(User);
@@ -148,7 +150,7 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
     const timezone     = settings?.timezone ?? 'America/New_York';
 
     // 4. Load conversation session (provides context + pending tool call state)
-    const session = await getActiveSession(user.id, 'whatsapp');
+    const session = await getActiveSession(user.id, channel);
     const history = extractHistory(session);
 
     // 5. Handle YES/NO for a pending confirmation (stored in DB session, not in-memory)
@@ -176,7 +178,7 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
             }
 
             if (session) await clearPendingToolCall(session.id).catch(() => {});
-            upsertTurn(user.id, 'whatsapp', body, reply, session?.id).catch(() => {});
+            upsertTurn(user.id, channel, body, reply, session?.id).catch(() => {});
             res.type('text/xml').send(twimlReply(reply));
             return;
 
@@ -190,7 +192,7 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
 
             const reply = 'Cancelled.';
             if (session) await clearPendingToolCall(session.id).catch(() => {});
-            upsertTurn(user.id, 'whatsapp', body, reply, session?.id).catch(() => {});
+            upsertTurn(user.id, channel, body, reply, session?.id).catch(() => {});
             res.type('text/xml').send(twimlReply(reply));
             return;
 
@@ -219,11 +221,11 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
         const familyMembers = await fmRepo.find({ where: { userId: user.id } });
 
         const reply = await handleMediaAttachment(
-            mediaUrl, mediaContentType, user, timezone, familyMembers, session?.id
+            mediaUrl, mediaContentType, user, timezone, familyMembers, session?.id, channel
         );
 
         const finalReply = typeof reply === 'string' ? reply + multipleNote : 'Something went wrong. Please try again.';
-        upsertTurn(user.id, 'whatsapp', `[attachment: ${mediaContentType}]`, finalReply, session?.id).catch(() => {});
+        upsertTurn(user.id, channel, `[attachment: ${mediaContentType}]`, finalReply, session?.id).catch(() => {});
         res.type('text/xml').send(twimlReply(finalReply));
         return;
     }
@@ -245,28 +247,28 @@ export async function handleTwilioWebhook(req: Request, res: Response): Promise<
             message: body,
             userId: user.id,
             timezone,
-            channel: 'whatsapp',
+            channel,
             history,
             preloadedEvents: eventsForContext,
             familyMembers,
         });
     } catch {
         const errReply = "Sorry, I couldn't process that. Try 'What's on my calendar this week?' or 'Add dentist Tuesday at 3pm'.";
-        upsertTurn(user.id, 'whatsapp', body, errReply, session?.id).catch(() => {});
+        upsertTurn(user.id, channel, body, errReply, session?.id).catch(() => {});
         res.type('text/xml').send(twimlReply(errReply));
         return;
     }
 
     // 10. If a mutating op needs confirmation: store pending in DB, send prompt
     if (result.pendingAction) {
-        const sid = session?.id ?? (await createSession(user.id, 'whatsapp')).id;
+        const sid = session?.id ?? (await createSession(user.id, channel)).id;
         await storePendingToolCall(sid, result.pendingAction).catch(() => {});
-        upsertTurn(user.id, 'whatsapp', body, result.reply, session?.id ?? sid).catch(() => {});
+        upsertTurn(user.id, channel, body, result.reply, session?.id ?? sid).catch(() => {});
         res.type('text/xml').send(twimlReply(result.reply));
         return;
     }
 
     // 11. Regular response: persist turn, send reply
-    upsertTurn(user.id, 'whatsapp', body, result.reply, session?.id).catch(() => {});
+    upsertTurn(user.id, channel, body, result.reply, session?.id).catch(() => {});
     res.type('text/xml').send(twimlReply(result.reply));
 }

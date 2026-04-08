@@ -74,18 +74,19 @@ export async function downloadTwilioMedia(url: string): Promise<Buffer> {
 }
 
 /**
- * Send an outbound WhatsApp message via Twilio REST API.
- * Used for proactive messages (email ingest confirmations, morning briefings, etc.)
- * No-ops in dev if TWILIO_ACCOUNT_SID or TWILIO_PHONE_NUMBER is not set.
+ * Send an outbound SMS or WhatsApp message via Twilio REST API.
+ * No-ops in dev if the required env vars are not set.
  */
-export async function sendWhatsAppMessage(toPhone: string, body: string): Promise<void> {
-    const { accountSid, authToken, phoneNumber } = config.twilio;
-    if (!accountSid || !authToken || !phoneNumber) return;
+export async function sendTwilioMessage(toPhone: string, body: string, channel: 'sms' | 'whatsapp'): Promise<void> {
+    const { accountSid, authToken, smsPhoneNumber, whatsappPhoneNumber } = config.twilio;
+    if (!accountSid || !authToken) return;
+
+    const fromNumber = channel === 'whatsapp' ? whatsappPhoneNumber : smsPhoneNumber;
+    if (!fromNumber) return;
+
+    const from = channel === 'whatsapp' ? `whatsapp:${fromNumber}` : fromNumber;
+    const to   = channel === 'whatsapp' ? `whatsapp:${toPhone}`    : toPhone;
 
     const client = twilio(accountSid, authToken);
-    await client.messages.create({
-        from: `whatsapp:${phoneNumber}`,
-        to: `whatsapp:${toPhone}`,
-        body,
-    });
+    await client.messages.create({ from, to, body });
 }

@@ -3,7 +3,7 @@ import { LLMCall } from '../entities/LLMCall';
 
 export interface LLMCallLog {
     userId?: string;
-    channel: 'web' | 'whatsapp' | 'flyer' | 'voice' | 'email';
+    channel: 'web' | 'whatsapp' | 'sms' | 'flyer' | 'voice' | 'email';
     model: string;
     intent?: string;
     promptTokens?: number;
