@@ -65,7 +65,7 @@ const AcceptInvite: React.FC = () => {
 
     const handleSignInAndAccept = () => {
         // Store token so AuthContext can pick it up after OAuth callback
-        localStorage.setItem('pendingInviteToken', token);
+        sessionStorage.setItem('pendingInviteToken', token);
         loginWithGoogle();
     };
 

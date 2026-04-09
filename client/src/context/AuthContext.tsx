@@ -69,9 +69,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user: authUser } = await authService.handleGoogleCallback();
 
       // If there's a pending invite token, accept it now.
-      const pendingToken = localStorage.getItem('pendingInviteToken');
+      const pendingToken = sessionStorage.getItem('pendingInviteToken');
       if (pendingToken) {
-        localStorage.removeItem('pendingInviteToken');
+        sessionStorage.removeItem('pendingInviteToken');
         try {
           await api.post('/api/family/invite/accept', { token: pendingToken });
           await authService.logout();

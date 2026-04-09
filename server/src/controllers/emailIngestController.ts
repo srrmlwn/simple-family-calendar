@@ -32,7 +32,7 @@ const INGEST_FROM = { name: 'kinroo.ai', address: 'add@kinroo.ai' };
 // ── Webhook secret check ───────────────────────────────────────────────────────
 function validateWebhookSecret(req: Request): boolean {
     const secret = process.env.SENDGRID_INBOUND_WEBHOOK_SECRET;
-    if (!secret) return true;
+    if (!secret) return false; // fail closed — secret must be configured
     return req.query['secret'] === secret;
 }
 
