@@ -113,10 +113,31 @@ if (process.env.SENTRY_DSN) {
 app.use(errorHandler);
 
 // ── Memory reporting helper ───────────────────────────────────────────────────
+const RSS_WARN_BYTES = 460 * 1024 * 1024; // 460MB — alert before Heroku's 512MB R14
+let lastMemoryAlertAt = 0;
+
 function logMemory(label: string) {
     const mb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
     const m = process.memoryUsage();
     console.log(`[mem] ${label} — rss=${mb(m.rss)} heap=${mb(m.heapUsed)}/${mb(m.heapTotal)} ext=${mb(m.external)}`);
+
+    // Fire a Sentry warning if RSS is approaching Heroku's 512MB R14 limit.
+    // Rate-limited to once per 15 minutes so a sustained spike doesn't spam alerts.
+    if (process.env.SENTRY_DSN && m.rss > RSS_WARN_BYTES) {
+        const now = Date.now();
+        if (now - lastMemoryAlertAt > 15 * 60 * 1000) {
+            lastMemoryAlertAt = now;
+            Sentry.captureMessage('High memory: R14 risk', {
+                level: 'warning',
+                extra: {
+                    label,
+                    rss_mb: Math.round(m.rss / 1024 / 1024),
+                    heap_used_mb: Math.round(m.heapUsed / 1024 / 1024),
+                    heap_total_mb: Math.round(m.heapTotal / 1024 / 1024),
+                },
+            });
+        }
+    }
 }
 
 // Initialize database and start server
