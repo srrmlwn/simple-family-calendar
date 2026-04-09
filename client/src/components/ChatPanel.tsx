@@ -213,8 +213,10 @@ const MessageBubble: React.FC<{
 
                 {/* Disambiguation cards */}
                 {msg.requiresDisambiguation && msg.candidates && msg.candidates.length > 0 && (
-                    <div className="mt-2">
-                        <p className="text-xs text-amber-600 font-medium mb-1.5 ml-1">Which event did you mean?</p>
+                    <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                        <p className="text-xs text-amber-700 font-semibold mb-2 flex items-center gap-1.5">
+                            <span>↓</span> Which event did you mean?
+                        </p>
                         <div className="space-y-1.5">
                             {msg.candidates.map(c => (
                                 <ChatEventCard key={c.id} event={c} onClick={() => onCandidateSelect(c.id, msg)} dimmed />

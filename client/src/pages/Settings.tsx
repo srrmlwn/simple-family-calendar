@@ -49,7 +49,7 @@ const Settings: React.FC = () => {
     };
 
     const handleRemovePhone = async () => {
-        if (!window.confirm('Remove your WhatsApp number?')) return;
+        if (!window.confirm('Remove your phone number?')) return;
         try {
             await phoneService.remove();
             setSavedPhone(null);

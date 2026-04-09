@@ -377,8 +377,13 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
             try {
                 await startWhisperRecording();
                 return;
-            } catch {
-                // Permission denied or not available — fall through to Web Speech
+            } catch (err) {
+                // If mic permission was explicitly denied, tell the user clearly
+                if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError')) {
+                    showError('Microphone access denied. Allow microphone access in your browser, or type instead.');
+                    return;
+                }
+                // Other errors (device not found, etc.) — fall through to Web Speech API
             }
         }
 

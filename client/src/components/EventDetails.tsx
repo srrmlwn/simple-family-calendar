@@ -25,6 +25,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteScopeDialog, setShowDeleteScopeDialog] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleSubmit = async (eventData: EventInput) => {
         try {
@@ -53,13 +54,15 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             return;
         }
 
-        if (!window.confirm('Are you sure you want to delete this event?')) {
-            return;
-        }
+        setShowDeleteConfirm(true);
+    };
 
+    const confirmDelete = async () => {
+        if (!onDelete) return;
         try {
             setIsDeleting(true);
             setError(null);
+            setShowDeleteConfirm(false);
             await onDelete();
             onClose();
         } catch (err) {
@@ -108,6 +111,29 @@ const EventDetails: React.FC<EventDetailsProps> = ({
                     {error && (
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
                             {error}
+                        </div>
+                    )}
+                    {showDeleteConfirm && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-3">
+                            <span className="text-sm text-red-700 font-medium">Delete this event?</span>
+                            <div className="flex gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={isDeleting}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={confirmDelete}
+                                    disabled={isDeleting}
+                                    className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {isDeleting ? 'Deleting…' : 'Delete'}
+                                </button>
+                            </div>
                         </div>
                     )}
                     <EventForm

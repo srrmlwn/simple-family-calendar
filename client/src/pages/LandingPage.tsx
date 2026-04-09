@@ -14,15 +14,6 @@ const ACCENT_MID = '#d4650f';
 const ACCENT_BG  = '#fef3e6';
 const ACCENT_BOR = '#f0c090';
 
-// WhatsApp colours
-const WA_HEADER = '#075e54';
-const WA_BG     = '#ddd4c8';
-const WA_USER   = '#dcf8c6';
-const WA_BOT    = '#ffffff';
-const WA_TEXT   = '#303030';
-const WA_MUTED  = '#667781';
-const WA_GREEN  = '#25d366';
-
 // ── Shared atoms ───────────────────────────────────────────────────────────────
 
 interface CardData {
@@ -69,39 +60,6 @@ const BrowserChrome: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
     </div>
     {children}
-  </div>
-);
-
-const WhatsAppChrome: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-    <div style={{ background: WA_HEADER, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-      <div style={{ width: 34, height: 34, borderRadius: '50%', background: WA_GREEN, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <span style={{ fontSize: 16 }}>🗓️</span>
-      </div>
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'white', lineHeight: 1.2 }}>kinroo.ai</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>online</div>
-      </div>
-    </div>
-    <div className="demo-chat" style={{ flex: 1, background: WA_BG, padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
-      {children}
-    </div>
-  </div>
-);
-
-const WaBubble: React.FC<{ from: 'user' | 'bot'; animate?: boolean; children: React.ReactNode }> = ({ from, animate, children }) => (
-  <div style={{ display: 'flex', justifyContent: from === 'user' ? 'flex-end' : 'flex-start', animation: animate ? 'fadeUp 0.25s ease' : undefined }}>
-    <div style={{ maxWidth: '84%', background: from === 'user' ? WA_USER : WA_BOT, borderRadius: from === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px', padding: '8px 10px', fontSize: 13, color: WA_TEXT, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-      {children}
-      <div style={{ fontSize: 10, color: WA_MUTED, textAlign: 'right', marginTop: 1 }}>{from === 'user' ? '✓✓' : ''}</div>
-    </div>
-  </div>
-);
-
-const WaYesNo: React.FC = () => (
-  <div style={{ display: 'flex', gap: 6, marginTop: 7 }}>
-    <span style={{ background: WA_GREEN, color: 'white', fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 10px' }}>YES</span>
-    <span style={{ background: '#e0e0e0', color: WA_MUTED, fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 10px' }}>NO</span>
   </div>
 );
 
@@ -288,48 +246,16 @@ const VoiceDemo: React.FC = () => {
   );
 };
 
-// ── Tab 3: WhatsApp text demo ──────────────────────────────────────────────────
+// ── Tab 3: Email forward demo ──────────────────────────────────────────────────
 
-const WhatsAppDemo: React.FC = () => {
-  // 0→1 user msg, →2 thinking, →3 bot reply, →4 user YES, →5 confirmed
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    const delays = [600, 1000, 900, 1700, 1500];
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    let total = 0;
-    delays.forEach((d, i) => { total += d; timers.push(setTimeout(() => setStep(i + 1), total)); });
-    return () => timers.forEach(clearTimeout);
-  }, []);
-
-  return (
-    <WhatsAppChrome>
-      {step >= 1 && <WaBubble from="user" animate>Soccer moved to Saturday 10am</WaBubble>}
-      {step === 2 && <div style={{ paddingLeft: 4 }}><ThinkingDots color="#aaa" /></div>}
-      {step >= 3 && (
-        <WaBubble from="bot" animate>
-          <span style={{ fontWeight: 500 }}>Got it — update Soccer Practice to Sat 10am?</span>
-          <WaYesNo />
-        </WaBubble>
-      )}
-      {step >= 4 && <WaBubble from="user" animate>YES</WaBubble>}
-      {step >= 5 && (
-        <WaBubble from="bot" animate>
-          <span style={{ color: '#22C55E', fontWeight: 700 }}>✓ Done!</span> Soccer Practice updated to Saturday 10am.
-        </WaBubble>
-      )}
-    </WhatsAppChrome>
-  );
-};
-
-// ── Tab 4: File forward via WhatsApp ──────────────────────────────────────────
+const FWDEMAIL_EVENTS = ['⚽ Soccer Practice — Thu 4:30 PM', '⚽ Soccer Practice — Sat 9:00 AM', '⚽ Soccer Practice — Mon 4:30 PM', '🏆 Tournament — Sun 11:00 AM'];
 
 const ForwardDemo: React.FC = () => {
-  // 0→1 attachment, →2 thinking, →3 events list, →4 user YES, →5 confirmed
+  // 0→1 email shown, →2 thinking, →3 events found, →4 confirmed
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    const delays = [700, 1200, 1500, 1800, 1400];
+    const delays = [700, 1200, 1500, 1600];
     const timers: ReturnType<typeof setTimeout>[] = [];
     let total = 0;
     delays.forEach((d, i) => { total += d; timers.push(setTimeout(() => setStep(i + 1), total)); });
@@ -337,50 +263,70 @@ const ForwardDemo: React.FC = () => {
   }, []);
 
   return (
-    <WhatsAppChrome>
-      {step >= 1 && (
-        <WaBubble from="user" animate>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 7, background: '#e8534a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 18 }}>📄</span>
+    <BrowserChrome>
+      <div className="demo-chat" style={{ flex: 1, padding: '12px 12px 8px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+        {/* Faded email being forwarded */}
+        <div style={{ opacity: step >= 1 ? 1 : 0, transition: 'opacity 0.3s', background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 12px', fontSize: 12 }}>
+          <div style={{ color: TEXT_MUTED, marginBottom: 4 }}>
+            <span style={{ fontWeight: 700, color: TEXT_BASE }}>Fwd:</span> Spring Soccer Schedule 2025
+          </div>
+          <div style={{ color: TEXT_MUTED, marginBottom: 2 }}>
+            <span style={{ fontWeight: 600 }}>To:</span>{' '}
+            <span style={{ color: ACCENT, fontWeight: 600 }}>add@kinroo.ai</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '6px 8px', background: BG_APP, borderRadius: 7, border: `1px solid ${BORDER}` }}>
+            <div style={{ width: 28, height: 28, borderRadius: 5, background: '#e8534a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 14 }}>📄</span>
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: WA_TEXT }}>soccer_schedule.pdf</div>
-              <div style={{ fontSize: 10, color: WA_MUTED }}>Forwarded · 84 KB</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_BASE }}>soccer_schedule.pdf</div>
+              <div style={{ fontSize: 10, color: TEXT_MUTED }}>84 KB</div>
             </div>
           </div>
-        </WaBubble>
-      )}
-      {step === 2 && <div style={{ paddingLeft: 4 }}><ThinkingDots color="#aaa" /></div>}
-      {step >= 3 && (
-        <WaBubble from="bot" animate>
-          <div style={{ fontWeight: 600, marginBottom: 5 }}>📅 Found 4 games in this schedule:</div>
-          {['⚽ Soccer Practice — Thu 4:30 PM', '⚽ Soccer Practice — Sat 9:00 AM', '⚽ Soccer Practice — Mon 4:30 PM', '🏆 Tournament — Sun 11:00 AM'].map((e, i) => (
-            <div key={i} style={{ fontSize: 12, color: WA_MUTED, marginBottom: 2 }}>{e}</div>
-          ))}
-          <WaYesNo />
-        </WaBubble>
-      )}
-      {step >= 4 && <WaBubble from="user" animate>YES</WaBubble>}
-      {step >= 5 && (
-        <WaBubble from="bot" animate>
-          <span style={{ color: '#22C55E', fontWeight: 700 }}>✓ Added 4 events</span> to your calendar!
-        </WaBubble>
-      )}
-    </WhatsAppChrome>
+        </div>
+
+        {step === 2 && <ThinkingDots />}
+
+        {step >= 3 && (
+          <div style={{ animation: 'fadeUp 0.3s ease' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 6, background: '#ede6da', padding: '8px 12px', borderRadius: '3px 14px 14px 14px', marginBottom: 8, fontSize: 13, color: TEXT_BASE }}>
+              <span style={{ color: '#22C55E', flexShrink: 0, fontSize: 12 }}>✓</span>
+              <span style={{ fontWeight: 500 }}>Found 4 events in this schedule:</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {FWDEMAIL_EVENTS.map((e, i) => (
+                <div key={i} style={{ fontSize: 12, color: TEXT_MUTED, padding: '4px 8px', background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: 7 }}>{e}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step >= 4 && (
+          <div style={{ animation: 'fadeUp 0.25s ease', display: 'inline-flex', alignItems: 'flex-start', gap: 6, background: '#ede6da', padding: '8px 12px', borderRadius: '3px 14px 14px 14px', fontSize: 13, color: TEXT_BASE }}>
+            <span style={{ color: '#22C55E', flexShrink: 0, fontWeight: 700, fontSize: 12 }}>✓</span>
+            <span style={{ fontWeight: 500 }}>Added 4 events to your calendar!</span>
+          </div>
+        )}
+      </div>
+
+      {/* Address bar reminder */}
+      <div style={{ padding: '8px 12px', borderTop: `1px solid ${BORDER}`, background: BG_APP, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 11, color: TEXT_MUTED }}>Forward schedules & PDFs to</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT }}>add@kinroo.ai</span>
+      </div>
+    </BrowserChrome>
   );
 };
 
 // ── Demo showcase (tabbed) ─────────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'web',      label: 'Web',      icon: '🖥️' },
-  { key: 'voice',    label: 'Voice',    icon: '🎤' },
-  { key: 'whatsapp', label: 'WhatsApp', icon: '💬' },
-  { key: 'forward',  label: 'Email',    icon: '📧' },
+  { key: 'web',     label: 'Web',   icon: '🖥️' },
+  { key: 'voice',   label: 'Voice', icon: '🎤' },
+  { key: 'forward', label: 'Email', icon: '📧' },
 ] as const;
 
-const TAB_DURATIONS = [8500, 9500, 9000, 10500];
+const TAB_DURATIONS = [8500, 9500, 10500];
 
 const DemoShowcase: React.FC = () => {
   const [tabIdx, setTabIdx] = useState(0);
@@ -392,7 +338,7 @@ const DemoShowcase: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => switchTab((tabIdx + 1) % 4), TAB_DURATIONS[tabIdx]);
+    const t = setTimeout(() => switchTab((tabIdx + 1) % 3), TAB_DURATIONS[tabIdx]);
     return () => clearTimeout(t);
   }, [tabIdx, animKey, switchTab]);
 
@@ -426,10 +372,9 @@ const DemoShowcase: React.FC = () => {
 
       {/* Demo panel */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {tabIdx === 0 && <WebDemo      key={`web-${animKey}`} />}
-        {tabIdx === 1 && <VoiceDemo    key={`voice-${animKey}`} />}
-        {tabIdx === 2 && <WhatsAppDemo key={`wa-${animKey}`} />}
-        {tabIdx === 3 && <ForwardDemo  key={`fwd-${animKey}`} />}
+        {tabIdx === 0 && <WebDemo     key={`web-${animKey}`} />}
+        {tabIdx === 1 && <VoiceDemo   key={`voice-${animKey}`} />}
+        {tabIdx === 2 && <ForwardDemo key={`fwd-${animKey}`} />}
       </div>
     </div>
   );
@@ -560,7 +505,7 @@ const LandingPage: React.FC = () => {
           <ul style={{ fontSize: 15, color: TEXT_MUTED, margin: '0 0 32px', maxWidth: 420, lineHeight: 1.75, paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
               <>Type "Emma soccer Saturday 9am" and it's done</>,
-              <>WhatsApp your kinroo.ai number from anywhere — no app needed</>,
+              <>Speak it — tap the mic and say what's happening, hands-free</>,
               <>Forward a school email or schedule PDF to <span style={{ color: ACCENT, fontWeight: 600 }}>add@kinroo.ai</span> and events appear automatically</>,
             ].map((text, i) => (
               <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -608,7 +553,7 @@ const LandingPage: React.FC = () => {
               { icon: '🗣️', title: 'Talk, don\'t tap',  desc: 'Just say what\'s happening. No date pickers, no dropdowns, no friction.' },
               { icon: '📧', title: 'Forward anything',   desc: 'Coach emails, school PDFs — forward to add@kinroo.ai and events appear.' },
               { icon: '👨‍👩‍👧', title: 'Everyone in sync', desc: 'Assign events to family members. iCal invites go out automatically.' },
-              { icon: '💬', title: 'WhatsApp it',         desc: 'Text your kinroo.ai number from anywhere. No app to open, no login required.' },
+              { icon: '📱', title: 'Works everywhere',    desc: 'Full web app on desktop or mobile — plus a native app wrapper for your phone.' },
             ].map((f, i, arr) => (
               <div key={i} style={{ padding: '32px 24px 40px', borderRight: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
                 <div style={{ fontSize: 26, marginBottom: 12 }}>{f.icon}</div>

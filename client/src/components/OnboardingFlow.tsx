@@ -106,7 +106,8 @@ const FamilyMembersStep: React.FC<{
     onNext: () => void;
     onBack: () => void;
     onSkip: () => void;
-}> = ({ onNext, onBack, onSkip }) => {
+    isFirst?: boolean;
+}> = ({ onNext, onBack, onSkip, isFirst }) => {
     const [members, setMembers] = useState<AddedMember[]>([]);
     const [name, setName] = useState('');
     const [color, setColor] = useState<string>(FAMILY_MEMBER_COLORS[0]);
@@ -219,6 +220,7 @@ const FamilyMembersStep: React.FC<{
                 onContinue={onNext}
                 onSkip={onSkip}
                 skipLabel={members.length === 0 ? 'Skip for now' : undefined}
+                isFirst={isFirst}
             />
         </div>
     );
@@ -256,13 +258,13 @@ const ConnectStep: React.FC<{
                     </div>
                 </div>
 
-                {/* WhatsApp */}
-                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-100 rounded-xl">
-                    <MessageSquare className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                {/* SMS */}
+                <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ backgroundColor: 'var(--bg-app)', borderColor: 'var(--border)' }}>
+                    <MessageSquare className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }} />
                     <div>
-                        <p className="text-sm font-semibold text-gray-800">WhatsApp & SMS <span className="ml-1 text-xs font-normal text-gray-400">coming soon</span></p>
+                        <p className="text-sm font-semibold text-gray-800">Text (SMS)</p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                            Link your phone in Settings → Connect to text events directly to kinroo.ai.
+                            Link your phone in Settings → Connect to text events to kinroo.ai from anywhere.
                         </p>
                     </div>
                 </div>
@@ -425,9 +427,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const renderStep = () => {
         switch (step) {
             case 0:
-                return <TryItStep onFinish={goNext} onBack={goBack} isFirst />;
+                return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} isFirst />;
             case 1:
-                return <FamilyMembersStep onNext={goNext} onBack={goBack} onSkip={goNext} />;
+                return <TryItStep onFinish={goNext} onBack={goBack} />;
             case 2:
                 return (
                     <ConnectStep

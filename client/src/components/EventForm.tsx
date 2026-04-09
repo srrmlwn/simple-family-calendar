@@ -551,7 +551,7 @@ const EventForm: React.FC<EventFormProps> = ({
 
             {/* Action buttons */}
             <div className="flex justify-between items-center mt-6 p-3" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)' }}>
-                {onDelete && (
+                {onDelete && event && (
                     <button
                         type="button"
                         onClick={() => onDelete?.()}
