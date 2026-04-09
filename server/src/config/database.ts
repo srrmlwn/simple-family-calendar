@@ -43,7 +43,9 @@ if (process.env.DATABASE_URL) {
     type: 'postgres',
     url: process.env.DATABASE_URL,
     // Heroku Postgres requires rejectUnauthorized:false unless PGSSLROOTCERT is set
-    ssl: { rejectUnauthorized }
+    ssl: { rejectUnauthorized },
+    // Keep pool small — Basic dyno has 512MB total
+    extra: { max: 3, idleTimeoutMillis: 10000 },
   } as DataSourceOptions;
 } else {
   // Use individual parameters (local development)
