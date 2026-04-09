@@ -216,6 +216,7 @@ export class EventController {
     public getEventById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
             const userId = effectiveUserId(req);
             const { timezone } = req.query;
 
@@ -593,6 +594,7 @@ export class EventController {
     public deleteEvent = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
+            if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
             const userId = effectiveUserId(req);
             const recurringScope = req.query.recurringScope as 'this' | 'future' | 'all' | undefined;
             const occurrenceDate = req.query.occurrenceDate as string | undefined;
