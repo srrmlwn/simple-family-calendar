@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowUp, Paperclip, Mic, MicOff, ChevronRight, CheckCircle, AlertCircle, X } from 'lucide-react';
+import MarkdownText from './MarkdownText';
 import moment from 'moment';
 import eventService, { Event, EventInput, NLPCommandResponse, ParsedFlyerEvent } from '../services/eventService';
 import { FamilyMember } from '../services/familyMemberService';
@@ -208,7 +209,7 @@ const MessageBubble: React.FC<{
                             ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5 text-green-500" />
                             : null
                     }
-                    <span>{msg.text}</span>
+                    <MarkdownText text={msg.text} />
                 </div>
 
                 {/* Disambiguation cards */}

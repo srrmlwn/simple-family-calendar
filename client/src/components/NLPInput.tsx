@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowUp, Paperclip, Mic, MicOff, X, ChevronRight } from 'lucide-react';
+import MarkdownText from './MarkdownText';
 import moment from 'moment';
 import eventService, { Event, NLPCommandResponse, ParsedFlyerEvent } from '../services/eventService';
 import { FamilyMember } from '../services/familyMemberService';
@@ -663,9 +664,10 @@ const NLPInput: React.FC<NLPInputProps> = ({ onEventsChanged, onEventSelect, fam
                         <p className="mt-1.5 text-xs animate-pulse" style={{ color: 'var(--accent-mid)' }}>Transcribing…</p>
                     )}
                     {persistentMsg && (
-                        <p className="mt-1.5 text-xs leading-snug" style={{ color: 'var(--text-muted)' }}>
-                            ✓ {persistentMsg}
-                        </p>
+                        <div className="mt-1.5 text-xs leading-snug flex items-start gap-1" style={{ color: 'var(--text-muted)' }}>
+                            <span className="shrink-0">✓</span>
+                            <MarkdownText text={persistentMsg} />
+                        </div>
                     )}
                     {errorMsg && (
                         <p className="mt-1.5 text-xs" style={{ color: 'var(--today)' }}>{errorMsg}</p>
