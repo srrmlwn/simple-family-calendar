@@ -112,14 +112,30 @@ if (process.env.SENTRY_DSN) {
 // Error handling middleware
 app.use(errorHandler);
 
+// ── Memory reporting helper ───────────────────────────────────────────────────
+function logMemory(label: string) {
+    const mb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
+    const m = process.memoryUsage();
+    console.log(`[mem] ${label} — rss=${mb(m.rss)} heap=${mb(m.heapUsed)}/${mb(m.heapTotal)} ext=${mb(m.external)}`);
+}
+
 // Initialize database and start server
+console.log('[startup] initializing…');
+logMemory('pre-db-init');
+
 AppDataSource.initialize()
     .then(() => {
-        console.log('Data Source has been initialized!');
+        logMemory('post-db-init');
         app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
+            logMemory('server-ready');
+            console.log(`[startup] ready on port ${PORT}`);
         });
     })
-    .catch((error) => console.log('Error during Data Source initialization', error));
+    .catch((error) => {
+        console.error('[startup] DB initialization failed', error);
+    });
+
+// Log memory every 5 minutes so spikes show up in heroku logs
+setInterval(() => logMemory('heartbeat'), 5 * 60 * 1000).unref();
 
 export default app;
