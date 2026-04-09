@@ -57,9 +57,6 @@ app.use(securityHeaders); // Single source of truth for all security headers
 // Health check — used by verify.sh and wait-on to confirm server is ready
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-// TEMPORARY: Sentry smoke test — remove after confirming Sentry works
-app.get('/api/debug-sentry', (_req, _res) => { throw new Error('Sentry smoke test'); });
-
 // Apply rate limiting to all routes
 app.use('/api', apiLimiter);
 
